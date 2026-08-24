@@ -275,6 +275,32 @@
 - Phase A（7 SP）：修 compiler 產出 bug 4 項
 - Phase B 部分（3 SP）：Disable Guard 自動注入 + TD-522 Order manifest
 
+### ✅ Sprint 11 Phase A 完成 — 修 compiler 產出 bug（4 / 4 项）
+
+#### Modified
+- `lib/compiler/api-generator.ts`：移除假 import（runAction, triggerWorkflowTransition）+ 修 hook 引用錯誤（`model.hooks?.x` → `'${hooks.x}'`）
+- `lib/compiler/api-generator.test.ts`：PATCH 一致化
+
+#### Added
+- `tests/integration/compiler-blog-compile.test.ts`：6 tests（包含「產出程式碼通過 tsc --noEmit」驗證）
+- `tsconfig.test-compiler.json`：給整合測試用的 typecheck 設定（不含 `_compiled/` 排除）
+- `docs/reflection/sprint-11-phase-a.md`：Phase A 反省
+
+#### Sprint 10 Phase 2 bug 盤點重調
+| Bug | 實際真相 |
+|---|---|
+| Schema 丟失 | false alarm — schema 有保留，是 tsconfig 排除導致 typecheck 看不到 |
+| `ctx.params` wrap | 早已正確（Promise<{id}>）|
+| hook 引用錯誤 | 真實 bug — 修了 |
+| 假 import | 真實 bug — 修了 |
+
+**實際只需修 2 個**，不是 Phase 2 盤點的 4 個
+
+#### 驗證結果
+- `pnpm typecheck` 全綠
+- `pnpm vitest run` → 783 tests / 57 files（+6 新測試）
+- `lib/compiler/api-generator.test.ts` → 16 tests 全綠
+
 ---
 
 ## Sprint 1 Review Fixes（7 SP）

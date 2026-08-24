@@ -13,11 +13,11 @@
 | **當前 Sprint** | **Sprint 10 — Compiler Pipeline** Phase 1 ✅ 完成（修正 Sprint 9 違背 §13 問題） |
 | **Sprint 9 狀態** | ✅ 100% 收尾（4 commits + Reflection）|
 | **測試基線** | 777 tests / 56 files / 4 Gate 全綠（compiler 既存測試 + Phase 1 都綠）|
-| **下一個 P0** | Sprint 11 — TECH-018~021 修 compiler 產出 bug（4 項 / 7 SP） |
-| **下一個 P1** | Sprint 11 — TECH-022 Disable Guard 自動注入（2 SP） |
-| **下一個 P2** | TD-522 Order Extension manifest 缺失（0.5 SP， Sprint 11 一起做） |
-| **Sprint 10 規劃** | Phase 1 ✅ / Phase 2 ⚠️ 部分完成（揭露 6 個 compiler bug） / Phase 3 留 Sprint 12+ |
-| **路線圖關鍵** | Sprint 10 揭露 compiler 是「未驗證的遺產」，Sprint 11-12 務必修完才能用 |
+| **下一個 P0** | Sprint 11 — TECH-022 Disable Guard 自動注入（2 SP） |
+| **下一個 P1** | Sprint 12 — TECH-023 Sidebar / TECH-024 Workflow button（5 SP）|
+| **下一個 P2** | TD-522 Order Extension manifest 缺失（0.5 SP）|
+| **Sprint 11 規劃** | Phase A ✅ 完成 / Phase B 部分（Disable Guard）街接中 |
+| **路線圖關鍵** | Sprint 10 揭露 compiler 是「未驗證的遺產」，Sprint 11 Phase A 已證明可 typecheck |
 
 ### Sprint 6 進度
 
@@ -73,6 +73,17 @@
 - TECH-020 修 api-generator `ctx.params` Promise wrap（1 SP）
 - TECH-021 統一編譯結果 typecheck 通過（2 SP）
 - TECH-022 Disable Guard 自動注入（2 SP）
+
+### Sprint 11 進度（Compiler 完善）
+
+| Task | 標題 | 計劃 | 實際 | 狀態 |
+|------|------|------|------|------|
+| **TECH-018** | 修 schema 丟失 + 假 import | 3 SP | 1 SP | ✅（schema 為 false alarm）|
+| **TECH-019** | 修 hook 引用錯誤 | 1 SP | 1 SP | ✅ |
+| **TECH-020** | `ctx.params` Promise wrap | 1 SP | 0 SP | ✅ 早已正確 |
+| **TECH-021** | 統一編譯結果 typecheck 通過 | 2 SP | 2 SP | ✅（含整合測試） |
+| **TECH-022** | Disable Guard 自動注入 | 2 SP | - | 📋 Ready |
+| **合計** | **8 SP**（預估 10 SP）| | | **Phase A ✅ 783 tests** |
 
 ### Backlog ID 編號規則（本次重整確立）
 

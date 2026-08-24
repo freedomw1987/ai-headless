@@ -73,8 +73,6 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
 import { checkPermission } from '@/lib/auth/rbac';
 import { invokeHook } from '@/lib/extensions/hooks';
-import { runAction } from '@/lib/extensions/actions';
-import { triggerWorkflowTransition } from '@/lib/workflows/transitions';
 `;
 
 function permissionCheck(action: string): string {
@@ -102,6 +100,7 @@ function generateListHandler(
 ): GeneratedRoute {
   const tableName = modelToTableName(model.name);
   const isSoftDelete = model.softDelete !== false;
+  const hooks = model.hooks ?? {};
   const searchableFields = model.fields.filter((f) => f.ui?.searchable);
   const sortableFields = model.fields.filter((f) => f.ui?.sortable !== false);
 
@@ -150,7 +149,7 @@ export async function ${'GET'}(request: NextRequest) {
   ]);
 
   // afterList hook
-  const afterListHook = hookFn(model.hooks?.afterList);
+  const afterListHook = hookFn('${hooks.afterList ?? ''}');
   const transformed = afterListHook
     ? (
         await invokeHook(afterListHook, { result: items, model: '${model.name}' })
@@ -188,6 +187,7 @@ function generateReadHandler(
 ): GeneratedRoute {
   const tableName = modelToTableName(model.name);
   const isSoftDelete = model.softDelete !== false;
+  const hooks = model.hooks ?? {};
 
   const softDeleteFilter = isSoftDelete ? `deletedAt: null,` : '';
 
@@ -207,7 +207,7 @@ export async function ${'GET'}(request: NextRequest, { params }: { params: Promi
   }
 
   // afterRead hook
-  const afterReadHook = hookFn(model.hooks?.afterRead);
+  const afterReadHook = hookFn('${hooks.afterRead ?? ''}');
   const transformed = afterReadHook
     ? (
         await invokeHook(afterReadHook, { data: item, model: '${model.name}' })
@@ -457,7 +457,8 @@ export async function ${'POST'}(request: NextRequest, { params }: { params: Prom
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
 
-  const result = await runAction(
+  // Action endpoint — invoke the user-defined action function via hook SDK
+  const result = await invokeHook(
     '${implFn}',
     { id, ...body },
     { user: session.user, entity: '${model.name}' }
