@@ -94,7 +94,8 @@
 | **TECH-001** | Tech Spike | 設計系統架構 | Next.js + Prisma + Postgres + AI Pipeline 架構圖 | 5 | SP1 | M0 | ✅ Done |
 | **TECH-002** | Tech Spike | 設計 JSON 功能規範 | OpenSpec（MD + JSON Schema + TS Types + 範例）| 8 | SP1 | M1 | ✅ Done |
 | **US-101** | User Story | AI 對話生成 CRUD 功能 | 「幫我做待辦事項」→ 自動生成 JSON + 代碼 + DB Migration | 13 | SP1 | M1 | ✅ Done |
-| **US-102** | User Story | 後台用戶管理 | 用戶 CRUD + 角色 + 登入/登出 + RBAC | 5 | SP1 | M2 | 📋 Backlog |
+| **US-102** | User Story | 後台用戶管理（Phase 1 基礎版）| 登入頁 + 用戶 CRUD + 3 個寫死角色（admin/editor/viewer）+ middleware 守衛 | 5 | SP1 | M2 | ✅ Done (Phase 1) |
+| **US-102-P2** | User Story | 後台用戶管理（Phase 2 動態 RBAC）| Role table + Permission table + 自定義角色管理 UI + 動態權限授權 | 5 | SP2 | M2 | 📋 Backlog |
 | **US-103** | User Story | Blog CRUD 範例 | Blog CRUD + 富文本編輯器 + 列表頁 + 詳情頁 | 5 | SP1 | M3 | ✅ Done |
 | **US-104** | User Story | AI 模型配置 | API Key 配置、模型切換、配置持久化、錯誤處理 | 5 | SP1 | M4 | 📋 Backlog |
 | **US-105** | User Story | AI 對話界面 | Chat UI 可用，能解析需求、生成 JSON、編譯代碼、提示進度 | 5 | SP1 | M5 | 📋 Backlog |
@@ -278,3 +279,32 @@
 | 🧊 Icebox | 3 | 7% |
 | Pending（S3 子任務）| 6 | 13% |
 | **總計** | **49** | **100%** |
+---
+
+## 📋 US-102 Phase 2 開工 checklist（下個 session 開工前必看）
+
+### 產品問題（需用戶確認才能開工）
+1. **admin / editor / viewer 是不是系統內建、不能刪？**
+   - 影響：Role table 是否要加 `isSystem: Boolean` 欄位
+   - 我的建議：是，內建3 個都 `isSystem=true`，不能刪只能「自定義新 role」
+
+2. **自定義 role 的命名規則？**
+   - 影響：Role.name 驗證邏輯
+   - 我的建議：小寫 + 底線（e.g. `editor_special`），≤32 字，唯一
+
+3. **Role 是不是用戶在後台能看到的資源？**
+   - 影響：UI 是否要列「所有 role」給用戶選
+   - 我的建議：是 — `/admin/roles` 頁面是公開的 role 管理 UI（admin 才能進）
+
+4. **誰能授權權限？**
+   - 影響：RBAC middleware / API 守衛
+   - 我的建議：只有 admin 能進 `/admin/roles`、能改 role 的 permission 設定
+
+### 技術問題（下個 session 開工時決定）
+5. **Session strategy：JWT vs database？**（現狀 JWT + jwt() 重讀 DB hack 已運作）
+6. **hasPermission 重構策略**：保留純函式 + 加 `hasDynamicPermission` 平行函式（漸進式遷移）
+7. **既有 auth.test.ts 22 個測試**：保留寫死矩陣測試 + 新增動態查 DB 測試
+
+### 開工時程
+- 預估 5 SP，3-4 天完成
+- 順序：(1) Prisma migration → (2) seed 重寫 → (3) auth.ts 重構 + 新測試 → (4) `/admin/roles` UI → (5) 4 Gate
