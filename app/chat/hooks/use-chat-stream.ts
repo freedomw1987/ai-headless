@@ -82,67 +82,56 @@ export function useChatStream(
           },
         )) {
           fullContent += content;
-          applyContent(session.id, fullContent);
+          mutateLastAssistant(session.id, (last) => ({
+            ...last,
+            content: fullContent,
+          }));
         }
 
         // 4. JsonSpec 標記
         const spec: JsonSpec | null = extractJsonSpec(fullContent);
         if (spec) {
-          applyJsonSpec(session.id, spec);
+          mutateLastAssistant(session.id, (last) => ({
+            ...last,
+            metadata: { jsonSpec: spec },
+          }));
         }
       } catch (err) {
-        lastError = String(err);
-        console.error('Chat stream error:', err);
-        applyError(session.id, lastError);
+        // TD-503: AbortError 是使用者主動取消，不視為錯誤訊息（略過）
+        const errMsg = err instanceof Error ? err.message : String(err);
+        const isAbort = err instanceof DOMException && err.name === 'AbortError';
+        lastError = isAbort ? null : errMsg;
+        if (!isAbort) {
+          console.error('Chat stream error:', err);
+        }
+        mutateLastAssistant(session.id, (last) => ({
+          ...last,
+          content: last.content || (lastError ? `錯誤：${lastError}` : ''),
+        }));
       } finally {
         setStreaming(false);
       }
 
-      // ====== helpers（用 functional setSessions 拿最新 state）======
+      // ====== helpers ======
 
-      function applyContent(sessionId: string, content: string) {
+      /**
+       * 對指定 session 的最後一條 assistant 訊息套用 mutator。
+       * 用 functional setSessions 拿最新 state，避免 stale closure race。
+       */
+      function mutateLastAssistant(
+        sessionId: string,
+        mutator: (last: ChatSession['messages'][number]) => ChatSession['messages'][number],
+      ) {
         setSessions((prev) =>
           prev.map((s) => {
             if (s.id !== sessionId) return s;
+            const last = s.messages.at(-1);
+            if (!last || last.role !== 'assistant') return s;
+            const updatedLast = mutator(last);
+            // mutator 可能回傳同物件（no-op）,避免無謂 re-render
+            if (updatedLast === last) return s;
             const messages = [...s.messages];
-            const lastIdx = messages.length - 1;
-            if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
-              messages[lastIdx] = { ...messages[lastIdx]!, content };
-            }
-            return { ...s, messages };
-          }),
-        );
-      }
-
-      function applyJsonSpec(sessionId: string, spec: JsonSpec) {
-        setSessions((prev) =>
-          prev.map((s) => {
-            if (s.id !== sessionId) return s;
-            const messages = [...s.messages];
-            const lastIdx = messages.length - 1;
-            if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
-              messages[lastIdx] = {
-                ...messages[lastIdx]!,
-                metadata: { jsonSpec: spec },
-              };
-            }
-            return { ...s, messages };
-          }),
-        );
-      }
-
-      function applyError(sessionId: string, error: string) {
-        setSessions((prev) =>
-          prev.map((s) => {
-            if (s.id !== sessionId) return s;
-            const messages = [...s.messages];
-            const lastIdx = messages.length - 1;
-            if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
-              messages[lastIdx] = {
-                ...messages[lastIdx]!,
-                content: messages[lastIdx]!.content || `錯誤：${error}`,
-              };
-            }
+            messages[messages.length - 1] = updatedLast;
             return { ...s, messages };
           }),
         );
