@@ -9,6 +9,40 @@
 
 ## [Unreleased]
 
+### 🎯 US-102 — 後台用戶管理（基礎版）
+
+#### Added
+- **`lib/auth/password.ts`** — bcrypt 密碼 hash + verify（salt rounds 10），取代之前明文密碼處理漏洞
+- **`app/api/users/route.ts`** — GET（列出用戶）/ POST（新增用戶，僅 admin）API
+- **`app/api/users/[id]/route.ts`** — GET / PATCH / DELETE（軟刪除）單一用戶 API；保護「不能刪自己」邏輯
+- **`app/api/auth/[...nextauth]/route.ts`** — Auth.js v5 handler endpoint（讓 next-auth/react 的 signIn/signOut 運作）
+- **`app/admin/login/page.tsx`** + **`login-form.tsx`** — Credentials Provider 登入頁
+- **`app/admin/users/page.tsx`** + **`users-page-client.tsx`** — 用戶列表頁（DataTable + 停用操作）
+- **`app/admin/users/new/page.tsx`** + **`user-form.tsx`** — 新增/編輯用戶表單
+- **`app/admin/users/[id]/edit/page.tsx`** — 編輯用戶頁（admin only）
+- **`app/admin/page.tsx`** — Admin 總覽首頁（含用戶管理 / Extensions 入口）
+- **`app/admin/layout.tsx`** + **`admin-sidebar.tsx`** — Admin 後台 layout（sidebar + nav + 登出）
+- **`middleware.ts`** + **`lib/auth/auth.config.ts`** — Next.js middleware 守衛 `/admin/*`（拆出 edge-safe config 避免 Prisma edge runtime 衝突）
+- **`prisma/seed-users.ts`** — Seed 3 個 demo 帳號（admin@ai-headless.local / editor@ai-headless.local / viewer@ai-headless.local）
+- **`app/api/users/users-api.test.ts`** — 17 個 API 整合測試（auth 守衛 / RBAC / CRUD / 錯誤處理）
+- **`lib/auth/password.test.ts`** — 5 個 bcrypt hash + verify 測試
+- **`tests/integration/us-102-user-management.test.ts`** — 8 個整合 smoke test（密碼流程 + seed 帳號 + RBAC 矩陣）
+
+#### Changed
+- **`lib/auth/config.ts`** — 修復 `authorize()` 兩大漏洞：(1) 加上 bcrypt 密碼驗證（之前可空密碼登入）；(2) 從 DB 讀真實 role（之前寫死 `'viewer'`）；JWT callback 改為每次 request 重讀 role，admin role 變更立即生效
+- **`lib/auth/auth.test.ts`** —（既有）保留寫死矩陣測試，Phase 2 動態化時重構
+
+#### Fixed
+- **Middleware edge runtime 衝突** — 拆分 `auth.config.ts`（edge-safe，無 Prisma）給 middleware 用，避免「Edge Runtime 不支援 Node.js API」runtime error
+- **Auth.js authorize() 兩大安全漏洞** — 修補寫死 role 與無 bcrypt 驗證
+- **登入無 handler endpoint** — 補上 `/api/auth/[...nextauth]/route.ts` 才能用 next-auth/react
+
+#### Test Stats
+- Tests: **662 → 692** (+30)
+- Files: **46 → 49** (+3)
+
+---
+
 ### 🎯 TD-511 + TD-513 — Playwright webServer 雙 profile + useChatSessions 測試補齊
 
 #### Added

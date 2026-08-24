@@ -31,6 +31,7 @@ import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { db } from '@/lib/db';
 import type { Role } from './auth';
+import { verifyPassword } from './password';
 
 // ==============================================
 // 模組類型增強：把 role 加到 Session.user
@@ -75,18 +76,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       authorize: async (credentials) => {
-        if (!credentials?.email) return null;
-        // 簡化版：實際部署需要 bcrypt 密碼驗證
+        if (!credentials?.email || !credentials.password) return null;
         const user = await db.user.findUnique({
           where: { email: String(credentials.email) },
         });
         if (!user || !user.isActive) return null;
+        // US-102：bcrypt 驗證密碼
+        if (!user.passwordHash) return null;
+        const valid = await verifyPassword(
+          String(credentials.password),
+          user.passwordHash,
+        );
+        if (!valid) return null;
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           image: user.image,
-          role: 'viewer', // 預設角色（實際從 DB 讀取）
+          role: (user.role as Role) ?? 'viewer',
         };
       },
     }),
@@ -95,6 +102,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.role = (user as { role?: Role }).role ?? 'viewer';
+      }
+      // US-102：每次請求都重新讀取最新的 role（讓 admin 升級 editor 立即生效）
+      if (token.sub) {
+        const fresh = await db.user.findUnique({
+          where: { id: token.sub },
+          select: { role: true },
+        });
+        if (fresh?.role) token.role = fresh.role as Role;
       }
       return token;
     },
