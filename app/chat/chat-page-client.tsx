@@ -1,37 +1,42 @@
 'use client';
 
 /**
- * ChatPage — AI 對話主頁面（TD-401 RWD + TD-406 Retry 整合）
+ * ChatPage — AI 對話主頁面
+ *
+ * TD-501 重構後：原本 243 行的單體組件拆為 3 個 hooks：
+ * - useChatSessions  : sessions CRUD 狀態
+ * - useChatStream    : 串流 + retry + abort + JsonSpec 邏輯
+ * - useSidebarToggle : RWD 手機版抽屜
+ *
+ * 本檔只剩「組合 hooks + UI 渲染」。
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
 import { MessageBubble } from '@/components/chat/message-bubble';
 import { ChatInput } from '@/components/chat/chat-input';
-import {
-  createChatSession,
-  addMessage,
-  extractJsonSpec,
-  type ChatSession,
-} from '@/lib/ai/chat/chat-utils';
-import { streamChatWithRetry } from '@/lib/ai/stream-client';
-import { abortStream, createStreamController } from '@/lib/ai/stream-controller';
+import { abortStream } from '@/lib/ai/stream-controller';
+import { useChatSessions } from './hooks/use-chat-sessions';
+import { useChatStream } from './hooks/use-chat-stream';
+import { useSidebarToggle } from './hooks/use-sidebar-toggle';
 
 export function ChatPageClient() {
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [streaming, setStreaming] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { sessions, activeId, activeSession, setActiveId, createSession, updateSession } =
+    useChatSessions();
+  const { open: sidebarOpen, setOpen: setSidebarOpen, selectAndClose } = useSidebarToggle();
+  const { streaming, send } = useChatStream(
+    (id) => sessions.find((s) => s.id === id),
+    updateSession,
+  );
 
-  const activeSession = sessions.find((s) => s.id === activeId) ?? null;
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 自動捲到最新訊息
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeSession?.messages.length, streaming]);
 
-  // TD-503: 組件 unmount 時 abort 所有活躍串流
+  // TD-503: 組件 unmount 或切換 active session 時 abort 活躍串流
   useEffect(() => {
     return () => {
       if (activeId) {
@@ -41,120 +46,13 @@ export function ChatPageClient() {
   }, [activeId]);
 
   const handleNewSession = () => {
-    const session = createChatSession({});
-    setSessions((prev) => [...prev, session]);
-    setActiveId(session.id);
+    createSession();
     setSidebarOpen(false); // 手機版創建後自動關閉 sidebar
   };
 
-  const updateSession = (session: ChatSession) => {
-    setSessions((prev) =>
-      prev.map((s) => (s.id === session.id ? session : s)),
-    );
-  };
-
-  const handleSend = async (text: string) => {
-    // 1. 確保有 active session
-    let session = activeSession;
-    if (!session) {
-      session = createChatSession({});
-      setSessions((prev) => [...prev, session!]);
-      setActiveId(session!.id);
-    }
-
-    // TD-503: 如果上一輪串流未結束，先 abort
-    if (streaming && session.id) {
-      abortStream(`chat-${session.id}`);
-    }
-
-    // 2. 加 user 訊息
-    session = addMessage(session, { role: 'user', content: text });
-    updateSession(session);
-
-    // 3. 加 placeholder assistant 訊息
-    setStreaming(true);
-    session = addMessage(session, { role: 'assistant', content: '' });
-    updateSession(session);
-
-    // TD-503: 建立 stream controller
-    const controller = createStreamController(`chat-${session.id}`);
-
-    // 4. 串流呼叫 API（TD-406 帶 retry + TD-503 帶 abort signal）
-    let fullContent = '';
-    let lastError: string | null = null;
-
-    try {
-      for await (const content of streamChatWithRetry(
-        session.messages
-          .filter((m) => m.role !== 'assistant' || m.content)
-          .slice(0, -1)
-          .map((m) => ({ role: m.role, content: m.content })),
-        {
-          maxRetries: 2,
-          onRetry: (attempt) => {
-            console.log(`Chat retry attempt ${attempt}`);
-          },
-          signal: controller.signal,
-        },
-      )) {
-        fullContent += content;
-
-        // 更新最後一條 assistant 訊息
-        setSessions((prev) =>
-          prev.map((s) => {
-            if (s.id !== session!.id) return s;
-            const messages = [...s.messages];
-            const lastIdx = messages.length - 1;
-            if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
-              messages[lastIdx] = {
-                ...messages[lastIdx]!,
-                content: fullContent,
-              };
-            }
-            return { ...s, messages };
-          }),
-        );
-      }
-
-      // 5. 結尾檢查 JsonSpec
-      const spec = extractJsonSpec(fullContent);
-      if (spec) {
-        setSessions((prev) =>
-          prev.map((s) => {
-            if (s.id !== session!.id) return s;
-            const messages = [...s.messages];
-            const lastIdx = messages.length - 1;
-            if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
-              messages[lastIdx] = {
-                ...messages[lastIdx]!,
-                metadata: { jsonSpec: spec },
-              };
-            }
-            return { ...s, messages };
-          }),
-        );
-      }
-    } catch (err) {
-      lastError = String(err);
-      console.error('Chat stream error:', err);
-      // 加錯誤訊息
-      setSessions((prev) =>
-        prev.map((s) => {
-          if (s.id !== session!.id) return s;
-          const messages = [...s.messages];
-          const lastIdx = messages.length - 1;
-          if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
-            messages[lastIdx] = {
-              ...messages[lastIdx]!,
-              content: messages[lastIdx]!.content || `錯誤：${lastError}`,
-            };
-          }
-          return { ...s, messages };
-        }),
-      );
-    } finally {
-      setStreaming(false);
-    }
+  const handleSend = (text: string) => {
+    const session = activeSession ?? createSession();
+    void send({ session, text });
   };
 
   return (
@@ -191,10 +89,7 @@ export function ChatPageClient() {
           <ChatSidebar
             sessions={sessions}
             activeId={activeId}
-            onSelect={(id) => {
-              setActiveId(id);
-              setSidebarOpen(false);
-            }}
+            onSelect={(id) => selectAndClose(id, setActiveId)}
             onNew={handleNewSession}
             onClose={() => setSidebarOpen(false)}
           />
@@ -209,10 +104,7 @@ export function ChatPageClient() {
           </p>
         </header>
 
-        <div
-          className="flex-1 overflow-y-auto"
-          data-testid="chat-messages"
-        >
+        <div className="flex-1 overflow-y-auto" data-testid="chat-messages">
           {!activeSession || activeSession.messages.length === 0 ? (
             <div className="flex h-full items-center justify-center text-center text-muted-foreground">
               <div>
