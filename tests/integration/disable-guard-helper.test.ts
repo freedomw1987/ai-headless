@@ -79,11 +79,11 @@ describe('Disable Guard — listEnabledExtensions', () => {
     expect(result).not.toContain('todo'); // disabled 被過濾
   });
 
-  it('DB 沒有任何記錄 → 返回預設 4 個（全部視為啟用）', async () => {
+  it('DB 沒有任何記錄 → 返回空陣列（沒安裝任何 extension）', async () => {
     vi.mocked(db.extension.findMany).mockResolvedValue([] as never);
 
     const result = await listEnabledExtensions();
-    expect(result).toEqual(['blog', 'event', 'todo', 'order']);
+    expect(result).toEqual([]);
   });
 
   it('全部 disabled → 返回空陣列（Sidebar 完全隱藏）', async () => {
@@ -99,7 +99,7 @@ describe('Disable Guard — listEnabledExtensions', () => {
   });
 
   it('部分 disabled → 只返回 enabled 的（mixed 場景）', async () => {
-    // blog 啟用、event disabled、todo disabled、order 沒記錄（預設啟用）
+    // blog 啟用、event disabled、todo disabled、order 沒記錄（不返回）
     vi.mocked(db.extension.findMany).mockResolvedValue([
       { name: 'blog', isEnabled: true },
       { name: 'event', isEnabled: false },
@@ -107,9 +107,7 @@ describe('Disable Guard — listEnabledExtensions', () => {
     ] as never);
 
     const result = await listEnabledExtensions();
-    expect(result).toEqual(expect.arrayContaining(['blog', 'order']));
-    expect(result).not.toContain('event');
-    expect(result).not.toContain('todo');
+    expect(result).toEqual(['blog']); // 只有 blog
   });
 });
 

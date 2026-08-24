@@ -25,25 +25,28 @@ export async function isExtensionEnabledByName(name: string): Promise<boolean> {
  *
  * 設計：
  * - 只查 4 個已知的 extension（blog/event/todo/order）
- * - DB 沒記錄 → 預設啟用
- * - DB 有記錄 isEnabled=false → 不返回（disabled）
- * - DB 有記錄 isEnabled=true → 返回
+ * - DB 有記錄且 isEnabled=true → 返回
+ * - DB 有記錄且 isEnabled=false → 不返回（disabled）
+ * - DB 沒記錄 → 不返回（沒安裝）
+ *
+ * 為什麼改設計：
+ * - 之前「沒記錄 → 預設啟用」造成「Order 沒 manifest，但 sidebar 一直顯示」
+ * - 「沒安裝」和「已啟用」是不同概念，沒安裝不應視為啟用
+ *
+ * 注意：
+ * - 對應「剛建立的 extension（沒人按過 toggle）」的情境：
+ *   extension-manager 的 toggleExtension() 會做 upsert，
+ *   所以首次 toggle 後才會有記錄。但首次 toggle 之前，
+ *   extension-manager.listInstalledExtensions() 仍會列出（filesystem 為 source of truth）。
+ * - Sidebar 應該看 DB（manifest 必須存在才能被 toggle），確保一致性
  */
 const KNOWN_EXTENSIONS = ['blog', 'event', 'todo', 'order'] as const;
 
 export async function listEnabledExtensions(): Promise<string[]> {
-  // 查 DB 裡所有有記錄的 extension（不論 enabled）
   const rows = await db.extension.findMany({
     where: { name: { in: [...KNOWN_EXTENSIONS] } },
     select: { name: true, isEnabled: true },
   });
-  const dbRecord = new Map(rows.map((r) => [r.name, r.isEnabled]));
-
-  return KNOWN_EXTENSIONS.filter((name) => {
-    const isEnabled = dbRecord.get(name);
-    // 沒記錄（undefined）→ 預設啟用
-    // 有記錄且 isEnabled=true → 啟用
-    // 有記錄且 isEnabled=false → 不返回
-    return isEnabled === undefined || isEnabled === true;
-  });
+  // 只返回 DB 有記錄且 enabled 的
+  return rows.filter((r) => r.isEnabled).map((r) => r.name);
 }
