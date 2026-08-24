@@ -15,6 +15,8 @@
  */
 
 import NextAuth, { type DefaultSession } from 'next-auth';
+// JWT import 是必要的:讓 next-auth/jwt 模組被加載,後續 declare module augmentation 才有效
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { JWT } from 'next-auth/jwt';
 import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -43,9 +45,6 @@ declare module 'next-auth/jwt' {
     role?: Role;
   }
 }
-
-// Re-augment locally so TS can resolve it (next-auth/jwt only re-exports from @auth/core/jwt)
-type _JwtWithRole = JWT & { role?: Role };
 
 // ==============================================
 // NextAuth 配置
