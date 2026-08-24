@@ -144,6 +144,77 @@
 
 ---
 
+## Sprint 9 — Blog + Event + Todo CRUD + Disable Guard
+
+### 🎯 核心交付（commit `ab837d9`）
+
+#### Added
+- **Blog Extension**：列表頁、詳情頁、狀態切換、狀態徽章
+  - 5 state + 4 event workflow（draft → published → archived + 草稿恢復）
+  - **3 個 UI 元件**：list-card / status-badge / transition-buttons / create-dialog
+- **Event Extension**：列表頁、狀態切換、狀態徽章
+  - 4 state + 3 event workflow（upcoming → ongoing → completed + cancelled）
+  - **3 個 UI 元件**：list-card / status-badge / transition-buttons / create-dialog
+- **Todo Extension**：列表頁、狀態切換、優先級徽章
+  - 3 state workflow（pending → in_progress → completed）
+  - **3 個 UI 元件**：list-card / priority-badge / row-actions / create-dialog
+- **API endpoints**：13 個（blog ×4 / event ×3 / todo ×4 / order ×2 補齊 transition）
+
+#### Tests
+- `tests/integration/blog-event-todo.test.ts` — **33 個**整合測試
+
+### 🛡️ Disable Guard 三層架構（commit `eb1d666`）
+
+#### Added
+- `lib/extensions/extension-enabled.ts` — 輕量 helper（`isExtensionEnabledByName` + `listEnabledExtensions`）
+- `lib/extensions/api-guard.ts` — API route helper（`guardExtensionApi` → 403）
+- `app/admin/_components/extension-page-guard.tsx` — Page helper（`guardExtensionOrRedirect` → redirect）
+- `app/admin/layout.tsx` — 注入 `enabledExtensions` 到 Sidebar
+- `app/admin/admin-sidebar.tsx` — 接收 prop + 過濾 NAV_ITEMS（每個 nav 加 `requiresExtension`）
+- **9 個 API routes** 加 guard（blog ×4 / event ×3 / todo ×4）
+- **4 個 pages** 加 guard（blog / event / todo / orders）
+- **3 個 edit-dialog 元件**（blog / event / todo）— shadcn/ui Dialog + react-hook-form + Zod
+- `app/admin/event/[id]/page.tsx` — Event 詳情頁
+
+### 🐛 Disable Guard 測試補完（commit `3c3be17`）
+
+#### Tests
+- `tests/integration/disable-guard-helper.test.ts` — **13 個** helper 測試
+- `tests/e2e/disable-guard-api.spec.ts` — **11 個** API E2E（9 pass + 2 skip）
+
+#### Bug Fix
+- 🐛 **揭露 `listEnabledExtensions()` bug**：原本 `|| true` 是死代碼，filter 形同失效。修為「`dbRecord.get(name) === undefined || === true`」的嚴格判斷
+
+#### Backlog
+- 🆕 **TD-522** Order Extension manifest 缺失（`extensions/order/` 沒有 `manifest.json`）
+
+### ✅ Sidebar HTML 隱藏驗證（commit `741e7f3`）
+
+#### Tests
+- `tests/integration/admin-sidebar.test.tsx` — **12 個** RTL 單元測試
+- `tests/e2e/disable-guard-sidebar.spec.ts` — **8 個** Sidebar HTML E2E
+
+#### Bug Fix
+- 🐛 **揭露 + 修正 `listEnabledExtensions()` 邏輯**：「DB 沒記錄 = 沒安裝 ≠ 已啟用」。改為「DB 有記錄且 enabled 才返回」
+
+### 📊 Sprint 9 統計
+
+| 指標 | 數值 |
+|------|------|
+| Commits | 4 |
+| 變更檔案 | 31 |
+| 新增行數 | 1341 |
+| 新增測試 | **81 個**（unit + integration + e2e）|
+| 揭露 bug | 2 個 |
+| Backlog 新增 | TD-521 ✅ Done + TD-522 📋 Ready |
+
+**測試基線**：820 tests / 56 files / 4 Gate 全綠
+
+### 📚 文檔
+- `docs/reflection/sprint-9-reflection.md` — 完整反省報告（6 維度）
+
+---
+
 ## Sprint 1 Review Fixes（7 SP）
 
 ### TD-305 Relation 二元性統一（2 SP）

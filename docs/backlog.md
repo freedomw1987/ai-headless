@@ -6,18 +6,17 @@
 
 ---
 
-## 📌 當前狀態（2026-08-24）
+## 📌 當前狀態（2026-08-25）
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 9**（收尾）— 見 [docs/sprint-9-plan.md](sprint-9-plan.md)（待寫）|
+| **當前 Sprint** | **Sprint 9** ✅ 100% 完成（4 commits）— 見 [docs/reflection/sprint-9-reflection.md](reflection/sprint-9-reflection.md) |
 | **Sprint 8 狀態** | ✅ 100% 收尾（TECH-006 + US-204 後端 + Demo UI + Sprint Reflection） |
-| **測試基線** | 765 tests / 55 files / 4 Gate 全綠（+13 Disable Guard helper tests）|
+| **測試基線** | 820 tests / 56 files / 4 Gate 全綠（+81 Sprint 9 新測試）|
 | **下一個 P0** | （無）|
-| **下一個 P1** | TD-521 Disable Guard 測試補完（已進 Sprint 9）|
-| **下一個 P2** | TD-522 Order Extension manifest 缺失（已揭露）|
-| **Sprint 9 狀態** | Blog + Event + Todo CRUD ✅ Done + Disable Guard + 編輯 UI ✅ Done + TD-521 ✅ Done |
-| **Sprint 9 預計** | 5 SP / 3 個項目（擴充為 7 SP）|
+| **下一個 P1** | （無）|
+| **下一個 P2** | TD-522 Order Extension manifest 缺失（已揭露，留 Sprint 10）|
+| **Sprint 10 推薦** | TD-522 + TECH-007（Disable Guard UX polish）= 3 SP |
 
 ### Sprint 6 進度
 
@@ -28,6 +27,35 @@
 | TD-508 | useChatStream → useReducer | 2 SP | 2 SP | ✅ |
 | TD-509 | JWT augmentation JSDoc | 0.5 SP | 0.5 SP | ✅ |
 | **合計** | **6.5 SP / 6.5 SP 計劃 (100%)** | | | **4 Gate 全綠** |
+
+### Sprint 7 進度（StateMachine + CI）
+
+| Task | 標題 | 計劃 | 實際 | 狀態 |
+|------|------|------|------|------|
+| TECH-006 | StateMachine Library (JSON schema + runtime) | 8 SP | 8 SP | ✅ |
+| US-204 | 訂單狀態機範例（後端 + DB）| 5 SP | 5 SP | ✅ |
+| TD-514 | CI workflow (GitHub Actions) | 2 SP | 2 SP | ✅ |
+| **合計** | **15 SP / 15 SP 計劃 (100%)** | | | **4 Gate 全綠** |
+
+### Sprint 8 進度（US-204 Demo UI）
+
+| Task | 標題 | 計劃 | 實際 | 狀態 |
+|------|------|------|------|------|
+| US-204 (UI) | 訂單 Demo UI（列表 + 詳情 + 建立 modal + 切換按鈕）| 5 SP | 5 SP | ✅ |
+| US-102 | 後台用戶管理 Phase 1（基礎版）| 5 SP | 5 SP | ✅ |
+| **合計** | **10 SP / 10 SP 計劃 (100%)** | | | **4 Gate 全綠** |
+
+### Sprint 9 進度（Blog + Event + Todo CRUD + Disable Guard）
+
+| Task | 標題 | 計劃 | 實際 | 狀態 |
+|------|------|------|------|------|
+| (Sprint 9 核心) | Blog + Event + Todo 完整 CRUD | 5 SP | 5 SP | ✅ |
+| Sprint 9 補完 | Disable Guard 三層架構 + 編輯 UI | 2 SP | 2 SP | ✅ |
+| TD-521 | Disable Guard 測試補完（揭蕎 `listEnabledExtensions` bug）| 1 SP | 1 SP | ✅ |
+| Sprint 9 Stage 4 | Sidebar HTML 隱藏驗證（E2E + RTL 雙覆蓋）| 0.5 SP | 0.5 SP | ✅ |
+| **合計** | **8.5 SP / 8.5 SP 計劃 (100%)** | | | **4 Gate 全綠 + 820 tests** |
+
+**揭露 Backlog（留 Sprint 10）**：TD-522 Order Extension manifest 缺失（0.5 SP）
 
 ### Backlog ID 編號規則（本次重整確立）
 
