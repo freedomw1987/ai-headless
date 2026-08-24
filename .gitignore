@@ -47,3 +47,6 @@ prisma/*.db-journal
 next-env.d.ts
 extension-state
 .extension-state.json
+
+# Sprint 10+ compiler output (build artifact, never commit)
+_compiled/

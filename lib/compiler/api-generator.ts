@@ -331,7 +331,7 @@ const ${model.name}UpdateSchema = z.object({
 ${zodFields}
 });
 
-export async function ${'PUT'}(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function ${'PATCH'}(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   ${permissionCheck(`${tableName}.update`)}
 
   const { id } = await params;
@@ -363,8 +363,8 @@ export async function ${'PUT'}(request: NextRequest, { params }: { params: Promi
 
   return {
     path,
-    method: 'PUT',
-    handler: 'PUT',
+    method: 'PATCH',
+    handler: 'PATCH',
     code,
     model: model.name,
     operation: 'update',

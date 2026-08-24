@@ -25,7 +25,7 @@ describe('generateRouteHandlers', () => {
       expect(operations).toContain('GET /api/crud/todo');
       expect(operations).toContain('POST /api/crud/todo');
       expect(operations).toContain('GET /api/crud/todo/[id]');
-      expect(operations).toContain('PUT /api/crud/todo/[id]');
+      expect(operations).toContain('PATCH /api/crud/todo/[id]');
       expect(operations).toContain('DELETE /api/crud/todo/[id]');
     });
 
@@ -149,7 +149,7 @@ describe('generateRouteHandlers', () => {
 
       const handlers = generateRouteHandlers(spec);
       const updateHandler = handlers.find(
-        (h) => h.method === 'PUT' && h.path === '/api/crud/post/[id]',
+        (h) => h.method === 'PATCH' && h.path === '/api/crud/post/[id]',
       );
 
       expect(updateHandler?.code).toContain('beforeUpdateHook');

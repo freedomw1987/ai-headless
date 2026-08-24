@@ -13,10 +13,11 @@
 | **當前 Sprint** | **Sprint 10 — Compiler Pipeline** Phase 1 ✅ 完成（修正 Sprint 9 違背 §13 問題） |
 | **Sprint 9 狀態** | ✅ 100% 收尾（4 commits + Reflection）|
 | **測試基線** | 777 tests / 56 files / 4 Gate 全綠（compiler 既存測試 + Phase 1 都綠）|
-| **下一個 P0** | TECH-008 Phase 2 反向驗證 Blog Extension |
-| **下一個 P1** | TD-522 Order Extension manifest 缺失 |
-| **Sprint 10 規劃** | Phase 1 ✅ / Phase 2 反向驗證 3 SP / Phase 3 全遷移 4 SP |
-| **路線圖關鍵** | Sprint 10-12 主軸：完成 compiler pipeline，讓 Sprint 9 違背 §13 的手寫檔案全面遷移回 JSON-driven |
+| **下一個 P0** | Sprint 11 — TECH-018~021 修 compiler 產出 bug（4 項 / 7 SP） |
+| **下一個 P1** | Sprint 11 — TECH-022 Disable Guard 自動注入（2 SP） |
+| **下一個 P2** | TD-522 Order Extension manifest 缺失（0.5 SP， Sprint 11 一起做） |
+| **Sprint 10 規劃** | Phase 1 ✅ / Phase 2 ⚠️ 部分完成（揭露 6 個 compiler bug） / Phase 3 留 Sprint 12+ |
+| **路線圖關鍵** | Sprint 10 揭露 compiler 是「未驗證的遺產」，Sprint 11-12 務必修完才能用 |
 
 ### Sprint 6 進度
 
@@ -62,9 +63,16 @@
 | Task | 標題 | 計劃 | 實際 | 狀態 |
 |------|------|------|------|------|
 | **TECH-008 Phase 1** | Compiler Pipeline 串接 + spec `apiBase`/`uiBase` | 3 SP | 3 SP | ✅ |
-| **TECH-008 Phase 2** | 反向驗證 Blog Extension（compiler 生成 vs 手寫等價）| 3 SP | - | 📋 Ready |
-| **TECH-008 Phase 3** | Order/Event/Todo 全遷移 + 撤除手寫檔 | 4 SP | - | 📋 Ready |
-| **合計** | **10 SP（規劃中）** | | | **Phase 1 ✅ 777 tests / 56 files** |
+| **TECH-008 Phase 2** | 反向驗證 Blog Extension（compiler 生成 vs 手寫等價）| 3 SP | 揭露 6 個 bug | ⚠️ Partial（轉 Sprint 11） |
+| **TECH-008 Phase 3** | Order/Event/Todo 全遷移 + 撤除手寫檔 | 4 SP | - | 📋 Ready（依賴 Sprint 11） |
+| **合計** | **10 SP** | | | **Phase 1 ✅ / Phase 2 ⚠️ 揭露 6 bug** |
+
+**揭露留 Sprint 11**：
+- TECH-018 修 api-generator schema 丟失 + 假 import（3 SP）
+- TECH-019 修 api-generator hook 引用錯誤（1 SP）
+- TECH-020 修 api-generator `ctx.params` Promise wrap（1 SP）
+- TECH-021 統一編譯結果 typecheck 通過（2 SP）
+- TECH-022 Disable Guard 自動注入（2 SP）
 
 ### Backlog ID 編號規則（本次重整確立）
 
@@ -157,7 +165,7 @@
 | **TD-306** | Tech Debt | Auth.js v5 整合 | `lib/auth/.gitkeep` 為空 | 5 | SP2 | M2 | ✅ Done |
 | **TECH-006** | Tech Spike | Workflow Engine | StateMachine + DSL + Runtime + API | 8 | SP2 | M1-WS | ✅ Done（本 session Sprint 7）|
 | **TECH-007** | Tech Debt | Disable Guard UX polish | disable 時 toast 提示 + 隱藏動畫 + Toggle UI 更明顯 | 2 | SP9+ | M6 | 📋 Ready（路線圖）|
-| **TECH-008** | Tech Spike | Compiler Pipeline 串接 | `lib/compiler/` 4 個 generator 串成 orchestrator + spec `apiBase`/`uiBase` 自訂路徑 | 10 | SP10 | M1 | 🚧 In Progress（Phase 1 ✅ / Phase 2-3 街接中）|
+| **TECH-008** | Tech Spike | Compiler Pipeline 串接 | `lib/compiler/` 4 個 generator 串成 orchestrator + spec `apiBase`/`uiBase` 自訂路徑 | 10 | SP10 | M1 | 🚧 In Progress（Phase 1 ✅ / Phase 2 揭露 6 個 bug）|
 | **TD-514** | Tech Debt | **CI workflow**（P0）| 加 `.github/workflows/ci.yml`：lint + typecheck + test + Playwright E2E | 2 | SP6 | M0 | ✅ Done（待 push 首次跑驗證）|
 
 ### P1（重要 / 安全）

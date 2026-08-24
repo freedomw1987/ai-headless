@@ -47,6 +47,13 @@ export type CompileOptions = {
   specPath?: string;
   /** 專案根目錄（預設 process.cwd()） */
   projectRoot?: string;
+  /**
+   * 寫入根目錄（預設 'app'）。
+   * 可以改 '_compiled' 或 'test-output' 等實現隔離。
+   * Sprint 10 Phase 2：傳入 '_compiled' 比對差異
+   * Sprint 10 Phase 3：預設 'app' 直接覆蓋手寫檔
+   */
+  outputBase?: string;
 };
 
 /**
@@ -54,6 +61,7 @@ export type CompileOptions = {
  */
 export async function compileExtension(opts: CompileOptions): Promise<CompileResult> {
   const root = opts.projectRoot ?? process.cwd();
+  const outputBase = opts.outputBase ?? 'app';
   const specPath =
     opts.specPath ?? path.join(root, 'extensions', opts.extensionName, `${opts.extensionName}-spec.json`);
 
@@ -78,17 +86,30 @@ export async function compileExtension(opts: CompileOptions): Promise<CompileRes
     };
   }
 
-  // 3. 寫 API routes
+  // 3. 寫 API routes（合併同 path 的多個 method code）
+  // 依路徑分組（Next.js route.ts 是一檔多 export）
+  const routesByPath = new Map<string, { method: string; code: string }[]>();
   for (const route of routes) {
-    const filePath = path.join(root, route.path);
+    if (!routesByPath.has(route.path)) {
+      routesByPath.set(route.path, []);
+    }
+    routesByPath.get(route.path)!.push({ method: route.method, code: route.code });
+  }
+
+  for (const [routePath, handlers] of routesByPath) {
+    const filePath = path.join(root, outputBase, routePath, 'route.ts');
+
+    // 合併：保留第一個 handler 的 import + header，其他只保留 export async function
+    const mergedCode = mergeHandlerCodes(handlers);
+
     await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, route.code, 'utf-8');
+    await fs.writeFile(filePath, mergedCode, 'utf-8');
     writtenFiles.push(filePath);
   }
 
-  // 4. 寫 UI pages
+  // 4. 寫 UI pages（page.path 是完整目錄路徑如 /admin/blog/[id]，實際檔案是 /admin/blog/[id]/page.tsx）
   for (const page of pages) {
-    const filePath = path.join(root, page.path);
+    const filePath = path.join(root, outputBase, page.path, 'page.tsx');
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, page.code, 'utf-8');
     writtenFiles.push(filePath);
@@ -103,6 +124,62 @@ export async function compileExtension(opts: CompileOptions): Promise<CompileRes
     pages,
     schemaCode,
     writtenFiles,
+  };
+}
+
+/**
+ * 合併多個 handler code 到單一 route.ts 檔案
+ *
+ * 規則：
+ * - 保留每個 handler 的完整 code（含 schema 定義）
+ * - 只在檔頭加一次 import（從所有 handler 的 imports 合併去重）
+ * - 每個 handler 之間用空白行分隔
+ */
+function mergeHandlerCodes(handlers: { method: string; code: string }[]): string {
+  if (handlers.length === 0) return '';
+  if (handlers.length === 1) return handlers[0]!.code;
+
+  const allImports = new Set<string>();
+  const bodies: string[] = [];
+
+  for (const h of handlers) {
+    const { header, body } = splitHandlerCode(h.code);
+    header.split('\n').forEach((line) => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('import ')) {
+        allImports.add(trimmed);
+      }
+    });
+    bodies.push(body);
+  }
+
+  return [...allImports].join('\n') + '\n\n' + bodies.join('\n\n');
+}
+
+/**
+ * 將 handler code 分成「header（imports）」+「body」
+ */
+function splitHandlerCode(code: string): { header: string; body: string } {
+  const lines = code.split('\n');
+  const importLines: string[] = [];
+  let bodyStart = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const trimmed = line.trim();
+    if (trimmed.startsWith('import ') || trimmed.startsWith('// ')) {
+      importLines.push(line);
+      bodyStart = i + 1;
+    } else if (trimmed === '') {
+      continue;
+    } else {
+      break;
+    }
+  }
+
+  return {
+    header: importLines.join('\n'),
+    body: lines.slice(bodyStart).join('\n'),
   };
 }
 

@@ -250,6 +250,31 @@
 - Phase 2：反向驗證 Blog Extension（compiler 生成 vs Sprint 9 手寫等價性）
 - Phase 3：Order / Event / Todo 全遷移
 
+### ⚠️ Sprint 10 Phase 2 揭露（未完成 — 規劃 Sprint 11）
+
+#### Sprint 10 Phase 2 揭露的 compiler 產出 bug
+| # | Bug | 影響 |
+|---|---|---|
+| 1 | api-generator Zod schema 在 body 切斷時丟失 | POST/PATCH 不能用 |
+| 2 | api-generator 生成不存在的 import（`runAction`, `triggerWorkflowTransition`）| typecheck 失敗 |
+| 3 | api-generator 引用不存在的函數（`hookFn(model.hooks?.x)`）| runtime 失敗 |
+| 4 | api-generator `ctx.params` 沒 Promise wrap | runtime 失敗 |
+| 5 | ui-generator 完全沒生成 workflow transition 按鈕 | 功能缺失 |
+| 6 | compiler 沒生成 disable guard | Sprint 9 揭露的需求未實現 |
+
+#### Phase 2 改動
+- `lib/compiler/compile.ts`：多 method merge（修 `mergeHandlerCodes`）+ outputBase 選項
+- `lib/compiler/api-generator.ts`：PATCH 一致化
+- `lib/compiler/api-generator.test.ts`：改 PATCH
+- `tsconfig.json`：排除 `_compiled/`
+- `scripts/compile-blog-to-temp.ts`（新）：隔離編譯到 `_compiled/`
+- `docs/reflection/compiler-blog-diff-phase-2.md`（新）：完整 diff 報告
+
+#### Sprint 11 規劃（10 SP）
+詳見 `docs/sprint-11-plan.md`
+- Phase A（7 SP）：修 compiler 產出 bug 4 項
+- Phase B 部分（3 SP）：Disable Guard 自動注入 + TD-522 Order manifest
+
 ---
 
 ## Sprint 1 Review Fixes（7 SP）
