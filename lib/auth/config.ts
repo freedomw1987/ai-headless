@@ -15,9 +15,18 @@
  */
 
 import NextAuth, { type DefaultSession } from 'next-auth';
-// JWT import 是必要的:讓 next-auth/jwt 模組被加載,後續 declare module augmentation 才有效
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { JWT } from 'next-auth/jwt';
+/**
+ * TD-509：
+ * next-auth/jwt 的 import 是必要的 TS quirk —— TypeScript 只會
+ * 為「已被引入的模組」處理 declare module augmentation。如果只在
+ * 下方 `declare module 'next-auth/jwt'` 引用 JWT type，但卻沒有真的
+ * 引入該模組，TypeScript 不會套用 augmentation，導致 `token.role`
+ * 仍是 unknown。
+ *
+ * 變數名為 _JWT 是為讓 ESLint 的 no-unused-vars 認可（_ 前缀 = 故意不用）。
+ * 保留為 type-only import，不參與 runtime（會被 TypeScript 自動消除）。
+ */
+import type { JWT as _JWT } from 'next-auth/jwt';
 import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { db } from '@/lib/db';
@@ -40,6 +49,11 @@ declare module 'next-auth' {
   }
 }
 
+/**
+ * TD-509 補充：上方的 `import type { JWT as _JWT } from 'next-auth/jwt'` 不只是導入
+ * 型別,更是讓 TypeScript 認得 next-auth/jwt 模組，從而套用下方這個 augmentation。
+ * 如果刪了 import，下方 JWT.role 將不被識別。
+ */
 declare module 'next-auth/jwt' {
   interface JWT {
     role?: Role;

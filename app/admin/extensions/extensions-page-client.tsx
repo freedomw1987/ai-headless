@@ -40,7 +40,8 @@ function ExtensionsContent() {
   };
 
   useEffect(() => {
-    loadExtensions();
+    // TD-405：fire-and-forget useEffect 明確標 void，告知讀者「這裡不是忘了 await」
+    void loadExtensions();
   }, []);
 
   const handleToggle = (name: string, newEnabled: boolean) => {

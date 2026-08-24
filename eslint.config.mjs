@@ -27,6 +27,9 @@ export default [
         ecmaVersion: 'latest',
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
+        // TD-405：啟用型別資訊，讓子 no-floating-promises / await-thenable 等規則能跨檔案追蹤型別
+        project: './tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
@@ -36,6 +39,14 @@ export default [
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-empty-object-type': 'off',
+      // TD-405：浮動 Promise 守門員（防止 async 函數忘 await，導致 runtime 才崩潰）
+      // 嚴格度：error（阻塞 lint gate）+ ignoreVoid 允許 `void somePromise()` 明確標註
+      '@typescript-eslint/no-floating-promises': [
+        'error',
+        { ignoreVoid: true },
+      ],
+      // TD-405 補充：禁止靜默丟棄 await 後的 Promise 結果
+      '@typescript-eslint/await-thenable': 'error',
     },
   },
 ];

@@ -21,10 +21,10 @@ import { useChatStream } from './hooks/use-chat-stream';
 import { useSidebarToggle } from './hooks/use-sidebar-toggle';
 
 export function ChatPageClient() {
-  const { sessions, activeId, activeSession, setActiveId, createSession, setSessions } =
+  const { sessions, activeId, activeSession, setActiveId, createSession, dispatch } =
     useChatSessions();
   const { open: sidebarOpen, setOpen: setSidebarOpen, selectAndClose } = useSidebarToggle();
-  const { streaming, send } = useChatStream(sessions, setSessions);
+  const { streaming, send } = useChatStream(sessions, dispatch);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

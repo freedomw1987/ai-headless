@@ -49,9 +49,27 @@ bun install
 cp .env.example .env
 # 編輯 .env，設定：
 #   DATABASE_URL=postgresql://user:pass@localhost:5432/ai_headless
-#   AUTH_SECRET=<隨機 32 字元>
+#   AUTH_SECRET=<隨機 32 字元>  # openssl rand -base64 32
 #   OPENAI_API_KEY=sk-...（可選，用於 AI Chat）
 ```
+
+#### 沒有本地 PostgreSQL？
+
+最簡單的方式是用 Docker 起一個：
+
+```bash
+docker run --name ai-headless-pg \
+  -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=ai_headless -p 5432:5432 -d postgres:16
+```
+
+然後 `.env` 的 `DATABASE_URL` 設為：
+
+```
+DATABASE_URL="postgresql://user:password@localhost:5432/ai_headless?schema=public"
+```
+
+> **如果 5432 已被其他 Postgres 佔用**：可改用 `-p 5433:5432` 並把 `localhost:5432` 換成 `localhost:5433`。
 
 ### 4. 初始化資料庫
 
