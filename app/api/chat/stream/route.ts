@@ -93,11 +93,17 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       try {
         let fullResponse = '';
-        for await (const chunk of provider.streamText(messages)) {
-          fullResponse += chunk;
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`),
-          );
+        let capturedUsage: { promptTokens: number; completionTokens: number; totalTokens: number } | undefined;
+        for await (const chunk of provider.streamChunks(messages)) {
+          if (chunk.content) {
+            fullResponse += chunk.content;
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ content: chunk.content })}\n\n`),
+            );
+          }
+          if (chunk.usage) {
+            capturedUsage = chunk.usage;
+          }
         }
 
         const spec = extractJsonSpec(fullResponse);
@@ -109,14 +115,36 @@ export async function POST(req: NextRequest) {
           );
         }
 
+        // TD-505: 結尾送 usage chunk（若有）
+        if (capturedUsage) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ usage: capturedUsage })}\n\n`,
+            ),
+          );
+        }
+
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
 
         logChatEvent({
           userId: session.id,
           action: 'chat.success',
-          metadata: { responseLength: fullResponse.length, hasJsonSpec: !!spec },
+          metadata: {
+            responseLength: fullResponse.length,
+            hasJsonSpec: !!spec,
+            ...(capturedUsage ? { usage: capturedUsage } : {}),
+          },
         });
+
+        // TD-505: 若有 usage，獨立 chat.usage 事件讓未來成本查詢方便
+        if (capturedUsage) {
+          logChatEvent({
+            userId: session.id,
+            action: 'chat.usage',
+            metadata: { usage: capturedUsage, provider: provider.name },
+          });
+        }
       } catch (err) {
         controller.enqueue(
           encoder.encode(

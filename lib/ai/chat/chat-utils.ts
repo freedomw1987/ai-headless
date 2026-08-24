@@ -197,6 +197,14 @@ export function extractJsonSpec(response: string): JsonSpec | null {
 export type StreamChunk = {
   content: string;
   done?: boolean;
+  usage?: TokenUsage;
+};
+
+/** TD-505: token usage 類型 */
+export type TokenUsage = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
 };
 
 /**
@@ -217,6 +225,26 @@ export function parseStreamChunk(chunk: string): StreamChunk | null {
 
     try {
       const parsed = JSON.parse(data);
+
+      // TD-505: usage 事件（結尾）優先處理
+      if (parsed.usage && typeof parsed.usage === 'object') {
+        const u = parsed.usage;
+        if (
+          typeof u.promptTokens === 'number' &&
+          typeof u.completionTokens === 'number' &&
+          typeof u.totalTokens === 'number'
+        ) {
+          return {
+            content: '',
+            usage: {
+              promptTokens: u.promptTokens,
+              completionTokens: u.completionTokens,
+              totalTokens: u.totalTokens,
+            },
+          };
+        }
+      }
+
       return {
         content: parsed.content ?? parsed.delta ?? '',
       };

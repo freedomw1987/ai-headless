@@ -1,5 +1,5 @@
 /**
- * Chat Audit Log — TD-502
+ * Chat Audit Log — TD-502 + TD-505
  *
  * In-memory audit log for /api/chat/stream（單實例）。
  * 生產環境應升級為 DB（Prisma AuditLog）或集中式 log。
@@ -8,8 +8,8 @@
  *   logChatEvent({ userId, action, metadata })
  *   - userId: string
  *   - action: 'chat.start' | 'chat.success' | 'chat.error'
- *           | 'chat.rate_limited' | 'chat.unauthorized'
- *   - metadata?: 額外資料（錯誤訊息、status code 等）
+ *           | 'chat.rate_limited' | 'chat.unauthorized' | 'chat.usage'
+ *   - metadata?: 額外資料（錯誤訊息、status code、usage 等）
  */
 
 export type ChatAuditAction =
@@ -17,7 +17,8 @@ export type ChatAuditAction =
   | 'chat.success'
   | 'chat.error'
   | 'chat.rate_limited'
-  | 'chat.unauthorized';
+  | 'chat.unauthorized'
+  | 'chat.usage';
 
 export type ChatAuditEvent = {
   userId: string;

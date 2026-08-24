@@ -35,6 +35,25 @@ export type EnvConfig = {
   ANTHROPIC_MODEL?: string;
 };
 
+/** TD-505 Token usage 追蹤 */
+export type TokenUsage = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+};
+
+/** Provider 串流輸出的 chunk（向後相容 content-only） */
+export type ProviderChunk = {
+  content?: string;
+  usage?: TokenUsage;
+};
+
+/** generateTextWithUsage 回傳 */
+export type GenerateTextResult = {
+  text: string;
+  usage?: TokenUsage;
+};
+
 // ==============================================
 // 1. AIProvider 抽象介面
 // ==============================================
@@ -42,7 +61,9 @@ export type EnvConfig = {
 export interface AIProvider {
   readonly name: string;
   generateText(messages: AIMessage[]): Promise<string>;
+  generateTextWithUsage(messages: AIMessage[]): Promise<GenerateTextResult>;
   streamText(messages: AIMessage[]): AsyncIterable<string>;
+  streamChunks(messages: AIMessage[]): AsyncIterable<ProviderChunk>;
 }
 
 // ==============================================
@@ -62,7 +83,21 @@ export class MockProvider implements AIProvider {
     return mockResponse(userText);
   }
 
+  async generateTextWithUsage(messages: AIMessage[]): Promise<GenerateTextResult> {
+    const text = await this.generateText(messages);
+    return {
+      text,
+      usage: mockUsageEstimate(messages, text),
+    };
+  }
+
   async *streamText(messages: AIMessage[]): AsyncIterable<string> {
+    for await (const chunk of this.streamChunks(messages)) {
+      if (chunk.content) yield chunk.content;
+    }
+  }
+
+  async *streamChunks(messages: AIMessage[]): AsyncIterable<ProviderChunk> {
     const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
     const userText = lastUserMessage?.content ?? '';
     const fullResponse = `${MOCK_SYSTEM_PROMPT ? '' : ''}${mockResponse(userText)}`;
@@ -70,9 +105,28 @@ export class MockProvider implements AIProvider {
     // 模擬串流打字效果
     for (const char of fullResponse) {
       await new Promise((r) => setTimeout(r, 15));
-      yield char;
+      yield { content: char };
     }
+
+    // TD-505: 結尾 yield usage chunk（mock 估算）
+    yield { usage: mockUsageEstimate(messages, fullResponse) };
   }
+}
+
+/**
+ * TD-505: MockProvider 的 token usage 估算（不計字准不准，只是佔位讓串流結尾有 usage）
+ * 近似估算：1 token ~ 2 chars（中英文取均值）
+ */
+function mockUsageEstimate(messages: AIMessage[], response: string): TokenUsage {
+  const promptChars = messages.reduce((sum, m) => sum + m.content.length, 0);
+  const completionChars = response.length;
+  const promptTokens = Math.ceil(promptChars / 2);
+  const completionTokens = Math.ceil(completionChars / 2);
+  return {
+    promptTokens,
+    completionTokens,
+    totalTokens: promptTokens + completionTokens,
+  };
 }
 
 function mockResponse(userInput: string): string {
@@ -178,7 +232,40 @@ export class OpenAIProvider implements AIProvider {
     return data.choices?.[0]?.message?.content ?? '';
   }
 
+  async generateTextWithUsage(messages: AIMessage[]): Promise<GenerateTextResult> {
+    const response = await fetch(this.baseUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.model,
+        messages: this.withSystemPrompt(messages),
+      }),
+    });
+
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      throw new Error(
+        `OpenAI API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
+      );
+    }
+
+    const data = await response.json();
+    return {
+      text: data.choices?.[0]?.message?.content ?? '',
+      usage: parseOpenAIUsage(data.usage),
+    };
+  }
+
   async *streamText(messages: AIMessage[]): AsyncIterable<string> {
+    for await (const chunk of this.streamChunks(messages)) {
+      if (chunk.content) yield chunk.content;
+    }
+  }
+
+  async *streamChunks(messages: AIMessage[]): AsyncIterable<ProviderChunk> {
     const response = await fetch(this.baseUrl, {
       method: 'POST',
       headers: {
@@ -216,7 +303,7 @@ export class OpenAIProvider implements AIProvider {
 
 async function* parseOpenAISSE(
   body: ReadableStream<Uint8Array>,
-): AsyncIterable<string> {
+): AsyncIterable<ProviderChunk> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
@@ -239,12 +326,36 @@ async function* parseOpenAISSE(
       try {
         const parsed = JSON.parse(data);
         const delta = parsed.choices?.[0]?.delta?.content;
-        if (delta) yield delta;
+        if (delta) yield { content: delta };
+
+        // TD-505: OpenAI 通常在最後一個 chunk 包含 usage（choices 為空）
+        const usage = parseOpenAIUsage(parsed.usage);
+        if (usage) yield { usage };
       } catch {
         // 跳過非 JSON 行
       }
     }
   }
+}
+
+/**
+ * TD-505: 解析 OpenAI `usage` 物件（snake_case → camelCase）
+ */
+function parseOpenAIUsage(usage: unknown): TokenUsage | undefined {
+  if (!usage || typeof usage !== 'object') return undefined;
+  const u = usage as Record<string, unknown>;
+  if (
+    typeof u.prompt_tokens !== 'number' ||
+    typeof u.completion_tokens !== 'number' ||
+    typeof u.total_tokens !== 'number'
+  ) {
+    return undefined;
+  }
+  return {
+    promptTokens: u.prompt_tokens,
+    completionTokens: u.completion_tokens,
+    totalTokens: u.total_tokens,
+  };
 }
 
 // ==============================================
@@ -296,7 +407,50 @@ export class AnthropicProvider implements AIProvider {
     return data.content?.[0]?.text ?? '';
   }
 
+  async generateTextWithUsage(messages: AIMessage[]): Promise<GenerateTextResult> {
+    const response = await fetch(this.baseUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': this.apiKey,
+        'anthropic-version': ANTHROPIC_VERSION,
+      },
+      body: JSON.stringify({
+        model: this.model,
+        ...this.splitSystemPrompt(messages),
+        max_tokens: 4096,
+      }),
+    });
+
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      throw new Error(
+        `Anthropic API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
+      );
+    }
+
+    const data = await response.json();
+    return {
+      text: data.content?.[0]?.text ?? '',
+      usage: parseAnthropicUsage(data.usage),
+    };
+  }
+
   async *streamText(messages: AIMessage[]): AsyncIterable<string> {
+    for await (const chunk of this.streamChunks(messages)) {
+      if (chunk.content) yield chunk.content;
+    }
+  }
+
+  async *streamChunks(messages: AIMessage[]): AsyncIterable<ProviderChunk> {
+    const body = await this.fetchAnthropicStream(messages);
+    yield* parseAnthropicSSE(body);
+  }
+
+  /** 由 streamChunks 使用，避免重複 fetch邏輯。 */
+  private async fetchAnthropicStream(
+    messages: AIMessage[],
+  ): Promise<ReadableStream<Uint8Array>> {
     const response = await fetch(this.baseUrl, {
       method: 'POST',
       headers: {
@@ -324,7 +478,7 @@ export class AnthropicProvider implements AIProvider {
       throw new Error('Anthropic response has no body');
     }
 
-    yield* parseAnthropicSSE(response.body);
+    return response.body;
   }
 
   /**
@@ -353,7 +507,7 @@ export class AnthropicProvider implements AIProvider {
 
 async function* parseAnthropicSSE(
   body: ReadableStream<Uint8Array>,
-): AsyncIterable<string> {
+): AsyncIterable<ProviderChunk> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
@@ -375,13 +529,38 @@ async function* parseAnthropicSSE(
         const parsed = JSON.parse(data);
         if (parsed.type === 'content_block_delta') {
           const text = parsed.delta?.text;
-          if (text) yield text;
+          if (text) yield { content: text };
+        }
+
+        // TD-505: Anthropic message_delta 含 usage（input_tokens + output_tokens）
+        if (parsed.type === 'message_delta') {
+          const usage = parseAnthropicUsage(parsed.usage);
+          if (usage) yield { usage };
         }
       } catch {
         // 跳過非 JSON 行
       }
     }
   }
+}
+
+/**
+ * TD-505: 解析 Anthropic `usage` 物件（input/output tokens）
+ */
+function parseAnthropicUsage(usage: unknown): TokenUsage | undefined {
+  if (!usage || typeof usage !== 'object') return undefined;
+  const u = usage as Record<string, unknown>;
+  if (
+    typeof u.input_tokens !== 'number' ||
+    typeof u.output_tokens !== 'number'
+  ) {
+    return undefined;
+  }
+  return {
+    promptTokens: u.input_tokens,
+    completionTokens: u.output_tokens,
+    totalTokens: u.input_tokens + u.output_tokens,
+  };
 }
 
 // ==============================================

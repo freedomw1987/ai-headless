@@ -326,3 +326,231 @@ describe('S4.4 MockProvider', () => {
     expect(result).toContain('？');
   });
 });
+
+// ==============================================
+// 6. TD-505 Token Usage 追蹤
+// ==============================================
+
+import type { TokenUsage } from './providers';
+
+describe('TD-505 Token Usage 追蹤', () => {
+  describe('型別定義', () => {
+    it('TokenUsage 包含 prompt/completion/total tokens', () => {
+      const usage: TokenUsage = {
+        promptTokens: 10,
+        completionTokens: 20,
+        totalTokens: 30,
+      };
+      expect(usage.totalTokens).toBe(usage.promptTokens + usage.completionTokens);
+    });
+  });
+
+  describe('MockProvider', () => {
+    it('generateTextWithUsage 回傳 fake usage', async () => {
+      const provider = new MockProvider();
+      const result = await provider.generateTextWithUsage([
+        { role: 'user', content: '幫我做個待辦' },
+      ]);
+
+      expect(result.text).toContain('```json');
+      expect(result.usage).toBeDefined();
+      expect(result.usage!.promptTokens).toBeGreaterThan(0);
+      expect(result.usage!.completionTokens).toBeGreaterThan(0);
+      expect(result.usage!.totalTokens).toBeGreaterThan(0);
+    });
+
+    it('streamChunks 在串流結束時 yield usage chunk', async () => {
+      const provider = new MockProvider();
+      const chunks: { content?: string; usage?: TokenUsage }[] = [];
+      for await (const chunk of provider.streamChunks([
+        { role: 'user', content: 'hi' },
+      ])) {
+        chunks.push(chunk);
+      }
+
+      // 最後一個 chunk 應帶 usage
+      const last = chunks[chunks.length - 1]!;
+      expect(last.usage).toBeDefined();
+      expect(last.usage!.totalTokens).toBeGreaterThan(0);
+    });
+  });
+
+  describe('OpenAIProvider', () => {
+    let mockFetch: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockFetch = vi.fn();
+      vi.stubGlobal('fetch', mockFetch);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('generateTextWithUsage 解析 OpenAI usage 欄位', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: 'hi' } }],
+          usage: {
+            prompt_tokens: 8,
+            completion_tokens: 12,
+            total_tokens: 20,
+          },
+        }),
+      });
+
+      const provider = new OpenAIProvider({ apiKey: 'sk-test' });
+      const result = await provider.generateTextWithUsage([
+        { role: 'user', content: 'hi' },
+      ]);
+
+      expect(result.text).toBe('hi');
+      expect(result.usage).toEqual({
+        promptTokens: 8,
+        completionTokens: 12,
+        totalTokens: 20,
+      });
+    });
+
+    it('streamChunks 從 SSE 最後一個 usage chunk 提取 usage', async () => {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          controller.enqueue(
+            encoder.encode('data: {"choices":[{"delta":{"content":"hi"}}]}\n\n'),
+          );
+          // OpenAI 最後一個 chunk 通常只帶 usage、choices 為空
+          controller.enqueue(
+            encoder.encode('data: {"choices":[],"usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}\n\n'),
+          );
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        },
+      });
+
+      mockFetch.mockResolvedValueOnce({ ok: true, body: stream });
+
+      const provider = new OpenAIProvider({ apiKey: 'sk-test' });
+      const chunks: { content?: string; usage?: TokenUsage }[] = [];
+      for await (const chunk of provider.streamChunks([
+        { role: 'user', content: 'hi' },
+      ])) {
+        chunks.push(chunk);
+      }
+
+      // 前面 chunk 有 content
+      const contentChunks = chunks.filter((c) => c.content);
+      expect(contentChunks.map((c) => c.content).join('')).toBe('hi');
+
+      // 某 chunk 帶 usage
+      const usageChunk = chunks.find((c) => c.usage);
+      expect(usageChunk).toBeDefined();
+      expect(usageChunk!.usage).toEqual({
+        promptTokens: 5,
+        completionTokens: 3,
+        totalTokens: 8,
+      });
+    });
+
+    it('streamChunks 缺 usage 時不報錯', async () => {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          controller.enqueue(
+            encoder.encode('data: {"choices":[{"delta":{"content":"hi"}}]}\n\n'),
+          );
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        },
+      });
+
+      mockFetch.mockResolvedValueOnce({ ok: true, body: stream });
+
+      const provider = new OpenAIProvider({ apiKey: 'sk-test' });
+      const chunks: { content?: string; usage?: TokenUsage }[] = [];
+      for await (const chunk of provider.streamChunks([
+        { role: 'user', content: 'hi' },
+      ])) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks.some((c) => c.usage)).toBe(false);
+    });
+  });
+
+  describe('AnthropicProvider', () => {
+    let mockFetch: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockFetch = vi.fn();
+      vi.stubGlobal('fetch', mockFetch);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('generateTextWithUsage 解析 Anthropic usage 欄位', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          content: [{ type: 'text', text: 'hi' }],
+          usage: { input_tokens: 7, output_tokens: 13 },
+        }),
+      });
+
+      const provider = new AnthropicProvider({ apiKey: 'sk-ant-test' });
+      const result = await provider.generateTextWithUsage([
+        { role: 'user', content: 'hi' },
+      ]);
+
+      expect(result.text).toBe('hi');
+      expect(result.usage).toEqual({
+        promptTokens: 7,
+        completionTokens: 13,
+        totalTokens: 20,
+      });
+    });
+
+    it('streamChunks 從 message_delta.usage 提取 usage', async () => {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          controller.enqueue(
+            encoder.encode('event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"text_delta","text":"hi"}}\n\n'),
+          );
+          // Anthropic message_delta 含 usage
+          controller.enqueue(
+            encoder.encode('event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"input_tokens":4,"output_tokens":2}}\n\n'),
+          );
+          controller.enqueue(
+            encoder.encode('event: message_stop\ndata: {"type":"message_stop"}\n\n'),
+          );
+          controller.close();
+        },
+      });
+
+      mockFetch.mockResolvedValueOnce({ ok: true, body: stream });
+
+      const provider = new AnthropicProvider({ apiKey: 'sk-ant-test' });
+      const chunks: { content?: string; usage?: TokenUsage }[] = [];
+      for await (const chunk of provider.streamChunks([
+        { role: 'user', content: 'hi' },
+      ])) {
+        chunks.push(chunk);
+      }
+
+      const contentChunks = chunks.filter((c) => c.content);
+      expect(contentChunks.map((c) => c.content).join('')).toBe('hi');
+
+      const usageChunk = chunks.find((c) => c.usage);
+      expect(usageChunk).toBeDefined();
+      expect(usageChunk!.usage).toEqual({
+        promptTokens: 4,
+        completionTokens: 2,
+        totalTokens: 6,
+      });
+    });
+  });
+});
