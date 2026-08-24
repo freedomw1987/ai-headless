@@ -554,3 +554,103 @@ describe('TD-505 Token Usage 追蹤', () => {
     });
   });
 });
+
+// ==============================================
+// 7. TD-504 Mock Stream 延遲優化
+// ==============================================
+
+describe('TD-504 Mock Stream 延遲優化', () => {
+  beforeEach(() => {
+    // 確保環境變數不污染測試
+    vi.unstubAllEnvs();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('預設 (無 env) streamChunks 不延遲 — 100字回應 < 100ms 完成', async () => {
+    const provider = new MockProvider();
+    const start = Date.now();
+
+    const chunks: string[] = [];
+    for await (const chunk of provider.streamChunks([
+      { role: 'user', content: '幫我做個待辦' }, // 約 90 字
+    ])) {
+      if (chunk.content) chunks.push(chunk.content);
+    }
+
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeLessThan(100);
+    expect(chunks.join('').length).toBeGreaterThan(0);
+  });
+
+  it('預設 generateText 不延遲 (< 50ms)', async () => {
+    const provider = new MockProvider();
+    const start = Date.now();
+
+    const text = await provider.generateText([
+      { role: 'user', content: '幫我做個待辦' },
+    ]);
+
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeLessThan(50);
+    expect(text).toContain('```json');
+  });
+
+  it('MOCK_STREAM_DELAY_MS=15 啟用字符延遲（給 demo UI）', async () => {
+    vi.stubEnv('MOCK_STREAM_DELAY_MS', '15');
+    const provider = new MockProvider();
+
+    // 用「其他輸入」分支拿最短回應（不到 20 字，計算快一點）
+    const start = Date.now();
+    let count = 0;
+    for await (const chunk of provider.streamChunks([
+      { role: 'user', content: '想做個部落格' }, // mock 返回 ~50 字引導式回應
+    ])) {
+      if (chunk.content) count++;
+    }
+    const elapsed = Date.now() - start;
+
+    // 即使很短回應也會多字符延遲
+    expect(count).toBeGreaterThan(10);
+    expect(elapsed).toBeGreaterThan(150);
+  }, 10000);
+
+  it('MOCK_STREAM_DELAY_MS=0 明確設為不延遲', async () => {
+    vi.stubEnv('MOCK_STREAM_DELAY_MS', '0');
+    const provider = new MockProvider();
+
+    const start = Date.now();
+    for await (const _ of provider.streamChunks([
+      { role: 'user', content: '幫我做個待辦' },
+    ])) {
+      void _;
+    }
+    const elapsed = Date.now() - start;
+
+    expect(elapsed).toBeLessThan(100);
+  });
+
+  it('MOCK_GENERATE_DELAY_MS 控制 generateText 延遲', async () => {
+    vi.stubEnv('MOCK_GENERATE_DELAY_MS', '50');
+    const provider = new MockProvider();
+
+    const start = Date.now();
+    await provider.generateText([{ role: 'user', content: 'hi' }]);
+    const elapsed = Date.now() - start;
+
+    expect(elapsed).toBeGreaterThanOrEqual(40); // 給 10ms 寬鬆
+  });
+
+  it('MOCK_GENERATE_DELAY_MS=0 明確不延遲', async () => {
+    vi.stubEnv('MOCK_GENERATE_DELAY_MS', '0');
+    const provider = new MockProvider();
+
+    const start = Date.now();
+    await provider.generateText([{ role: 'user', content: 'hi' }]);
+    const elapsed = Date.now() - start;
+
+    expect(elapsed).toBeLessThan(50);
+  });
+});

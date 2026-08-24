@@ -76,8 +76,26 @@ const MOCK_SYSTEM_PROMPT = `你是 ai-headless 框架的 AI 助手。用戶會�
 export class MockProvider implements AIProvider {
   readonly name = 'mock';
 
+  // TD-504: 預設不延遲 — 測試環境可加快。Demo UI 設 MOCK_STREAM_DELAY_MS=15 保留打字效果。
+  private get streamDelayMs(): number {
+    const env = process.env.MOCK_STREAM_DELAY_MS;
+    if (env === undefined || env === '') return 0;
+    const parsed = Number(env);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  }
+
+  private get generateDelayMs(): number {
+    const env = process.env.MOCK_GENERATE_DELAY_MS;
+    if (env === undefined || env === '') return 0;
+    const parsed = Number(env);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  }
+
   async generateText(messages: AIMessage[]): Promise<string> {
-    await new Promise((r) => setTimeout(r, 100));
+    const delay = this.generateDelayMs;
+    if (delay > 0) {
+      await new Promise((r) => setTimeout(r, delay));
+    }
     const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
     const userText = lastUserMessage?.content ?? '';
     return mockResponse(userText);
@@ -102,9 +120,13 @@ export class MockProvider implements AIProvider {
     const userText = lastUserMessage?.content ?? '';
     const fullResponse = `${MOCK_SYSTEM_PROMPT ? '' : ''}${mockResponse(userText)}`;
 
-    // 模擬串流打字效果
+    const delay = this.streamDelayMs;
+
+    // TD-504: 預設不延遲（加速測試）；MOCK_STREAM_DELAY_MS>0 時保留打字效果（demo UI）
     for (const char of fullResponse) {
-      await new Promise((r) => setTimeout(r, 15));
+      if (delay > 0) {
+        await new Promise((r) => setTimeout(r, delay));
+      }
       yield { content: char };
     }
 
