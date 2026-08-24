@@ -88,7 +88,7 @@
 | ID | 類型 | 標題 | 描述 | 優先級 | SP | 模組 | 狀態 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | **TD-405** | Tech Debt | Extension State 持久化用 Prisma | `.extension-state.json` 寫 filesystem，但 Prisma 已有 `Extension` model（schema.prisma 已定義）。Sprint 4 略過 | P2 | 2 | M7 | Ready for Sprint 5 |
-| **TD-501** | Tech Debt | chat-page-client.tsx 221 行，職責過多 | 同檔負責 UI 渲染 + 串流 + session 管理 + RWD 切換 + retry | P2 | 3 | M5 | Ready for Sprint 5 |
+| **TD-501** | Tech Debt | chat-page-client.tsx 221 行，職責過多 | 同檔負責 UI 渲染 + 串流 + session 管理 + RWD 切換 + retry | P2 | 3 | M5 | ✅ Done (Sprint 5: 243→135 行 + 3 hooks) |
 | **TD-502** | Tech Debt | AI API 缺乏 server-side 驗證 + rate limit | `/api/chat/stream` 未檢查 Auth、未限速、未審計。P1 安全風險 | P1 | 1 | M5 | ✅ Done (Sprint 5 infra-restoration, includes audit log + rate limit + auth; unit test added bcf5fd1) |
 | **TD-503** | Tech Debt | SSE 串流無 abort/cancel 機制 | 用戶離開頁面或新對話時，串流繼續消耗 API quota | P2 | 1 | M5 | ✅ Done (Sprint 5 infra-restoration commit) |
 | **TD-504** | Tech Debt | Mock Stream 字符級延遲造成測試慢 | `MockProvider.streamText` 每字符 15ms，600字=9秒。影響 CI | P2 | 1 | M5 | ✅ Done (Sprint 5: MOCK_STREAM_DELAY_MS env var; test runtime -29%) |
