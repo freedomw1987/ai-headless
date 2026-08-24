@@ -14,8 +14,9 @@
 | **Sprint 6 狀態** | ✅ 100% 收尾（4 起步 Task + TD-511/513 + US-102 Phase 1） |
 | **測試基線** | 692 tests / 49 files / 4 Gate 全綠 |
 | **下一個 P0** | TD-514 CI workflow（沒 CI = 沒保護）|
-| **下一個 P1** | TECH-006 StateMachine + US-201/202/203 Extension 三大核心 |
-| **下一個 P2** | TD-301/302 generator TODO 修復 |
+| **下一個 P1** | （需重新評估，見 backlog-audit-2026-08-24.md）|
+| **下一個 P2** | （需重新評估）|
+| **Sprint 7 狀態** | TECH-006 ✅ Done；US-201/202/203 早已完成（見盤點報告）|
 | **Sprint 7 預計** | 17 SP / 5 個 P1 項目 |
 
 ### Sprint 6 進度
@@ -102,12 +103,12 @@
 | **US-104** | User Story | AI 模型配置 | API Key 配置、模型切換、配置持久化、錯誤處理 | 5 | SP1 | M4 | 📋 Backlog |
 | **US-105** | User Story | AI 對話界面 | Chat UI 可用，能解析需求、生成 JSON、編譯代碼、提示進度 | 5 | SP1 | M5 | 📋 Backlog |
 | **TECH-005** | Tech Spike | 混合模式架構 v1.0.0 | JSON L1+L2 + Extension Code L3 + `{{fn:...}}` 引用 | 5 | SP2 | M1 | ✅ Done |
-| **TD-301** | Tech Debt | Hook Runtime 實作 | `api-generator.ts:150,202` 的 hook 調用仍是 TODO | 5 | SP2 | M1 | 🔜 Ready |
-| **TD-302** | Tech Debt | Relation Select 選項載入 | `ui-generator.ts:145,365,510` 是 placeholder | 3 | SP2 | M1 | 🔜 Ready |
-| **US-201** | User Story | Hook SDK | Extension 提供 hook 函數（11 種 hook context），JSON 用 `{{fn:...}}` 引用 | 5 | SP2 | M1 | 🔜 Ready |
-| **US-202** | User Story | Action SDK | Extension 提供 action 函數（Zod 驗證），UI 自動以按鈕形式顯示 | 5 | SP2 | M1 | 🔜 Ready |
-| **US-203** | User Story | Computed SDK | Extension 提供 compute 函數，UI 自動渲染 + 快取 + dependency 追蹤 | 3 | SP2 | M1 | 🔜 Ready |
-| **US-204** | User Story | 訂單狀態機 | 訂單狀態：draft → pending_payment → paid → shipped → completed | 8 | SP2 | M1-WS | 🔜 Ready |
+| **TD-301** | Tech Debt | Hook Runtime 實作 | `api-generator.ts:150,202` 的 hook 調用仍是 TODO | 5 | SP2 | M1 | ✅ Done（盤點 2026-08-24） |
+| **TD-302** | Tech Debt | Relation Select 選項載入 | `ui-generator.ts:145,365,510` 是 placeholder | 3 | SP2 | M1 | 🗑️ Cancel（UI 不適用 hook 概念，盤點 2026-08-24） |
+| **US-201** | User Story | Hook SDK | Extension 提供 hook 函數（11 種 hook context），JSON 用 `{{fn:...}}` 引用 | 5 | SP2 | M1 | ✅ Done（盤點 2026-08-24） |
+| **US-202** | User Story | Action SDK | Extension 提供 action 函數（Zod 驗證），UI 自動以按鈕形式顯示 | 5 | SP2 | M1 | ✅ Done（盤點 2026-08-24） |
+| **US-203** | User Story | Computed SDK | Extension 提供 compute 函數，UI 自動渲染 + 快取 + dependency 追蹤 | 3 | SP2 | M1 | ✅ Done（盤點 2026-08-24） |
+| **US-204** | User Story | 訂單狀態機 | 訂單狀態：draft → pending_payment → paid → shipped → completed | 8 | SP2 | M1-WS | 🔜 Ready（待 TECH-006 真實應用） |
 | **US-206** | User Story | AI 生成狀態機系統 | 「做訂單管理含狀態機」→ AI 生成 JSON + workflow TS + 測試 | 8 | SP2 | M1 | 📋 Backlog |
 | **TD-306** | Tech Debt | Auth.js v5 整合 | `lib/auth/.gitkeep` 為空 | 5 | SP2 | M2 | ✅ Done |
 | **TECH-006** | Tech Spike | Workflow Engine | StateMachine + DSL + Runtime + API | 8 | SP2 | M1-WS | 🔜 Ready |
@@ -119,11 +120,11 @@
 |----|------|------|------|----|----|------|------|
 | **US-106** | User Story | AI 生成 Extension | 「加留言板 Extension」→ AI 生成 + UI 顯示已安裝 | 8 | SP2 | M6 | 📋 Backlog |
 | **US-107** | User Story | 管理已安裝 Extension | 列出 / 啟用 / 停用 / 查看配置 JSON | 3 | SP2 | M6 | 📋 Backlog |
-| **TD-303** | Tech Debt | Tiptap rich text 整合 | `text-long` 欄位目前用 Textarea，應整合 Tiptap WYSIWYG | 3 | SP2 | M3 | 🔜 Ready |
+| **TD-303** | Tech Debt | Tiptap rich text 整合 | `text-long` 欄位目前用 Textarea，應整合 Tiptap WYSIWYG | 3 | SP2 | M3 | ✅ Done（盤點 2026-08-24） |
 | **TD-305** | Tech Debt | Field.relation vs Model.relations 雙軌制 | schema-generator 只支持 `model.relations`，field.relation 無人處理 | 2 | SP2 | M1 | ✅ Done |
-| **TD-401** | Tech Debt | Chat Sidebar 漢堡選單 | <768px 永遠渲染 256px sidebar 擠壓主內容 | 1 | SP4 | M5 | 📋 Ready |
-| **TD-403** | Tech Debt | Extension toggle 失敗 Toast | toggle catch 後只 console.error，用戶無反饋 | 0.5 | SP4 | M7 | 📋 Ready |
-| **TD-404** | Tech Debt | 真實 AI Provider 串接 | `providers.ts` 是 mock，`.env.example` 配 OPENAI_API_KEY 但未使用 | 12 | SP5 | M5 | 📋 Ready |
+| **TD-401** | Tech Debt | Chat Sidebar 漢堡選單 | <768px 永遠渲染 256px sidebar 擠壓主內容 | 1 | SP4 | M5 | ✅ Done（chat RWD 已完成，盤點 2026-08-24） |
+| **TD-403** | Tech Debt | Extension toggle 失敗 Toast | toggle catch 後只 console.error，用戶無反饋 | 0.5 | SP4 | M7 | ✅ Done（setError 已實作，盤點 2026-08-24） |
+| **TD-404** | Tech Debt | 真實 AI Provider 串接 | `providers.ts` 是 mock，`.env.example` 配 OPENAI_API_KEY 但未使用 | 12 | SP5 | M5 | ✅ Done（真實串接 + mock fallback，盤點 2026-08-24） |
 | **TD-502** | Tech Debt | AI API 驗證 + rate limit | `/api/chat/stream` 未檢查 Auth、未限速、未審計 | 1 | SP5 | M5 | ✅ Done |
 | **US-S6-1** | User Story | TD-503 abort E2E | 切換 chat / SPA 切換 / disabled 守護 3 場景（reviewer P1）| 2 | SP6 | M6 | ✅ Done |
 | **TD-601** | Defect | /admin/extensions 崩潰修復 | async 函數漏 await → await + try/catch + lint + smoke test | 2 | SP6 | M7 | ✅ Done |
@@ -133,8 +134,8 @@
 
 | ID | 類型 | 標題 | 描述 | SP | Sprint | 模組 | 狀態 |
 |----|------|------|------|----|----|------|------|
-| **TD-402** | Tech Debt | Extension grid RWD | `md:grid-cols-2`，<md 未做單欄處理 | 0.5 | SP4 | M7 | 📋 Ready |
-| **TD-406** | Tech Debt | Chat 串流重連機制 | 無 retry，弱網環境體驗差 | 1 | SP4 | M5 | 📋 Ready |
+| **TD-402** | Tech Debt | Extension grid RWD | `md:grid-cols-2`，<md 未做單欄處理 | 0.5 | SP4 | M7 | 📋 Ready（未做） |
+| **TD-406** | Tech Debt | Chat 串流重連機制 | 無 retry，弱網環境體驗差 | 1 | SP4 | M5 | ✅ Done（streamChatWithRetry 已實作，盤點 2026-08-24） |
 | **TD-501** | Tech Debt | chat-page-client.tsx 職責過多 | 243 行 → 135 行 + 3 hooks | 3 | SP5 | M5 | ✅ Done |
 | **TD-503** | Tech Debt | SSE 串流無 abort/cancel | 用戶離開頁面或新對話時，串流繼續消耗 API quota | 1 | SP5 | M5 | ✅ Done |
 | **TD-504** | Tech Debt | Mock Stream 字符延遲 | 每字符 15ms，600字=9秒 | 1 | SP5 | M5 | ✅ Done |
@@ -144,7 +145,7 @@
 | **TD-511** | Tech Debt | Playwright webServer 設定 | CI 跑 E2E 需手動起 server | 0.5 | SP6 | M6 | 📋 Ready |
 | **TD-513** | Tech Debt | use-chat-sessions.ts 測試 | TD-508 重構未涵蓋 hook 整合測試 | 1 | SP6 | M5 | 📋 Ready |
 | **US-S6-2** | User Story | 平板 RWD 優化 | 768-1024px sidebar 太擠 | 1 | SP6 | M6 | 📋 Ready |
-| **TD-515** | Tech Debt | Extension State 持久化用 Prisma | `.extension-state.json` 寫 filesystem，多實例部署狀態不一致（舊 TD-405，已重新編號）| 2 | SP6 | M7 | 📋 Ready |
+| **TD-515** | Tech Debt | Extension State 持久化用 Prisma | `.extension-state.json` 寫 filesystem，多實例部署狀態不一致（舊 TD-405，已重新編號）| 2 | SP6 | M7 | ✅ Done（Prisma Extension.isEnabled，盤點 2026-08-24） |
 
 ### P3（細節 / 可選）
 
