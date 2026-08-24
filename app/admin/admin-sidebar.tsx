@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: '/admin', label: '總覽', exact: true },
   { href: '/admin/users', label: '用戶管理' },
   { href: '/admin/extensions', label: 'Extensions' },
+  { href: '/admin/orders', label: '訂單' },
 ];
 
 export function AdminSidebar({ user }: { user: AuthUser }) {
