@@ -4,6 +4,7 @@
  * ChatSidebar — Session 列表（TD-401 RWD：手機版可關閉）
  */
 
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ChatSession } from '@/lib/ai/chat/chat-utils';
@@ -37,7 +38,7 @@ export function ChatSidebar({ sessions, activeId, onSelect, onNew, onClose }: Pr
             aria-label="關閉側邊欄"
             data-testid="sidebar-close-button"
           >
-            ✕
+            <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         )}
       </div>
