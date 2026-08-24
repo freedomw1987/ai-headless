@@ -94,6 +94,11 @@
 | **TD-504** | Tech Debt | Mock Stream 字符級延遲造成測試慢 | `MockProvider.streamText` 每字符 15ms，600字=9秒。影響 CI | P2 | 1 | M5 | ✅ Done (Sprint 5: MOCK_STREAM_DELAY_MS env var; test runtime -29%) |
 | **TD-505** | Tech Debt | Token 使用量追蹤 | OpenAI/Anthropic 回應含 `usage`，目前完全丟棄 | P2 | 2 | M5 | ✅ Done (Sprint 5 eefdb0e: usage captured, SSE event, audit log) |
 | **TD-506** | Tech Debt | ChatSidebar close 用 emoji「✕」而非 icon | 視覺一致性 + 無障礙問題 | P3 | 0.5 | M5 | ✅ Done (Sprint 5: lucide X icon + aria-hidden) |
+| **TD-507** | Tech Debt | pnpm-workspace Tiptap `minimumReleaseAgeExclude` 是 pnpm 11 升級 workaround | Tiptap 套件源未被 pnpm trust，需要時間逐步移除 exclude | P2 | 0.5 | M6 | Ready for Sprint 6 |
+| **TD-508** | Tech Debt | `useChatStream` functional setSessions 是 workaround，考慮 useReducer | 現在 functional setSessions 可避免 stale closure，但 useReducer + dispatch 更乾淨 | P2 | 2 | M6 | Ready for Sprint 6 |
+| **TD-509** | Tech Debt | `lib/auth/config.ts` JWT augmentation 需 `import type { JWT }` 作為 TS module-load trigger | TS quirk，應在 module declaration 上方加清楚 JSDoc | P3 | 0.5 | M6 | Ready for Sprint 6 |
+| **US-S6-1** | User Story | TD-503 UI abort 場景加 Playwright E2E 測試 | 切換 chat / unmount / resend 三個 abort 場景（Gate 4 reviewer P1）| P1 | 2 | M6 | Ready for Sprint 6 |
+| **US-S6-2** | User Story | 平板尺寸 (768-1024px) RWD 優化 | 目前僅桌面/手機二分，中間尺寸 sidebar 太擠 | P2 | 1 | M6 | Ready for Sprint 6 |
 
 | **S2.1** | Task | Hook SDK：類型定義 + Runtime + 11 種 hook context | 5 | SP2 | M1 | Ready for Sprint |
 | **S2.2** | Task | Action SDK：類型 + Zod 驗證 + Runtime | 3 | SP2 | M1 | Ready for Sprint |
