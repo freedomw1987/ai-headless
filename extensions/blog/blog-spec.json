@@ -1,6 +1,8 @@
 {
   "name": "blog",
   "label": "Blog",
+  "apiBase": "/api/blog",
+  "uiBase": "/admin/blog",
   "models": [
     {
       "name": "BlogPost",

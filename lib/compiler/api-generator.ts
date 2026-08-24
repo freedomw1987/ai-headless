@@ -44,8 +44,11 @@ function modelToKebab(modelName: string): string {
   return modelName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
-function modelToRouteBase(specName: string, modelName: string): string {
-  // /api/crud/[model-kebab]
+function modelToRouteBase(spec: JsonSpec, modelName: string): string {
+  // 設計選擇：
+  // - 沒設 apiBase → /api/crud/[model-kebab]（預設·一 spec 多 model）
+  // - 有設 apiBase → 直接用 apiBase 作為 base（單一 model / Extension 風格）
+  if (spec.apiBase) return spec.apiBase;
   return `/api/crud/${modelToKebab(modelName)}`;
 }
 
@@ -524,7 +527,7 @@ export function generateRouteHandlers(spec: JsonSpec): GeneratedRoute[] {
   const routes: GeneratedRoute[] = [];
 
   for (const model of spec.models) {
-    const basePath = modelToRouteBase(spec.name, model.name);
+    const basePath = modelToRouteBase(spec, model.name);
 
     // CRUD 5 個 endpoint
     routes.push(generateListHandler(spec, model, basePath));

@@ -10,13 +10,13 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 9** ✅ 100% 完成（4 commits）— 見 [docs/reflection/sprint-9-reflection.md](reflection/sprint-9-reflection.md) |
-| **Sprint 8 狀態** | ✅ 100% 收尾（TECH-006 + US-204 後端 + Demo UI + Sprint Reflection） |
-| **測試基線** | 820 tests / 56 files / 4 Gate 全綠（+81 Sprint 9 新測試）|
-| **下一個 P0** | （無）|
-| **下一個 P1** | （無）|
-| **下一個 P2** | TD-522 Order Extension manifest 缺失（已揭露，留 Sprint 10）|
-| **Sprint 10 推薦** | TD-522 + TECH-007（Disable Guard UX polish）= 3 SP |
+| **當前 Sprint** | **Sprint 10 — Compiler Pipeline** Phase 1 ✅ 完成（修正 Sprint 9 違背 §13 問題） |
+| **Sprint 9 狀態** | ✅ 100% 收尾（4 commits + Reflection）|
+| **測試基線** | 777 tests / 56 files / 4 Gate 全綠（compiler 既存測試 + Phase 1 都綠）|
+| **下一個 P0** | TECH-008 Phase 2 反向驗證 Blog Extension |
+| **下一個 P1** | TD-522 Order Extension manifest 缺失 |
+| **Sprint 10 規劃** | Phase 1 ✅ / Phase 2 反向驗證 3 SP / Phase 3 全遷移 4 SP |
+| **路線圖關鍵** | Sprint 10-12 主軸：完成 compiler pipeline，讓 Sprint 9 違背 §13 的手寫檔案全面遷移回 JSON-driven |
 
 ### Sprint 6 進度
 
@@ -56,6 +56,15 @@
 | **合計** | **8.5 SP / 8.5 SP 計劃 (100%)** | | | **4 Gate 全綠 + 820 tests** |
 
 **揭露 Backlog（留 Sprint 10）**：TD-522 Order Extension manifest 缺失（0.5 SP）
+
+### Sprint 10 進度（Compiler Pipeline — 修正 Sprint 9 違背 §13）
+
+| Task | 標題 | 計劃 | 實際 | 狀態 |
+|------|------|------|------|------|
+| **TECH-008 Phase 1** | Compiler Pipeline 串接 + spec `apiBase`/`uiBase` | 3 SP | 3 SP | ✅ |
+| **TECH-008 Phase 2** | 反向驗證 Blog Extension（compiler 生成 vs 手寫等價）| 3 SP | - | 📋 Ready |
+| **TECH-008 Phase 3** | Order/Event/Todo 全遷移 + 撤除手寫檔 | 4 SP | - | 📋 Ready |
+| **合計** | **10 SP（規劃中）** | | | **Phase 1 ✅ 777 tests / 56 files** |
 
 ### Backlog ID 編號規則（本次重整確立）
 
@@ -147,6 +156,8 @@
 | **US-206** | User Story | AI 生成狀態機系統 | 「做訂單管理含狀態機」→ AI 生成 JSON + workflow TS + 測試 | 8 | SP2 | M1 | 📋 Backlog |
 | **TD-306** | Tech Debt | Auth.js v5 整合 | `lib/auth/.gitkeep` 為空 | 5 | SP2 | M2 | ✅ Done |
 | **TECH-006** | Tech Spike | Workflow Engine | StateMachine + DSL + Runtime + API | 8 | SP2 | M1-WS | ✅ Done（本 session Sprint 7）|
+| **TECH-007** | Tech Debt | Disable Guard UX polish | disable 時 toast 提示 + 隱藏動畫 + Toggle UI 更明顯 | 2 | SP9+ | M6 | 📋 Ready（路線圖）|
+| **TECH-008** | Tech Spike | Compiler Pipeline 串接 | `lib/compiler/` 4 個 generator 串成 orchestrator + spec `apiBase`/`uiBase` 自訂路徑 | 10 | SP10 | M1 | 🚧 In Progress（Phase 1 ✅ / Phase 2-3 街接中）|
 | **TD-514** | Tech Debt | **CI workflow**（P0）| 加 `.github/workflows/ci.yml`：lint + typecheck + test + Playwright E2E | 2 | SP6 | M0 | ✅ Done（待 push 首次跑驗證）|
 
 ### P1（重要 / 安全）

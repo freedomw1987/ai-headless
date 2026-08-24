@@ -215,6 +215,43 @@
 
 ---
 
+## Sprint 10 — Compiler Pipeline（修正 Sprint 9 違背 §13）
+
+### 🎯 Phase 1 — Compiler Pipeline 串接（commit 計畫中）
+
+#### 動機
+用戶揭蕎：Sprint 9 手寫 13 個 App Route + 9 個 page + 12 個 dialog，違反 `docs/system-design.md §13` 的「混合模式架構」（JSON Compiler 應該生成這些）。`lib/compiler/` 4 個 generator（schema / api / ui / permission）已存在但沒串起來。
+
+#### Added
+- `lib/compiler/compile.ts` — Orchestrator：`compileExtension()` + `listAvailableExtensions()`
+- `scripts/try-compile.ts` — 驗證腳本
+
+#### Modified
+- `lib/specs/json-spec.types.ts` — `JsonSpec` 加 `apiBase?` + `uiBase?` 選填欄位
+- `lib/compiler/api-generator.ts` — `modelToRouteBase` 讀 `spec.apiBase`
+- `lib/compiler/ui-generator.ts` — 加 `uiBasePath()` + 改 3 處硬編碼路徑
+- `extensions/blog/blog-spec.json` — 加 `"apiBase": "/api/blog"`, `"uiBase": "/admin/blog"`
+
+#### 驗證結果
+- `pnpm typecheck` 全綠
+- `pnpm vitest run lib/compiler` 84 tests / 4 files（既存 compiler test 全綠）
+- `pnpm vitest run` 全 unit + integration 777 tests / 56 files
+- `scripts/try-compile.ts` 產出路徑與 Sprint 9 完全一致
+
+#### 揭露 Phase 2/3 議題
+- UI page 缺少狀態機 transition 按鈕（需擴充 ui-generator）
+- API 缺少 disable guard（需 api-generator 加 `requiresExtension`）
+- Sidebar 沒有自動加 nav item
+
+### 📚 文檔
+- `docs/reflection/sprint-10-phase-1.md` — Phase 1 反省報告
+
+### 🚧 下一步
+- Phase 2：反向驗證 Blog Extension（compiler 生成 vs Sprint 9 手寫等價性）
+- Phase 3：Order / Event / Todo 全遷移
+
+---
+
 ## Sprint 1 Review Fixes（7 SP）
 
 ### TD-305 Relation 二元性統一（2 SP）

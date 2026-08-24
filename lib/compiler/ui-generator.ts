@@ -44,6 +44,14 @@ function _modelToTableName(modelName: string): string {
   return modelName.charAt(0).toLowerCase() + modelName.slice(1);
 }
 
+function uiBasePath(spec: JsonSpec, modelName: string): string {
+  // 設計選擇：
+  // - 沒設 uiBase → /admin/[model-kebab]（預設·一 spec 多 model）
+  // - 有設 uiBase → 直接用 uiBase 作為 base（單一 model / Extension 風格）
+  if (spec.uiBase) return spec.uiBase;
+  return `/admin/${modelToKebab(modelName)}`;
+}
+
 // ==============================================
 // Common imports & utilities
 // ==============================================
@@ -273,7 +281,7 @@ export default function ${model.name}ListPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">${label}</h1>
         <Button asChild>
-          <Link href="/admin/${kebabName}/new">新增</Link>
+          <Link href="${uiBasePath(spec, model.name)}/new">新增</Link>
         </Button>
       </div>
       ${searchBox}
@@ -292,7 +300,7 @@ ${headerCells}
 ${rowCells}
                   <TableCell className="text-right space-x-2">
                     <Button variant="ghost" size="sm" asChild>
-                      <Link href={\`/admin/${kebabName}/\${item.id}\`}>編輯</Link>
+                      <Link href={\`${uiBasePath(spec, model.name)}/\${item.id}\`}>編輯</Link>
                     </Button>${actionButtons}
                     <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>
                       刪除
@@ -317,7 +325,7 @@ ${rowCells}
 `;
 
   return {
-    path: `/admin/${kebabName}`,
+    path: uiBasePath(spec, model.name),
     name: `${model.name}ListPage`,
     code,
     model: model.name,
@@ -445,7 +453,7 @@ export default function ${model.name}CreatePage() {
       });
       if (!res.ok) throw new Error('Create failed');
       toast({ title: '已建立' });
-      router.push('/admin/${kebabName}');
+      router.push('${uiBasePath(spec, model.name)}');
     } catch (err) {
       toast({ title: '建立失敗', variant: 'destructive' });
     } finally {
@@ -468,7 +476,7 @@ export default function ${model.name}CreatePage() {
 `;
 
   return {
-    path: `/admin/${kebabName}/new`,
+    path: `${uiBasePath(spec, model.name)}/new`,
     name: `${model.name}CreatePage`,
     code,
     model: model.name,
@@ -594,7 +602,7 @@ export default function ${model.name}EditPage() {
       });
       if (!res.ok) throw new Error('Update failed');
       toast({ title: '已更新' });
-      router.push('/admin/${kebabName}');
+      router.push('${uiBasePath(spec, model.name)}');
     } catch (err) {
       toast({ title: '更新失敗', variant: 'destructive' });
     } finally {
@@ -619,7 +627,7 @@ export default function ${model.name}EditPage() {
 `;
 
   return {
-    path: `/admin/${kebabName}/[id]`,
+    path: `${uiBasePath(spec, model.name)}/[id]`,
     name: `${model.name}EditPage`,
     code,
     model: model.name,
