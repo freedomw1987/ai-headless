@@ -92,7 +92,7 @@
 | **TD-502** | Tech Debt | AI API 缺乏 server-side 驗證 + rate limit | `/api/chat/stream` 未檢查 Auth、未限速、未審計。P1 安全風險 | P1 | 1 | M5 | ✅ Done (Sprint 5 infra-restoration, includes audit log + rate limit + auth; unit test added bcf5fd1) |
 | **TD-503** | Tech Debt | SSE 串流無 abort/cancel 機制 | 用戶離開頁面或新對話時，串流繼續消耗 API quota | P2 | 1 | M5 | ✅ Done (Sprint 5 infra-restoration commit) |
 | **TD-504** | Tech Debt | Mock Stream 字符級延遲造成測試慢 | `MockProvider.streamText` 每字符 15ms，600字=9秒。影響 CI | P2 | 1 | M5 | Ready for Sprint 6+ |
-| **TD-505** | Tech Debt | Token 使用量追蹤 | OpenAI/Anthropic 回應含 `usage`，目前完全丟棄 | P2 | 2 | M5 | Ready for Sprint 5 |
+| **TD-505** | Tech Debt | Token 使用量追蹤 | OpenAI/Anthropic 回應含 `usage`，目前完全丟棄 | P2 | 2 | M5 | ✅ Done (Sprint 5 eefdb0e: usage captured, SSE event, audit log) |
 | **TD-506** | Tech Debt | ChatSidebar close 用 emoji「✕」而非 icon | 視覺一致性 + 無障礙問題 | P3 | 0.5 | M5 | Icebox |
 
 | **S2.1** | Task | Hook SDK：類型定義 + Runtime + 11 種 hook context | 5 | SP2 | M1 | Ready for Sprint |
