@@ -22,13 +22,28 @@ export async function isExtensionEnabledByName(name: string): Promise<boolean> {
 
 /**
  * 取得所有啟用的 extensions（Sidebar 用）
+ *
+ * 設計：
+ * - 只查 4 個已知的 extension（blog/event/todo/order）
+ * - DB 沒記錄 → 預設啟用
+ * - DB 有記錄 isEnabled=false → 不返回（disabled）
+ * - DB 有記錄 isEnabled=true → 返回
  */
+const KNOWN_EXTENSIONS = ['blog', 'event', 'todo', 'order'] as const;
+
 export async function listEnabledExtensions(): Promise<string[]> {
+  // 查 DB 裡所有有記錄的 extension（不論 enabled）
   const rows = await db.extension.findMany({
-    where: { isEnabled: true },
-    select: { name: true },
+    where: { name: { in: [...KNOWN_EXTENSIONS] } },
+    select: { name: true, isEnabled: true },
   });
-  // 預設啟用（DB 沒記錄也視為啟用）
-  const dbNames = new Set(rows.map((r) => r.name));
-  return ['blog', 'event', 'todo', 'order'].filter((n) => dbNames.has(n) || true);
+  const dbRecord = new Map(rows.map((r) => [r.name, r.isEnabled]));
+
+  return KNOWN_EXTENSIONS.filter((name) => {
+    const isEnabled = dbRecord.get(name);
+    // 沒記錄（undefined）→ 預設啟用
+    // 有記錄且 isEnabled=true → 啟用
+    // 有記錄且 isEnabled=false → 不返回
+    return isEnabled === undefined || isEnabled === true;
+  });
 }

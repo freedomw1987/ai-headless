@@ -10,14 +10,14 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 7**（規劃中，待開工）— 見 [docs/sprint-7-plan.md](sprint-7-plan.md) |
-| **Sprint 6 狀態** | ✅ 100% 收尾（4 起步 Task + TD-511/513 + US-102 Phase 1） |
-| **測試基線** | 692 tests / 49 files / 4 Gate 全綠 |
-| **下一個 P0** | （Sprint 7 收尾中，見 sprint-7-plan.md）|
-| **下一個 P1** | （需重新評估，見 backlog-audit-2026-08-24.md）|
-| **下一個 P2** | （需重新評估）|
-| **Sprint 7 狀態** | TECH-006 ✅ Done；TD-514 CI ✅ Done（待 push 驗證）|
-| **Sprint 7 預計** | 17 SP / 5 個 P1 項目 |
+| **當前 Sprint** | **Sprint 9**（收尾）— 見 [docs/sprint-9-plan.md](sprint-9-plan.md)（待寫）|
+| **Sprint 8 狀態** | ✅ 100% 收尾（TECH-006 + US-204 後端 + Demo UI + Sprint Reflection） |
+| **測試基線** | 765 tests / 55 files / 4 Gate 全綠（+13 Disable Guard helper tests）|
+| **下一個 P0** | （無）|
+| **下一個 P1** | TD-521 Disable Guard 測試補完（已進 Sprint 9）|
+| **下一個 P2** | TD-522 Order Extension manifest 缺失（已揭露）|
+| **Sprint 9 狀態** | Blog + Event + Todo CRUD ✅ Done + Disable Guard + 編輯 UI ✅ Done + TD-521 ✅ Done |
+| **Sprint 9 預計** | 5 SP / 3 個項目（擴充為 7 SP）|
 
 ### Sprint 6 進度
 
@@ -113,6 +113,8 @@
 | **TD-518** | Tech Debt | Order transition 權限檢查 | `POST /api/order/{id}/transition` 沒檢查「誰」可以切狀態 | 1 | SP8 | M1-WS | 📋 Ready（待 US-102-P2 完成）|
 | **TD-519** | Tech Debt | Order 列表分頁 | 訂單 >50 筆會慢，沒分頁 | 1 | SP8 | M1-WS | 📋 Ready（Sprint 9+）|
 | **TD-520** | Tech Debt | Order 用 Zod 驗證 form | 目前 createOrderDialog 手寫 if 驗證 | 1 | SP8 | M1-WS | 📋 Ready（Sprint 9+）|
+| **TD-521** | Tech Debt | Disable Guard 測試補完 | Sprint 9 補完 Disable Guard 時發現：`listEnabledExtensions()` 有個 `\|\| true` bug，Sidebar filter 形同失效；其他 helper 也沒 unit test | 1 | SP9 | M6 | ✅ Done（本 session Sprint 9 補完）|
+| **TD-522** | Tech Debt | Order Extension manifest 缺失 | `extensions/order/` 沒有 `manifest.json`，導致 extension-manager filesystem scan 漏掉，/api/extensions 看不到 order（但 API guard 仍 work） | 0.5 | SP9+ | M6 | 📋 Ready（Sprint 10+）|
 | **US-204** | User Story | 訂單狀態機 | 訂單狀態：draft → pending_payment → paid → shipped → completed | 8 | SP2 | M1-WS | ✅ Done（Sprint 8：後端 + Demo UI，24 個測試）|
 | **US-206** | User Story | AI 生成狀態機系統 | 「做訂單管理含狀態機」→ AI 生成 JSON + workflow TS + 測試 | 8 | SP2 | M1 | 📋 Backlog |
 | **TD-306** | Tech Debt | Auth.js v5 整合 | `lib/auth/.gitkeep` 為空 | 5 | SP2 | M2 | ✅ Done |
