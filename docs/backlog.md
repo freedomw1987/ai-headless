@@ -10,11 +10,13 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 6**（起步 4 Task 已完成） |
-| **測試基線** | 649 tests / 3 E2E / 4 Gate 全綠 |
+| **當前 Sprint** | **Sprint 7**（規劃中，待開工）— 見 [docs/sprint-7-plan.md](sprint-7-plan.md) |
+| **Sprint 6 狀態** | ✅ 100% 收尾（4 起步 Task + TD-511/513 + US-102 Phase 1） |
+| **測試基線** | 692 tests / 49 files / 4 Gate 全綠 |
 | **下一個 P0** | TD-514 CI workflow（沒 CI = 沒保護）|
-| **下一個 P1** | TD-510 Backlog ID 撞號修正（已透過本次重整完成）|
-| **下一個 P2** | TD-511 Playwright webServer + TD-513 use-chat-sessions 測試 |
+| **下一個 P1** | TECH-006 StateMachine + US-201/202/203 Extension 三大核心 |
+| **下一個 P2** | TD-301/302 generator TODO 修復 |
+| **Sprint 7 預計** | 17 SP / 5 個 P1 項目 |
 
 ### Sprint 6 進度
 
