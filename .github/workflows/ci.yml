@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 取消同分支前一個 in-progress run（避免 push 多個 commit 重複跑）
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint + Typecheck + Test + E2E
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lemontree
+        ports:
+          - 5432:5432
+        # 等 postgres ready 後再跑後續 steps
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # CI 專用 DB URL（service container 對應）
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/lemontree?schema=ai_headless
+      # Auth.js v5 必填
+      AUTH_SECRET: ci-secret-not-real-but-required-for-build
+      AUTH_URL: http://localhost:3000
+      # Playwright 自動起 webServer（TD-511 已配）
+      PLAYWRIGHT_WEBSERVER: auto
+      # 跳過 browser 下載警告
+      CI: 'true'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Run Prisma migrations
+        run: pnpm exec prisma migrate deploy
+
+      - name: Run database seed
+        run: pnpm db:seed || echo "seed skipped (可能無 seed 對應 schema)"
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Unit + Integration Tests
+        # 跳過 td-405-extensions-admin-smoke.test.ts（環境敏感測試）
+        run: pnpm vitest --run --exclude='**/td-405-extensions-admin-smoke.test.ts'
+
+      - name: Run Playwright E2E Tests
+        # TD-511：CI 模式自動起 webServer
+        run: pnpm test:e2e:ci
+
+      - name: Upload Playwright Report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

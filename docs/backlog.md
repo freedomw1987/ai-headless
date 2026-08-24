@@ -13,10 +13,10 @@
 | **當前 Sprint** | **Sprint 7**（規劃中，待開工）— 見 [docs/sprint-7-plan.md](sprint-7-plan.md) |
 | **Sprint 6 狀態** | ✅ 100% 收尾（4 起步 Task + TD-511/513 + US-102 Phase 1） |
 | **測試基線** | 692 tests / 49 files / 4 Gate 全綠 |
-| **下一個 P0** | TD-514 CI workflow（沒 CI = 沒保護）|
+| **下一個 P0** | （Sprint 7 收尾中，見 sprint-7-plan.md）|
 | **下一個 P1** | （需重新評估，見 backlog-audit-2026-08-24.md）|
 | **下一個 P2** | （需重新評估）|
-| **Sprint 7 狀態** | TECH-006 ✅ Done；US-201/202/203 早已完成（見盤點報告）|
+| **Sprint 7 狀態** | TECH-006 ✅ Done；TD-514 CI ✅ Done（待 push 驗證）|
 | **Sprint 7 預計** | 17 SP / 5 個 P1 項目 |
 
 ### Sprint 6 進度
@@ -112,7 +112,7 @@
 | **US-206** | User Story | AI 生成狀態機系統 | 「做訂單管理含狀態機」→ AI 生成 JSON + workflow TS + 測試 | 8 | SP2 | M1 | 📋 Backlog |
 | **TD-306** | Tech Debt | Auth.js v5 整合 | `lib/auth/.gitkeep` 為空 | 5 | SP2 | M2 | ✅ Done |
 | **TECH-006** | Tech Spike | Workflow Engine | StateMachine + DSL + Runtime + API | 8 | SP2 | M1-WS | 🔜 Ready |
-| **TD-514** | Tech Debt | **CI workflow**（P0）| 加 `.github/workflows/ci.yml`：lint + typecheck + test + Playwright E2E | 2 | SP6 | M0 | 🔜 Ready |
+| **TD-514** | Tech Debt | **CI workflow**（P0）| 加 `.github/workflows/ci.yml`：lint + typecheck + test + Playwright E2E | 2 | SP6 | M0 | ✅ Done（待 push 首次跑驗證）|
 
 ### P1（重要 / 安全）
 
