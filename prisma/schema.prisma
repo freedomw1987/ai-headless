@@ -284,3 +284,23 @@ model EventRegistration {
   @@index([userId])
   @@map("event_registrations")
 }
+
+// ==============================================
+// US-204: Order with StateMachine
+// ==============================================
+
+model Order {
+  id          String   @id @default(cuid())
+  orderNumber String   @unique
+  customer    String
+  amount      Int      // cents，避免浮點數問題
+  status      String   @default("draft") // StateMachine: draft | pending_payment | paid | shipped | completed | cancelled | refunded
+  stateData   Json     @default("{}") // 狀態機 context（如 paidAt, shippedAt）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([status])
+  @@index([customer])
+  @@map("orders")
+}

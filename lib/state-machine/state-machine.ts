@@ -45,6 +45,7 @@ export type TransitionInput =
 
 export interface StateMachineInstance {
   getState(): string;
+  setState(state: string): void;
   canTransition(event: string): boolean;
   getAvailableEvents(): string[];
   transition(input: TransitionInput): string;
@@ -104,6 +105,15 @@ export function createStateMachine(
   return {
     getState() {
       return currentState;
+    },
+
+    setState(state: string): void {
+      if (!schema.states[state]) {
+        throw new Error(
+          `StateMachine "${schema.id}": state "${state}" 不存在於 states`,
+        );
+      }
+      currentState = state;
     },
 
     canTransition(event: string): boolean {

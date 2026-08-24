@@ -268,4 +268,50 @@ describe('TECH-006 StateMachine Runtime', () => {
       expect(sm.getContext()).toEqual({ count: 5 });
     });
   });
+
+  describe('setState 支援（從 DB 載入現有狀態）', () => {
+    it('setState 可重設當前狀態', () => {
+      const schema: StateMachineSchema = {
+        id: 'order',
+        initial: 'draft',
+        states: {
+          draft: { on: { submit: 'pending' } },
+          pending: { on: { pay: 'paid' } },
+          paid: {},
+        },
+      };
+      const sm = createStateMachine(schema);
+      sm.setState('pending');
+      expect(sm.getState()).toBe('pending');
+    });
+
+    it('setState 後可接著 transition', () => {
+      const schema: StateMachineSchema = {
+        id: 'order',
+        initial: 'draft',
+        states: {
+          draft: { on: { submit: 'pending' } },
+          pending: { on: { pay: 'paid' } },
+          paid: {},
+        },
+      };
+      const sm = createStateMachine(schema);
+      sm.setState('pending');
+      const next = sm.transition('pay');
+      expect(next).toBe('paid');
+      expect(sm.getState()).toBe('paid');
+    });
+
+    it('setState 不存在的 state 拋錯', () => {
+      const schema: StateMachineSchema = {
+        id: 'order',
+        initial: 'draft',
+        states: { draft: {} },
+      };
+      const sm = createStateMachine(schema);
+      expect(() => sm.setState('nonexistent')).toThrow(
+        /state.*不存在|not found/i,
+      );
+    });
+  });
 });
