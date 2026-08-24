@@ -76,16 +76,21 @@ describe('TD-501 ChatPageClient Session 管理', () => {
     HTMLElement.prototype.scrollIntoView = vi.fn();
   });
 
-  it('點 + 新對話 → 新增 session 並切換為 active', () => {
+  it('點 + 新對話 → 新增 session 並在 sidebar 出現', () => {
     render(<ChatPageClient />);
 
+    // 點按鈕前：sidebar 裡不應有 session 項目（僅有 + 新對話 按鈕）
+    const sidebar = screen.getByTestId('chat-sidebar');
+    expect(sidebar.querySelectorAll('[data-testid^="session-"]')).toHaveLength(0);
+
+    // 點 + 新對話
     const newButton = screen.getByRole('button', { name: /新對話/ });
     fireEvent.click(newButton);
 
-    // 新 session 後,空狀態消失(因為有新空 session 但無訊息,仍顯示空狀態)
-    // 行為驗證：sidebar 應有 session 列表出現
-    // 為避免完整 sidebar 渲染依賴,只驗證空狀態的引導文字「待辦」仍顯示(因為新 session 無訊息)
-    expect(screen.getByText(/待辦事項|活動管理/)).toBeTruthy();
+    // 點後：sidebar 裡應有 session 項目、且標題為「新對話」
+    const sessions = screen.getByTestId('chat-sidebar').querySelectorAll('[data-testid^="session-"]');
+    expect(sessions).toHaveLength(1);
+    expect(screen.getByText('新對話')).toBeTruthy();
   });
 });
 
@@ -146,5 +151,86 @@ describe('TD-501 ChatPageClient 串流發送', () => {
     await waitFor(() => {
       expect(screen.getByText(/AI 正在輸入/)).toBeTruthy();
     });
+  });
+
+  it('串流返回 ```json {...}``` → 提取 JsonSpec 標記到最後一條 assistant 訊息', async () => {
+    // 串流返回包含 JsonSpec markdown code block（包含必須的 name + models）
+    async function* mockStream() {
+      yield '這是個活動管理';
+      yield ` \n\`\`\`json
+{"name":"event-management","models":[{"name":"Event","fields":[{"name":"title","type":"string"}]}]}
+\`\`\``;
+    }
+    vi.mocked(streamChatWithRetry).mockImplementation(mockStream);
+
+    render(<ChatPageClient />);
+
+    fireEvent.click(screen.getByRole('button', { name: /新對話/ }));
+    const input = screen.getByPlaceholderText(/輸入訊息|傳送|message/i);
+    fireEvent.change(input, { target: { value: '建立活動管理' } });
+    fireEvent.click(screen.getByTestId('chat-send-button'));
+
+    // MessageBubble 應顯示 JsonSpec badge + ✨ 已生成 JsonSpec 文字
+    await waitFor(
+      () => {
+        expect(screen.getByText(/已生成 JsonSpec/)).toBeTruthy();
+      },
+      { timeout: 3000 },
+    );
+    // event-management 是 spec 名稱
+    await waitFor(
+      () => {
+        expect(screen.getByText('event-management')).toBeTruthy();
+      },
+      { timeout: 3000 },
+    );
+  });
+
+  it('送出後 → 確認傳給 streamChatWithRetry 的 messages 包含 user 訊息（TD-501 P1-1 bug guard）', async () => {
+    async function* mockStream() {
+      yield 'ok';
+    }
+    vi.mocked(streamChatWithRetry).mockImplementation(mockStream);
+
+    render(<ChatPageClient />);
+
+    fireEvent.click(screen.getByRole('button', { name: /新對話/ }));
+    const input = screen.getByPlaceholderText(/輸入訊息|傳送|message/i);
+    fireEvent.change(input, { target: { value: '幫我做個待辦' } });
+    fireEvent.click(screen.getByTestId('chat-send-button'));
+
+    await waitFor(() => {
+      expect(streamChatWithRetry).toHaveBeenCalled();
+    });
+
+    // 驗證第一個參數 messages 包含 user 訊息
+    const callArgs = vi.mocked(streamChatWithRetry).mock.calls[0]![0] as Array<{ role: string; content: string }>;
+    const hasUserMessage = callArgs.some(
+      (m) => m.role === 'user' && m.content === '幫我做個待辦',
+    );
+    expect(hasUserMessage).toBe(true);
+  });
+
+  it('串流 throw → 錯誤訊息顯示在 assistant 訊息中', async () => {
+    // Mock 一個馬上 throw 的 generator（沒有 yield,content 為空 → 應顯示錯誤訊息）
+    async function* mockStream() {
+      throw new Error('API failed');
+    }
+    vi.mocked(streamChatWithRetry).mockImplementation(mockStream);
+
+    render(<ChatPageClient />);
+
+    fireEvent.click(screen.getByRole('button', { name: /新對話/ }));
+    const input = screen.getByPlaceholderText(/輸入訊息|傳送|message/i);
+    fireEvent.change(input, { target: { value: 'test' } });
+    fireEvent.click(screen.getByTestId('chat-send-button'));
+
+    await waitFor(
+      () => {
+        // 錯誤訊息格式：「錯誤：<error string>」
+        expect(screen.getByText(/錯誤：/)).toBeTruthy();
+      },
+      { timeout: 3000 },
+    );
   });
 });

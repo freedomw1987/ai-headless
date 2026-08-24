@@ -19,6 +19,7 @@ export type UseChatSessions = {
   setActiveId: (id: string | null) => void;
   createSession: () => ChatSession;
   updateSession: (session: ChatSession) => void;
+  setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>;
 };
 
 export function useChatSessions(): UseChatSessions {
@@ -47,5 +48,6 @@ export function useChatSessions(): UseChatSessions {
     setActiveId,
     createSession,
     updateSession,
+    setSessions,
   };
 }

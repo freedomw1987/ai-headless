@@ -9,8 +9,9 @@
  * - 累積內容 + 處理 JsonSpec 標記
  * - 錯誤處理
  *
- * 不持有 sessions state — 由呼叫端透過 getSession/setSession 提供。
- * 這樣 hook 可獨立測試,且避免雙向狀態同步問題。
+ * TD-501 reviewer P1-2 修：之前用 getSession/setSession pattern,因為 React
+ * async batch race,for await 內的 applyContent 讀到 stale state。
+ * 改用 functional setSessions — React 保證 reducer 拿到最新 state。
  */
 
 import { useCallback, useState } from 'react';
@@ -30,12 +31,12 @@ export type UseChatStream = {
 };
 
 /**
- * @param getSession 取得當前 session 的函式(避免 hook 持雙向 state)
- * @param setSession 更新整個 session 的函式(等同於 useChatSessions.updateSession)
+ * @param sessions 所有 sessions（由 caller 管理）
+ * @param setSessions setSessions 函式（functional update,確保拿最新 state）
  */
 export function useChatStream(
-  getSession: (id: string) => ChatSession | undefined,
-  setSession: (session: ChatSession) => void,
+  sessions: ChatSession[],
+  setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>,
 ): UseChatStream {
   const [streaming, setStreaming] = useState(false);
 
@@ -46,26 +47,31 @@ export function useChatStream(
         abortStream(`chat-${session.id}`);
       }
 
-      // 2. 加 user 訊息
-      let updated = addMessage(session, { role: 'user', content: text });
-      setSession(updated);
+      // 2. 加 user 訊息 + 加 placeholder assistant（一次 setSessions 觸發 batch）
+      const initialUpdated = addMessage(session, { role: 'user', content: text });
+      const seeded = addMessage(initialUpdated, {
+        role: 'assistant',
+        content: '',
+      });
+      setSessions((prev) =>
+        prev.map((s) => (s.id === session.id ? seeded : s)),
+      );
 
-      // 3. 加 placeholder assistant
       setStreaming(true);
-      updated = addMessage(updated, { role: 'assistant', content: '' });
-      setSession(updated);
 
-      // 4. 建 stream controller（TD-503）
+      // 3. 建 stream controller（TD-503）
       const controller = createStreamController(`chat-${session.id}`);
 
       let fullContent = '';
       let lastError: string | null = null;
 
       try {
+        // seeded.messages = [...history, userMsg, emptyAssistant]
+        // filter() 移除空的 assistant（placeholder）,保留 userMsg
+        // **不要** slice(0, -1) — 那會丟掉當前 userMsg!（TD-501 reviewer P1-1）
         for await (const content of streamChatWithRetry(
-          updated.messages
+          seeded.messages
             .filter((m) => m.role !== 'assistant' || m.content)
-            .slice(0, -1)
             .map((m) => ({ role: m.role, content: m.content })),
           {
             maxRetries: 2,
@@ -76,66 +82,80 @@ export function useChatStream(
           },
         )) {
           fullContent += content;
-          applyContent(updated.id, fullContent);
+          applyContent(session.id, fullContent);
         }
 
-        // 5. JsonSpec 標記
+        // 4. JsonSpec 標記
         const spec: JsonSpec | null = extractJsonSpec(fullContent);
         if (spec) {
-          applyJsonSpec(updated.id, spec);
+          applyJsonSpec(session.id, spec);
         }
       } catch (err) {
         lastError = String(err);
         console.error('Chat stream error:', err);
-        applyError(updated.id, lastError);
+        applyError(session.id, lastError);
       } finally {
         setStreaming(false);
       }
 
-      // ====== helpers ======
+      // ====== helpers（用 functional setSessions 拿最新 state）======
 
       function applyContent(sessionId: string, content: string) {
-        const s = getSession(sessionId);
-        if (!s) return;
-        const messages = [...s.messages];
-        const lastIdx = messages.length - 1;
-        if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
-          messages[lastIdx] = { ...messages[lastIdx]!, content };
-        }
-        setSession({ ...s, messages });
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id !== sessionId) return s;
+            const messages = [...s.messages];
+            const lastIdx = messages.length - 1;
+            if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
+              messages[lastIdx] = { ...messages[lastIdx]!, content };
+            }
+            return { ...s, messages };
+          }),
+        );
       }
 
       function applyJsonSpec(sessionId: string, spec: JsonSpec) {
-        const s = getSession(sessionId);
-        if (!s) return;
-        const messages = [...s.messages];
-        const lastIdx = messages.length - 1;
-        if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
-          messages[lastIdx] = {
-            ...messages[lastIdx]!,
-            metadata: { jsonSpec: spec },
-          };
-        }
-        setSession({ ...s, messages });
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id !== sessionId) return s;
+            const messages = [...s.messages];
+            const lastIdx = messages.length - 1;
+            if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
+              messages[lastIdx] = {
+                ...messages[lastIdx]!,
+                metadata: { jsonSpec: spec },
+              };
+            }
+            return { ...s, messages };
+          }),
+        );
       }
 
       function applyError(sessionId: string, error: string) {
-        const s = getSession(sessionId);
-        if (!s) return;
-        const messages = [...s.messages];
-        const lastIdx = messages.length - 1;
-        if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
-          messages[lastIdx] = {
-            ...messages[lastIdx]!,
-            content: messages[lastIdx]!.content || `錯誤：${error}`,
-          };
-        }
-        setSession({ ...s, messages });
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id !== sessionId) return s;
+            const messages = [...s.messages];
+            const lastIdx = messages.length - 1;
+            if (lastIdx >= 0 && messages[lastIdx]!.role === 'assistant') {
+              messages[lastIdx] = {
+                ...messages[lastIdx]!,
+                content: messages[lastIdx]!.content || `錯誤：${error}`,
+              };
+            }
+            return { ...s, messages };
+          }),
+        );
       }
     },
-    // streaming intentionally not in deps to avoid stale closures mid-stream
-    [streaming, getSession, setSession],
+    // streaming 故意在 deps 中 — 是用來在重送時 abort 上一輪串流，
+    // 不在 deps 才會 stale。
+    [streaming],
   );
+
+  // 用 sessions 觸發 callback 重建,以免 stale closure
+  // (但實際 functional setSessions 不需要)
+  void sessions;
 
   return { streaming, send };
 }
