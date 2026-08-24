@@ -1,0 +1,31 @@
+{
+  "name": "event",
+  "version": "1.0.0",
+  "label": "活動管理",
+  "description": "活動管理 — 展示 datetime + 多對多 Relation + 容量 Hook + 狀態機 Workflow",
+  "author": "ai-headless team",
+  "hooks": [
+    "event.beforeCreate",
+    "event.beforeRegister",
+    "event.afterRegister"
+  ],
+  "actions": [
+    "event.registerAttendee",
+    "event.cancelEvent"
+  ],
+  "computed": [
+    "event.availableSeats",
+    "event.isFull",
+    "event.isUpcoming"
+  ],
+  "workflows": ["event.lifecycle"],
+  "permissions": [
+    "event.create",
+    "event.read",
+    "event.update",
+    "event.delete",
+    "event.register",
+    "event.cancel"
+  ],
+  "dependencies": []
+}

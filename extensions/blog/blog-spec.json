@@ -1,0 +1,74 @@
+{
+  "name": "blog",
+  "label": "Blog",
+  "models": [
+    {
+      "name": "BlogPost",
+      "label": "文章",
+      "description": "部落格文章 — 展示 Workflow + 多對多 + 富文本 + 自動 slug",
+      "fields": [
+        {
+          "name": "title",
+          "type": "string",
+          "label": "標題",
+          "validation": { "required": true, "min": 1, "max": 200 }
+        },
+        {
+          "name": "slug",
+          "type": "string",
+          "label": "Slug（URL 友善識別）",
+          "validation": { "unique": true }
+        },
+        {
+          "name": "content",
+          "type": "text",
+          "label": "內容（HTML）"
+        },
+        {
+          "name": "excerpt",
+          "type": "string",
+          "label": "摘要",
+          "validation": { "max": 500 }
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "label": "狀態",
+          "options": ["draft", "pending", "published", "archived"],
+          "validation": { "default": "draft" }
+        },
+        {
+          "name": "publishedAt",
+          "type": "datetime",
+          "label": "發布時間"
+        },
+        {
+          "name": "readingTime",
+          "type": "integer",
+          "label": "預估閱讀時間（分鐘）",
+          "validation": { "default": 0 }
+        }
+      ],
+      "computed": [
+        {
+          "name": "readingTime",
+          "type": "number",
+          "label": "閱讀時間",
+          "compute": "{{fn:computeReadingTime}}"
+        }
+      ],
+      "hooks": {
+        "beforeCreate": "{{fn:beforeCreateBlogPost}}"
+      },
+      "actions": [
+        {
+          "name": "publish",
+          "label": "發布",
+          "input": [],
+          "implementation": "{{fn:publishBlogPost}}"
+        }
+      ],
+      "softDelete": true
+    }
+  ]
+}

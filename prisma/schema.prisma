@@ -1,0 +1,286 @@
+// ==============================================
+// ai-headless Prisma Schema
+// ==============================================
+// 對應 docs/system-design.md §7 資料模型
+// 對應 docs/prd/03-auth.md 用戶/角色/權限
+// 對應 docs/prd/08-workflow.md 轉換日誌
+// ==============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==============================================
+// M2 — Auth & RBAC
+// ==============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  image         String?
+  emailVerified DateTime?
+  isActive      Boolean   @default(true)
+
+  // 角色（admin / editor / viewer / 自定義）
+  role String @default("viewer")
+
+  // 關聯
+  accounts      Account[]
+  sessions      Session[]
+  transitions   TransitionLog[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ==============================================
+// M1-WS — Workflow Subsystem
+// ==============================================
+
+model TransitionLog {
+  id           String   @id @default(cuid())
+  machineName  String   // e.g. "orderStateMachine"
+  entityType   String   // e.g. "Order"
+  entityId     String   // e.g. orderId
+
+  fromState    String
+  toState      String
+
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  reason       String?
+  metadata     Json?
+  guardResult  Boolean?
+  effectResult String?  // "success" | "failed"
+
+  createdAt    DateTime @default(now())
+
+  @@index([machineName, entityType, entityId, createdAt])
+  @@index([userId])
+  @@map("transition_logs")
+}
+
+// ==============================================
+// M1 — Extension Registry
+// ==============================================
+
+model Extension {
+  id          String   @id @default(cuid())
+  name        String   @unique  // "blog"
+  version     String            // "1.0.0"
+  manifest    Json              // ExtensionManifest
+  isEnabled   Boolean  @default(true)
+  isBuiltIn   Boolean  @default(false)
+
+  installedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+  @@index([isEnabled])
+  @@map("extensions")
+}
+
+// ==============================================
+// M4 — AI Configuration
+// ==============================================
+
+model AIConfig {
+  id        String   @id @default(cuid())
+  userId    String?  @unique  // null = 全局配置
+
+  provider  String   // "openai" | "anthropic"
+  model     String   // "gpt-4o" | "claude-3-5-sonnet-20241022"
+  apiKeyEnc String?  @db.Text  // 加密後的 API Key
+
+  // Pipeline 配置
+  temperature    Float  @default(0.7)
+  maxTokens      Int    @default(4096)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ai_configs")
+}
+
+// ==============================================
+// M1 — JSON Specs（用戶生成的 JSON 規範存儲）
+// ==============================================
+
+model JsonSpec {
+  id          String   @id @default(cuid())
+
+  name        String   @unique  // "todo-app"
+  label       String             // "待辦事項"
+  spec        Json              // 完整 JSON 規範
+  schemaJson  String?  @db.Text // Zod 生成的 JSON Schema
+
+  // 編譯狀態
+  status      String   @default("draft")  // "draft" | "compiling" | "compiled" | "failed"
+  errorLog    String?  @db.Text
+  compiledAt  DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@map("json_specs")
+}
+
+// ==============================================
+// M5 — AI Chat Sessions
+// ==============================================
+
+model ChatSession {
+  id        String        @id @default(cuid())
+  userId    String?
+  title     String        @default("新對話")
+  messages  ChatMessage[]
+
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      String      // "user" | "assistant" | "system"
+  content   String      @db.Text
+  metadata  Json?       // Pipeline progress, tool calls, etc.
+
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId])
+  @@map("chat_messages")
+}
+
+// ==============================================
+// M3 — Extensions: Blog + Todo + Event
+// ==============================================
+
+model BlogPost {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  content       String    @db.Text
+  excerpt       String?
+  status        String    @default("draft") // draft | pending | published | archived
+  publishedAt   DateTime?
+  readingTime   Int       @default(0) // computed
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@index([status])
+  @@index([publishedAt])
+  @@map("blog_posts")
+}
+
+model Todo {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  completed   Boolean   @default(false)
+  dueDate     DateTime?
+  priority    String    @default("medium") // low | medium | high
+  completedAt DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@index([completed])
+  @@index([dueDate])
+  @@map("todos")
+}
+
+model Event {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime
+  location    String?
+  capacity    Int            @default(0)
+  status      String         @default("upcoming") // upcoming | ongoing | past | cancelled
+  cancelledAt DateTime?
+
+  registrations EventRegistration[]
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  @@index([status])
+  @@index([startAt])
+  @@map("events")
+}
+
+model EventRegistration {
+  id           String   @id @default(cuid())
+  eventId      String
+  userId       String
+  registeredAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_registrations")
+}

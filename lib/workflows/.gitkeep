@@ -1,0 +1,24 @@
+# lib/workflows/
+
+**用途**：Workflow Engine（狀態機 / 審批引擎）
+
+## 對應 PRD
+- `docs/prd/08-workflow.md`（完整 PRD）
+- `docs/prd/01-framework-core.md` §2.6 FR-6.4 Workflow SDK
+
+## 子目錄規劃（Sprint 2）
+
+```
+lib/workflows/
+├── types.ts            # StateMachine, StateConfig, TransitionDef
+├── runtime.ts          # Workflow Runtime（執行 transition、guard、effect）
+├── dsl-parser.ts       # JSON DSL → StateMachine
+├── validator.ts        # 狀態機合法性校驗（無死鎖、無不可達狀態）
+├── transitions.ts      # transition() / canTransition() / getState()
+├── permissions.ts      # transition.requires.permission 檢查
+└── tests/
+```
+
+## 設計詳見
+- `docs/specs/json-spec.md` §3.8 Workflows
+- `docs/specs/extension-spec.md` §4.6 Workflow SDK

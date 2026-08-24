@@ -1,0 +1,43 @@
+# lib/ai/
+
+**用途**：AI Pipeline（由 pi agent 驅動）
+
+## 對應 PRD
+- `docs/prd/01-framework-core.md` §2.3 FR-3 AI Pipeline
+- `docs/prd/05-ai-config.md`（AI 配置）
+- `docs/prd/06-ai-chat.md`（Chat UI）
+
+## 子目錄規劃
+
+```
+lib/ai/
+├── agent-runner.ts     # pi agent 觸發器（調用 runSubagent）
+├── pipeline/           # 8-Stage Pipeline 實現
+│   ├── stage-1-analyze.ts
+│   ├── stage-2-clarify.ts
+│   ├── stage-3-spec.ts
+│   ├── stage-4-tdd.ts
+│   ├── stage-5-compile.ts
+│   ├── stage-6-lint.ts
+│   ├── stage-7-regression.ts
+│   └── stage-8-review.ts
+├── providers/          # AI 模型抽象
+│   ├── openai.ts
+│   ├── anthropic.ts
+│   └── base.ts         # Provider interface
+├── streaming.ts        # 串流回應（給 Chat UI 用）
+└── tests/
+```
+
+## 8-Stage Pipeline（對應 SOP §2.3 4 Gate）
+
+| Stage | 說明 | 對應 Gate |
+|---|---|---|
+| 1. analyze | 需求分析 | — |
+| 2. clarify | 反問釐清 | — |
+| 3. spec | 生成 JSON Spec | — |
+| 4. tdd | 先寫測試、紅→綠 | **Gate 1** |
+| 5. compile | Schema/API/UI/Extension Code 生成 | — |
+| 6. lint | ESLint + TypeScript 校驗 | **Gate 2** |
+| 7. regression | 跑全部測試 | **Gate 3** |
+| 8. review | Reviewer + Submitter | **Gate 4** |

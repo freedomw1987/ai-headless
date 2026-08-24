@@ -1,0 +1,29 @@
+# app/api/
+
+**用途**：Next.js App Router 的 API routes
+
+## 規劃
+
+```
+app/api/
+├── auth/[...nextauth]/route.ts  # NextAuth 入口（M2）
+├── ai/
+│   ├── generate/route.ts         # POST: 啟動 AI Pipeline（M5）
+│   └── stream/route.ts           # GET: 串流 AI 進度（M5）
+├── extensions/
+│   ├── route.ts                  # GET: 列已安裝 Extensions（M6）
+│   └── [name]/route.ts           # POST: 安裝、DELETE: 卸載（M6）
+├── specs/
+│   ├── route.ts                  # GET: 列 JSON Specs, POST: 建立（M1）
+│   └── [name]/
+│       ├── route.ts              # GET/PUT/DELETE 單個 Spec
+│       └── compile/route.ts      # POST: 觸發編譯
+└── crud/[model]/route.ts         # 自動生成的 CRUD endpoints（M1）
+```
+
+## 由 Compiler 自動生成的 API
+
+當 AI 完成 JSON Spec 後，Compiler 會：
+- 為每個 model 自動生成 `app/api/crud/[model]/route.ts`
+- 自動綁定 RBAC 檢查
+- 自動注入 Extension 的 hook / action

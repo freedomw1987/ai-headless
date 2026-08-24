@@ -1,0 +1,12 @@
+{
+  "name": "todo",
+  "version": "1.0.0",
+  "label": "待辦事項",
+  "description": "個人待辦清單 — 展示極簡 CRUD + Hook + Computed",
+  "author": "ai-headless team",
+  "hooks": ["todo.beforeCreate", "todo.afterCreate"],
+  "actions": ["todo.complete"],
+  "computed": ["todo.remainingDays"],
+  "permissions": ["todo.create", "todo.read", "todo.update", "todo.delete"],
+  "dependencies": []
+}

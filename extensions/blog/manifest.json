@@ -1,0 +1,13 @@
+{
+  "name": "blog",
+  "version": "1.0.0",
+  "label": "部落格",
+  "description": "部落格系統 — 展示完整混合模式（Hook + Action + Computed + Workflow）",
+  "author": "ai-headless team",
+  "hooks": ["blog.beforeCreateBlogPost"],
+  "actions": ["blog.publishBlogPost"],
+  "computed": ["blog.computeReadingTime"],
+  "workflows": ["blog.lifecycle"],
+  "permissions": ["blog.create", "blog.read", "blog.update", "blog.delete"],
+  "dependencies": []
+}

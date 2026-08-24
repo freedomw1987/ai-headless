@@ -1,0 +1,28 @@
+# lib/extensions/
+
+**用途**：Extension Runtime + SDK
+
+## 對應 PRD
+- `docs/prd/01-framework-core.md` §2.4 FR-4 Extension 系統
+- `docs/prd/01-framework-core.md` §2.6 FR-6 混合模式 SDK
+
+## 子目錄規劃（Sprint 2 主力）
+
+```
+lib/extensions/
+├── types.ts            # ExtensionManifest, ExtensionContext, ExtensionApi
+├── loader.ts           # Extension Loader（掃描 extensions/ 目錄）
+├── registry.ts         # Extension Registry（註冊/反註冊/查詢）
+├── lifecycle.ts        # onLoad / onUnload / onConfigChange
+├── hooks.ts            # Hook SDK（beforeCreate, afterCreate, onTransition 等 11 種）
+├── actions.ts          # Action SDK（自定義動作）
+├── computed.ts         # Computed Field SDK（動態計算欄位）
+├── workflows.ts        # Workflow SDK（狀態機）
+├── events.ts           # 事件系統
+├── sandbox.ts          # Extension sandbox（隔離執行環境）
+└── tests/
+```
+
+## 設計詳見
+- `docs/system-design.md` §13 混合模式架構
+- `docs/specs/extension-spec.md` §4 Extension API

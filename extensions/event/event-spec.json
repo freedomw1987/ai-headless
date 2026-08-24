@@ -1,0 +1,156 @@
+{
+  "name": "event",
+  "label": "活動管理",
+  "models": [
+    {
+      "name": "Event",
+      "label": "活動",
+      "description": "活動資訊",
+      "fields": [
+        {
+          "name": "title",
+          "type": "string",
+          "label": "活動標題",
+          "validation": { "required": true, "min": 1, "max": 200 }
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "label": "活動描述"
+        },
+        {
+          "name": "startAt",
+          "type": "datetime",
+          "label": "開始時間",
+          "validation": { "required": true }
+        },
+        {
+          "name": "endAt",
+          "type": "datetime",
+          "label": "結束時間",
+          "validation": { "required": true }
+        },
+        {
+          "name": "location",
+          "type": "string",
+          "label": "地點"
+        },
+        {
+          "name": "capacity",
+          "type": "integer",
+          "label": "容量",
+          "validation": { "default": 0 }
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "label": "狀態",
+          "options": ["upcoming", "ongoing", "past", "cancelled"],
+          "validation": { "default": "upcoming" }
+        }
+      ],
+      "computed": [
+        {
+          "name": "availableSeats",
+          "type": "integer",
+          "label": "剩餘名額",
+          "compute": "{{fn:availableSeats}}"
+        },
+        {
+          "name": "isFull",
+          "type": "boolean",
+          "label": "是否已滿",
+          "compute": "{{fn:isFull}}"
+        },
+        {
+          "name": "isUpcoming",
+          "type": "boolean",
+          "label": "即將開始",
+          "compute": "{{fn:isUpcoming}}"
+        }
+      ],
+      "relations": [
+        {
+          "type": "hasMany",
+          "model": "Registration",
+          "foreignKey": "eventId"
+        }
+      ],
+      "hooks": {
+        "beforeCreate": "{{fn:beforeCreateEvent}}"
+      },
+      "actions": [
+        {
+          "name": "registerAttendee",
+          "label": "報名",
+          "input": [
+            { "name": "userId", "type": "string", "required": true }
+          ],
+          "implementation": "{{fn:registerAttendee}}"
+        },
+        {
+          "name": "cancelEvent",
+          "label": "取消活動",
+          "input": [],
+          "implementation": "{{fn:cancelEvent}}"
+        }
+      ],
+      "workflows": [
+        {
+          "name": "lifecycle",
+          "initialState": "upcoming",
+          "states": {
+            "upcoming": {
+              "label": "即將開始",
+              "allowedActions": ["START", "CANCEL"]
+            },
+            "ongoing": {
+              "label": "進行中",
+              "allowedActions": ["END", "CANCEL"]
+            },
+            "past": {
+              "label": "已結束",
+              "allowedActions": []
+            },
+            "cancelled": {
+              "label": "已取消",
+              "allowedActions": []
+            }
+          },
+          "transitions": [
+            { "from": "upcoming", "to": "ongoing", "effect": "sendStartNotification" },
+            { "from": "ongoing", "to": "past", "effect": "sendEndNotification" },
+            { "from": "upcoming", "to": "cancelled", "effect": "sendCancellationNotification" },
+            { "from": "ongoing", "to": "cancelled", "effect": "sendCancellationNotification" }
+          ]
+        }
+      ],
+      "softDelete": true
+    },
+    {
+      "name": "Registration",
+      "label": "報名記錄",
+      "description": "活動報名中間表",
+      "fields": [
+        {
+          "name": "eventId",
+          "type": "reference",
+          "relation": { "type": "belongsTo", "model": "Event" }
+        },
+        {
+          "name": "userId",
+          "type": "reference"
+        },
+        {
+          "name": "registeredAt",
+          "type": "datetime",
+          "label": "報名時間"
+        }
+      ],
+      "hooks": {
+        "beforeCreate": "{{fn:beforeRegister}}"
+      },
+      "softDelete": false
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "name": "todo",
+  "label": "待辦事項",
+  "models": [
+    {
+      "name": "Todo",
+      "label": "待辦",
+      "description": "個人待辦事項",
+      "fields": [
+        {
+          "name": "title",
+          "type": "string",
+          "label": "標題",
+          "validation": { "required": true, "min": 1, "max": 200 }
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "label": "描述"
+        },
+        {
+          "name": "completed",
+          "type": "boolean",
+          "label": "已完成",
+          "validation": { "default": false }
+        },
+        {
+          "name": "dueDate",
+          "type": "datetime",
+          "label": "截止日期"
+        },
+        {
+          "name": "priority",
+          "type": "enum",
+          "label": "優先級",
+          "options": ["low", "medium", "high"],
+          "validation": { "default": "medium" }
+        }
+      ],
+      "computed": [
+        {
+          "name": "remainingDays",
+          "type": "number",
+          "label": "剩餘天數",
+          "compute": "{{fn:remainingDays}}"
+        }
+      ],
+      "hooks": {
+        "beforeCreate": "{{fn:beforeCreateTodo}}"
+      },
+      "actions": [
+        {
+          "name": "complete",
+          "label": "標記完成",
+          "input": [],
+          "implementation": "{{fn:completeTodo}}"
+        }
+      ],
+      "softDelete": true
+    }
+  ]
+}

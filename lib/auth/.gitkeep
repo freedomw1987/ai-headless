@@ -1,0 +1,28 @@
+# lib/auth/
+
+**用途**：Authentication & RBAC
+
+## 對應 PRD
+- `docs/prd/03-auth.md`（M2 完整 PRD）
+
+## 子目錄規劃
+
+```
+lib/auth/
+├── config.ts           # NextAuth / Auth.js 配置
+├── rbac.ts             # checkPermission(role, action) 函數
+├── providers/          # 多種登入方式
+│   ├── credentials.ts
+│   ├── github.ts
+│   └── google.ts
+├── password.ts         # bcrypt hash/verify
+└── tests/
+```
+
+## 內建角色
+
+| 角色 | 權限 |
+|---|---|
+| admin | 萬能（所有操作） |
+| editor | 可編輯內容，不可刪除用戶 |
+| viewer | 只讀 |
