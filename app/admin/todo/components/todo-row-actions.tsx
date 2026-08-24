@@ -7,8 +7,23 @@
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { EditTodoDialog } from './edit-todo-dialog';
 
-export function TodoRowActions({ todoId, completed }: { todoId: string; completed: boolean }) {
+export function TodoRowActions({
+  todoId,
+  completed,
+  initialTitle,
+  initialDescription,
+  initialDueDate,
+  initialPriority,
+}: {
+  todoId: string;
+  completed: boolean;
+  initialTitle: string;
+  initialDescription: string;
+  initialDueDate: string | null;
+  initialPriority: string;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -29,6 +44,13 @@ export function TodoRowActions({ todoId, completed }: { todoId: string; complete
 
   return (
     <div className="flex gap-2 justify-end">
+      <EditTodoDialog
+        todoId={todoId}
+        initialTitle={initialTitle}
+        initialDescription={initialDescription}
+        initialDueDate={initialDueDate}
+        initialPriority={initialPriority}
+      />
       <Button variant="outline" size="sm" onClick={toggle} disabled={isPending}>
         {completed ? '取消完成' : '完成'}
       </Button>

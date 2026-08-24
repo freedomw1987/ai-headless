@@ -2,12 +2,16 @@
  * Event List Page
  */
 
+import Link from 'next/link';
 import { listEvents } from '@/extensions/event/workflow/event-workflow';
+import { guardExtensionOrRedirect } from '@/app/admin/_components/extension-page-guard';
 import { CreateEventDialog } from './components/create-event-dialog';
 import { EventStatusBadge } from './components/event-status-badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default async function EventsPage() {
+  await guardExtensionOrRedirect('event');
   const events = await listEvents();
   return (
     <div className="space-y-6 p-6">
@@ -39,6 +43,7 @@ export default async function EventsPage() {
                     <th className="text-left py-2 px-2">地點</th>
                     <th className="text-right py-2 px-2">容量</th>
                     <th className="text-left py-2 px-2">狀態</th>
+                    <th className="text-right py-2 px-2">操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -55,6 +60,11 @@ export default async function EventsPage() {
                       <td className="py-2 px-2 text-sm">{event.location || '—'}</td>
                       <td className="py-2 px-2 text-right text-sm">{event.capacity}</td>
                       <td className="py-2 px-2"><EventStatusBadge status={event.status} /></td>
+                      <td className="py-2 px-2 text-right">
+                        <Link href={`/admin/event/${event.id}`}>
+                          <Button variant="outline" size="sm">詳情</Button>
+                        </Link>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

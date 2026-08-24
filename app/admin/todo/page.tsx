@@ -3,6 +3,7 @@
  */
 
 import { listTodos } from '@/extensions/todo/workflow/todo-workflow';
+import { guardExtensionOrRedirect } from '@/app/admin/_components/extension-page-guard';
 import { CreateTodoDialog } from './components/create-todo-dialog';
 import { TodoRowActions } from './components/todo-row-actions';
 import { TodoPriorityBadge } from './components/todo-priority-badge';
@@ -10,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { cn } from '@/lib/utils';
 
 export default async function TodosPage() {
+  await guardExtensionOrRedirect('todo');
   const todos = await listTodos();
   const active = todos.filter((t) => !t.completed);
   const done = todos.filter((t) => t.completed);
@@ -53,7 +55,14 @@ export default async function TodosPage() {
                         )}
                       </div>
                     </div>
-                    <TodoRowActions todoId={todo.id} completed={todo.completed} />
+                    <TodoRowActions
+                      todoId={todo.id}
+                      completed={todo.completed}
+                      initialTitle={todo.title}
+                      initialDescription={todo.description ?? ''}
+                      initialDueDate={todo.dueDate ? todo.dueDate.toISOString() : null}
+                      initialPriority={todo.priority}
+                    />
                   </div>
                 </div>
               ))
@@ -75,7 +84,14 @@ export default async function TodosPage() {
                     <div className="flex-1">
                       <div className="font-medium line-through text-muted-foreground">{todo.title}</div>
                     </div>
-                    <TodoRowActions todoId={todo.id} completed={todo.completed} />
+                    <TodoRowActions
+                      todoId={todo.id}
+                      completed={todo.completed}
+                      initialTitle={todo.title}
+                      initialDescription={todo.description ?? ''}
+                      initialDueDate={todo.dueDate ? todo.dueDate.toISOString() : null}
+                      initialPriority={todo.priority}
+                    />
                   </div>
                 </div>
               ))

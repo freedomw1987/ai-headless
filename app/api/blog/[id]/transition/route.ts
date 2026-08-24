@@ -8,10 +8,13 @@ import {
   type BlogEvent,
 } from '@/extensions/blog/workflow/blog-workflow';
 import { InvalidTransitionError } from '@/lib/state-machine/state-machine';
+import { guardExtensionApi } from '@/lib/extensions/api-guard';
 
 const VALID_EVENTS: BlogEvent[] = ['submit', 'approve', 'reject', 'publish', 'archive'];
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const guard = await guardExtensionApi('blog');
+  if (guard) return guard;
   const { id } = await ctx.params;
   try {
     const body = await req.json();

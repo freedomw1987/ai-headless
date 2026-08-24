@@ -4,13 +4,18 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createEvent, listEvents } from '@/extensions/event/workflow/event-workflow';
+import { guardExtensionApi } from '@/lib/extensions/api-guard';
 
 export async function GET() {
+  const guard = await guardExtensionApi('event');
+  if (guard) return guard;
   const events = await listEvents();
   return NextResponse.json({ events });
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await guardExtensionApi('event');
+  if (guard) return guard;
   try {
     const body = await req.json();
     const event = await createEvent(body);

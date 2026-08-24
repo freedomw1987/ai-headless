@@ -6,6 +6,7 @@
 
 import Link from 'next/link';
 import { listOrders } from '@/extensions/order/workflow/order-workflow';
+import { guardExtensionOrRedirect } from '@/app/admin/_components/extension-page-guard';
 import { CreateOrderDialog } from './components/create-order-dialog';
 import { OrderStatusBadge } from './components/order-status-badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/card';
 
 export default async function OrdersPage() {
+  await guardExtensionOrRedirect('order');
   const orders = await listOrders();
 
   return (

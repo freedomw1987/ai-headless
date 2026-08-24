@@ -5,13 +5,16 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getBlogPost } from '@/extensions/blog/workflow/blog-workflow';
+import { guardExtensionOrRedirect } from '@/app/admin/_components/extension-page-guard';
 import { BlogStatusBadge } from '../components/blog-status-badge';
 import { BlogTransitionButtons } from '../components/blog-transition-buttons';
+import { EditBlogDialog } from '../components/edit-blog-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type Params = { params: Promise<{ id: string }> };
 
 export default async function BlogDetailPage({ params }: Params) {
+  await guardExtensionOrRedirect('blog');
   const { id } = await params;
   let post;
   try { post = await getBlogPost(id); } catch { notFound(); }
@@ -24,7 +27,15 @@ export default async function BlogDetailPage({ params }: Params) {
         </Link>
         <div className="flex items-center justify-between mt-2">
           <h1 className="text-3xl font-bold">{post.title}</h1>
-          <BlogStatusBadge status={post.status} />
+          <div className="flex items-center gap-2">
+            <EditBlogDialog
+              postId={post.id}
+              initialTitle={post.title}
+              initialContent={post.content ?? ''}
+              initialExcerpt={post.excerpt}
+            />
+            <BlogStatusBadge status={post.status} />
+          </div>
         </div>
       </div>
 

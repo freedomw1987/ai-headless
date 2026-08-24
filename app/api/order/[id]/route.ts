@@ -4,10 +4,13 @@
 
 import { NextResponse } from 'next/server';
 import { getOrder, deleteOrder } from '@/extensions/order/workflow/order-workflow';
+import { guardExtensionApi } from '@/lib/extensions/api-guard';
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
+  const guard = await guardExtensionApi('order');
+  if (guard) return guard;
   const { id } = await params;
   try {
     const order = await getOrder(id);
@@ -21,6 +24,8 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
+  const guard = await guardExtensionApi('order');
+  if (guard) return guard;
   const { id } = await params;
   try {
     await deleteOrder(id);

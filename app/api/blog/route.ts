@@ -7,13 +7,18 @@ import {
   createBlogPost,
   listBlogPosts,
 } from '@/extensions/blog/workflow/blog-workflow';
+import { guardExtensionApi } from '@/lib/extensions/api-guard';
 
 export async function GET() {
+  const guard = await guardExtensionApi('blog');
+  if (guard) return guard;
   const posts = await listBlogPosts();
   return NextResponse.json({ posts });
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await guardExtensionApi('blog');
+  if (guard) return guard;
   try {
     const body = await req.json();
     const post = await createBlogPost(body);

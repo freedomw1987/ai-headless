@@ -19,6 +19,7 @@ import { NextResponse } from 'next/server';
 import { transitionOrder } from '@/extensions/order/workflow/order-workflow';
 import { InvalidTransitionError } from '@/lib/state-machine/state-machine';
 import type { OrderEvent } from '@/extensions/order/workflow/order-workflow';
+import { guardExtensionApi } from '@/lib/extensions/api-guard';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -32,6 +33,8 @@ const VALID_EVENTS: OrderEvent[] = [
 ];
 
 export async function POST(request: Request, { params }: Params) {
+  const guard = await guardExtensionApi('order');
+  if (guard) return guard;
   const { id } = await params;
   try {
     const body = await request.json();

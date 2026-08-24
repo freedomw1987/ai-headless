@@ -8,8 +8,11 @@
 
 import { NextResponse } from 'next/server';
 import { createOrder, listOrders } from '@/extensions/order/workflow/order-workflow';
+import { guardExtensionApi } from '@/lib/extensions/api-guard';
 
 export async function GET() {
+  const guard = await guardExtensionApi('order');
+  if (guard) return guard;
   try {
     const orders = await listOrders();
     return NextResponse.json({ orders });
@@ -22,6 +25,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const guard = await guardExtensionApi('order');
+  if (guard) return guard;
   try {
     const body = await request.json();
     const { orderNumber, customer, amount } = body;

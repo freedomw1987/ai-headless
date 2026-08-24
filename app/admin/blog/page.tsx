@@ -4,12 +4,14 @@
 
 import Link from 'next/link';
 import { listBlogPosts } from '@/extensions/blog/workflow/blog-workflow';
+import { guardExtensionOrRedirect } from '@/app/admin/_components/extension-page-guard';
 import { CreateBlogDialog } from './components/create-blog-dialog';
 import { BlogStatusBadge } from './components/blog-status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default async function BlogPage() {
+  await guardExtensionOrRedirect('blog');
   const posts = await listBlogPosts();
   return (
     <div className="space-y-6 p-6">

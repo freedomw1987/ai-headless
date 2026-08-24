@@ -9,8 +9,11 @@ import {
   toggleTodo,
   updateTodo,
 } from '@/extensions/todo/workflow/todo-workflow';
+import { guardExtensionApi } from '@/lib/extensions/api-guard';
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const guard = await guardExtensionApi('todo');
+  if (guard) return guard;
   const { id } = await ctx.params;
   try {
     const todo = await getTodo(id);
@@ -21,6 +24,8 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
 }
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const guard = await guardExtensionApi('todo');
+  if (guard) return guard;
   const { id } = await ctx.params;
   try {
     const body = await req.json();
@@ -35,6 +40,8 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 }
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const guard = await guardExtensionApi('todo');
+  if (guard) return guard;
   const { id } = await ctx.params;
   try {
     await deleteTodo(id);
