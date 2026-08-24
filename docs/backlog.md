@@ -111,7 +111,7 @@
 | **US-204** | User Story | 訂單狀態機 | 訂單狀態：draft → pending_payment → paid → shipped → completed | 8 | SP2 | M1-WS | 🔜 Ready（待 TECH-006 真實應用） |
 | **US-206** | User Story | AI 生成狀態機系統 | 「做訂單管理含狀態機」→ AI 生成 JSON + workflow TS + 測試 | 8 | SP2 | M1 | 📋 Backlog |
 | **TD-306** | Tech Debt | Auth.js v5 整合 | `lib/auth/.gitkeep` 為空 | 5 | SP2 | M2 | ✅ Done |
-| **TECH-006** | Tech Spike | Workflow Engine | StateMachine + DSL + Runtime + API | 8 | SP2 | M1-WS | 🔜 Ready |
+| **TECH-006** | Tech Spike | Workflow Engine | StateMachine + DSL + Runtime + API | 8 | SP2 | M1-WS | ✅ Done（本 session Sprint 7）|
 | **TD-514** | Tech Debt | **CI workflow**（P0）| 加 `.github/workflows/ci.yml`：lint + typecheck + test + Playwright E2E | 2 | SP6 | M0 | ✅ Done（待 push 首次跑驗證）|
 
 ### P1（重要 / 安全）
@@ -119,7 +119,7 @@
 | ID | 類型 | 標題 | 描述 | SP | Sprint | 模組 | 狀態 |
 |----|------|------|------|----|----|------|------|
 | **US-106** | User Story | AI 生成 Extension | 「加留言板 Extension」→ AI 生成 + UI 顯示已安裝 | 8 | SP2 | M6 | 📋 Backlog |
-| **US-107** | User Story | 管理已安裝 Extension | 列出 / 啟用 / 停用 / 查看配置 JSON | 3 | SP2 | M6 | 📋 Backlog |
+| **US-107** | User Story | 管理已安裝 Extension | 列出 / 啟用 / 停用 / 查看配置 JSON | 3 | SP2 | M6 | ✅ Done（盤點 2026-08-24，`/admin/extensions` 完整實作）|
 | **TD-303** | Tech Debt | Tiptap rich text 整合 | `text-long` 欄位目前用 Textarea，應整合 Tiptap WYSIWYG | 3 | SP2 | M3 | ✅ Done（盤點 2026-08-24） |
 | **TD-305** | Tech Debt | Field.relation vs Model.relations 雙軌制 | schema-generator 只支持 `model.relations`，field.relation 無人處理 | 2 | SP2 | M1 | ✅ Done |
 | **TD-401** | Tech Debt | Chat Sidebar 漢堡選單 | <768px 永遠渲染 256px sidebar 擠壓主內容 | 1 | SP4 | M5 | ✅ Done（chat RWD 已完成，盤點 2026-08-24） |
@@ -142,8 +142,8 @@
 | **TD-505** | Tech Debt | Token 使用量追蹤 | OpenAI/Anthropic 回應含 `usage`，目前完全丟棄 | 2 | SP5 | M5 | ✅ Done |
 | **TD-507** | Tech Debt | Tiptap `minimumReleaseAgeExclude` workaround | pnpm 11 升級暫時方案，逐步移除 | 0.5 | SP6 | M6 | 📋 Ready |
 | **TD-508** | Tech Debt | useChatStream → useReducer | functional setState workaround → useReducer + dispatch | 2 | SP6 | M6 | ✅ Done |
-| **TD-511** | Tech Debt | Playwright webServer 設定 | CI 跑 E2E 需手動起 server | 0.5 | SP6 | M6 | 📋 Ready |
-| **TD-513** | Tech Debt | use-chat-sessions.ts 測試 | TD-508 重構未涵蓋 hook 整合測試 | 1 | SP6 | M5 | 📋 Ready |
+| **TD-511** | Tech Debt | Playwright webServer 設定 | CI 跑 E2E 需手動起 server | 0.5 | SP6 | M6 | ✅ Done（盤點 2026-08-24，`PLAYWRIGHT_WEBSERVER=auto` 已實作 + `test:e2e:ci` script）|
+| **TD-513** | Tech Debt | use-chat-sessions.ts 測試 | TD-508 重構未涵蓋 hook 整合測試 | 1 | SP6 | M5 | ✅ Done（盤點 2026-08-24，16 個測試 case 已實作）|
 | **US-S6-2** | User Story | 平板 RWD 優化 | 768-1024px sidebar 太擠 | 1 | SP6 | M6 | 📋 Ready |
 | **TD-515** | Tech Debt | Extension State 持久化用 Prisma | `.extension-state.json` 寫 filesystem，多實例部署狀態不一致（舊 TD-405，已重新編號）| 2 | SP6 | M7 | ✅ Done（Prisma Extension.isEnabled，盤點 2026-08-24） |
 
@@ -153,7 +153,7 @@
 |----|------|------|------|----|----|------|------|
 | **US-108** | User Story | 下載 AI 生成的 JSON | 每個生成的功能旁邊有「下載 JSON」按鈕 | 1 | SP2 | M1 | 📋 Backlog |
 | **US-205** | User Story | 審批請假單 | 狀態機 + 審批佇列 UI | 5 | SP2 | M1-WS | 📋 Backlog |
-| **US-207** | User Story | Blog Extension 加 hook | 混合模式範例：slug 生成、自動 excerpt、發布 action | 3 | SP2 | M3 | 📋 Backlog |
+| **US-207** | User Story | Blog Extension 加 hook | 混合模式範例：slug 生成、自動 excerpt、發布 action | 3 | SP2 | M3 | ✅ Done（盤點 2026-08-24，`extensions/blog/hooks/before-create.ts` 含 slug + excerpt + status 自動生成；發布 action `actions/publish.ts` 已存在）|
 | **TD-304** | Tech Debt | Pipeline Stage 類型安全 | `<TIn=any, TOut=any>` 失去類型保護 | 1 | SP2 | M1 | 📋 Ready |
 | **TD-506** | Tech Debt | ChatSidebar close emoji → icon | 視覺一致性 + 無障礙 | 0.5 | SP5 | M5 | ✅ Done |
 | **TD-509** | Tech Debt | JWT augmentation JSDoc | 解釋 TS quirk：`import type { JWT }` 是 module-load trigger | 0.5 | SP6 | M6 | ✅ Done |
@@ -163,8 +163,8 @@
 
 | ID | 類型 | 標題 | 描述 | SP | 模組 | 狀態 |
 |----|------|------|------|----|------|------|
-| **TECH-003** | Tech Spike | Extension 開發規範 | OpenSpec（MD + JSON Schema + TS Types + 範例）| 5 | M6 | 📋 Backlog |
-| **TECH-004** | Tech Spike | 雙模型抽象層 | OpenAI + Claude interface + Provider 實作 + token 計算 | 3 | M4 | 📋 Ready |
+| **TECH-003** | Tech Spike | Extension 開發規範 | OpenSpec（MD + JSON Schema + TS Types + 範例）| 5 | M6 | ✅ Done（盤點 2026-08-24，`docs/specs/extension-spec.md` 已存在）|
+| **TECH-004** | Tech Spike | 雙模型抽象層 | OpenAI + Claude interface + Provider 實作 + token 計算 | 3 | M4 | ✅ Done（盤點 2026-08-24，`lib/ai/providers/providers.ts` 含 OpenAI + Anthropic 真實串接 + mock fallback）|
 | **EN-301** | Tech Debt | MVP 完成後改進 | CI/CD、測試覆蓋率、Extension Marketplace | 13 | M0 | 🧊 Icebox |
 
 ---
