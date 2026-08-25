@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 17 Stage 1 完成）
+> **最後更新**：2026-08-26（Sprint 17 完成）
 
 ---
 
@@ -23,7 +23,7 @@
 | **Sprint 14** | [**sprint-14.md**](./sprint-14.md) | ✅ | **100%** | ✅ **全綠** | **方向大轉彎：Compiler → Runtime** |
 | **Sprint 15** | [**sprint-15.md**](./sprint-15.md) | ✅ | **78%** (3.5/4.5) | ✅ **全綠** | **移除 apiBase/uiBase + 統一 disable guard + formatters/customRenderers** |
 | **Sprint 16** | [**sprint-16.md**](./sprint-16.md) | ⚠️ partial | **67%** (2/3) | ✅ **全綠** | **list page 改 Server Component + formatter 真實套用 + RWD E2E（customRenderer 客戶端留 Sprint 17）** |
-| **Sprint 17** | [**sprint-17.md**](./sprint-17.md) | ⏳ 進行中 | **54%** (3/5.5) | ✅ **全綠** | **list/detail/form UI 改進（shadcn） + customRenderer 待 Stage 2** |
+| **Sprint 17** | [**sprint-17.md**](./sprint-17.md) | ✅ | **100%** (5.5/5.5) | ✅ **全綠** | **list/detail/form UI 改進（shadcn） + customRenderer 客戶端動態渲染（webpack dynamic import）** |
 
 ---
 
@@ -67,16 +67,19 @@
 
 ---
 
-## 🏆 Sprint 17 Stage 1 重點發現
+## 🏆 Sprint 17 重點發現
 
 - **用戶痛點「UI Raw 丑」100% 解決**：list / detail / form 全面改用 shadcn/ui 元件
 - **新 shadcn 元件**：`Badge`（4 variants）+ `Empty`（6 sub-components）
 - **CardTitle semantic HTML 修正**：`<div>` → `<h3>`（SEO + E2E + a11y）
 - **統一 Lucide icons**（Plus / ChevronRight / Inbox / ArrowLeft / Trash2 / AlertCircle / Loader2 / Play）
 - **統一 shadcn Button variants**（default / outline / destructive / ghost）
-- **37 個新守護測試**（11 + 11 + 15）+ 2 個 Sprint 16 測試更新
-- **技術債進度**：formatter bug 完全消解 + customRenderer JSX 預編譯仍待 Stage 2
-- **Sprint 17 Stage 2 待做**：customRenderer 客戶端動態渲染（2 SP）+ JSX 預編譯 Spike（0.5 SP）
+- **46 個新守護測試**（11 + 11 + 15 + 9）+ 2 個 Sprint 16 測試更新
+- **技術債 100% 消解**：
+  - Sprint 15 Stage 3 formatter bug → Sprint 16 已修
+  - customRenderer JSX 預編譯 → Sprint 17 Stage 2 採用 webpack dynamic import 解決（**零 build step**）
+- **customRenderer 真實渲染**：Event list 進度條 `0/50`、`0/100` 用 next/dynamic + 多候選路徑（kebab + 去掉 render- 前缀）
+- **Sprint 18 待做**：dropdown-menu / pagination / skeleton 元件
 
 ---
 
@@ -91,7 +94,8 @@
 | Typecheck ≠ 真能用 | - | - | ✅ Sprint 13/14 兩次揭露 | ✅ Sprint 15 揭露「Server Component 函數傳遞限制」 | ✅ Sprint 16 揭露「守衛測試只驗結構不等於 runtime 套用」 | ✅ Stage 1.1 CardTitle 是 `<div>` 揭露 SEO 問題 |
 | 守衛檢查演進 | - | - | Sprint 9「每個 spec 都有 disable guard」是 false claim | ✅ Sprint 15「總是 guard」修正 | ✅ Sprint 16 揭露「守衛測試需驗 runtime 執行」 | ✅ 3 個 shadcn UI 守護測試（11+11+15）|
 | SoT 擴展 | - | - | spec.json 是 manifest/API/UI 的 SoT | ✅ spec.json 是 formatter/customRenderer 的 SoT | ✅ spec.json 拆 fnRef 純 fnName 後是 formatter 唯一介面 | ✅ components/ui/ 是 shadcn 元件 SoT |
-| UI 一致性 | - | - | Sprint 13 完成 Order Demo UI | Sprint 15 partial 一致 | Sprint 16 list/detail/form 都是純 HTML | ✅ Sprint 17 Stage 1 全面 shadcn 統一 |
+| UI 一致性 | - | - | Sprint 13 完成 Order Demo UI | Sprint 15 partial 一致 | Sprint 16 list/detail/form 都是純 HTML | ✅ Sprint 17 **完成**（shadcn 統一 + customRenderer 真實渲染）|
+| customRenderer 設計 | - | - | - | ✅ Sprint 15 `{{fn:}}` 語法（partial：僅 server side 跑） | ✅ Sprint 16 揭露 JSX server side require SyntaxError | ✅ Sprint 17 Stage 2 採用 webpack dynamic import（零 build step）|
 
 ---
 

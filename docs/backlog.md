@@ -10,11 +10,11 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 17 — list/detail/form UI 改進 + customRenderer** ✅ Stage 1 完成（3 SP） |
+| **當前 Sprint** | **Sprint 17 — list/detail/form UI 改進 + customRenderer** ✅ 完成 5 / 5.5 SP（Stage 1 + Stage 2，Spike 並入 Stage 2）|
 | **Sprint 16 狀態** | ✅ 100% 收尾（partial 2/3 SP，customRenderer 留 Sprint 17）|
-| **測試基線** | **826 tests / 66 files** / 4 Gate 全綠（783 vitest + 43 E2E）|
-| **下一個 P0** | Sprint 17 Stage 2 — customRenderer 客戶端動態渲染（2 SP） + JSX 預編譯 Spike（0.5 SP）|
-| **路線圖關鍵** | ✅ Stage 1：list/detail/form 全面改 shadcn/ui + customRenderer 待 Stage 2 |
+| **測試基線** | **835 tests / 67 files** / 4 Gate 全綠（792 vitest + 43 E2E）|
+| **下一個 P0** | Sprint 18 規劃（dropdown-menu / pagination / skeleton）|
+| **路線圖關鍵** | ✅ Stage 1：list/detail/form 全面改 shadcn/ui + Stage 2：customRenderer 真實渲染 |
 
 ### Sprint 15 進度（Runtime Spec 精簡化）
 
@@ -63,15 +63,15 @@
 | **Spike** | JSX 預編譯方案評估（tsx-loader / esbuild / swc）| 0.5 | Sprint 16 揭露 |
 | **合計** | | **5.5 SP** | |
 
-### Sprint 17 進度（Stage 1 完成 3 / 5.5 SP）
+### Sprint 17 進度（Stage 1 + Stage 2 完成 5 / 5.5 SP）
 
 | Task | 計劃 | 實際 | 狀態 |
 |---|---|---|---|
 | **Stage 1.1 list** | 1 SP | 1 SP | ✅ commit `096aade`（shadcn Table + Badge + Empty + Button） |
 | **Stage 1.2 detail** | 1 SP | 1 SP | ✅ commit `5d24eed`（shadcn Card + CardHeader/Title/Description + Badge） |
 | **Stage 1.3 form** | 1 SP | 1 SP | ✅ commit `fd32825`（shadcn Input + Textarea + Label + Button） |
-| **Stage 2 customRenderer** | 2 SP | 0 SP | ⏳ 待做（需 JSX 預編譯） |
-| **Spike JSX 預編譯** | 0.5 SP | 0 SP | ⏳ 待做 |
+| **Stage 2 customRenderer** | 2 SP | 2 SP | ✅ commit `dd25cbc`（webpack dynamic import + DynamicRendererCell） |
+| **Spike JSX 預編譯** | 0.5 SP | 0 SP | ✅ 結論：採用 webpack dynamic import（內建），不需預編譯 |
 
 **Sprint 17 Stage 1 完成後測試基線**：
 - vitest: 783 / 66 files（+33 from Sprint 16）
@@ -95,6 +95,18 @@
 - Spike JSX 預編譯方案（esbuild 最可能，因為 Next.js 13+ 內建支援）
 - customRenderer 客戶端動態載入 .tsx component
 - list page 移除 placeholder + 真實渲染 React component
+
+**Sprint 17 Stage 2 Spike 結論**：**採用 webpack dynamic import（內建 swc 編譯）**，不需預編譯 .tsx → .js。理由：
+1. Next.js Turbopack/webpack 已自動打包 `extensions/<spec>/custom-renderers/*.tsx` 為 chunks
+2. `import('@/extensions/...')` + `next/dynamic` + `ssr: false` 即得 lazy load
+3. 零 build step、零配置、零 runtime 改動
+4. 唯一限制：路徑必須 webpack 可分析（不能完全 runtime 動態拼接變數）
+
+**Sprint 17 Stage 2 實作重點**：
+- `components/admin/dynamic-renderer-cell.tsx`：client component + next/dynamic + 多候選路徑
+- 移除 list page placeholder
+- 9 個守護測試（tech-044）
+- Event list 驗證：customRenderer cell 真實渲染進度條 `0/50`、`0/100`
 
 ### Sprint 6 進度
 

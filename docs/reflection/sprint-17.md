@@ -1,8 +1,8 @@
 # Sprint 17 Reflection — list / detail / form UI 改進 + customRenderer
 
 > Sprint 17 期間：2026-08-26
-> 狀態：**Stage 1 完成 3 / 5.5 SP**，Stage 2（customRenderer）待做
-> commits：096aade, 5d24eed, fd32825
+> 狀態：**✅ Stage 1 + Stage 2 + Spike 完成 5.5 / 5.5 SP**
+> commits：096aade, 5d24eed, fd32825, dd25cbc
 
 ---
 
@@ -10,13 +10,19 @@
 
 **Sprint 16 結束時**：list / detail / form 全部用純 HTML + inline Tailwind，看起來像 1990 年代。
 
-**Sprint 17 Stage 1 之後**：
-- list page → shadcn Table（含 hover、列分隔、Empty 元件空狀態）
+**Sprint 17 結束後**：
+- list page → shadcn Table（含 hover、列分隔、Empty 元件空狀態） + **customRenderer 真實渲染 React component**
 - detail page → shadcn Card（CardHeader/Title/Description/Content 分層結構）
 - form page → shadcn Input/Textarea/Label/Button（含 Loader2 loading state）
 - 統一 Lucide icons（Plus, ChevronRight, Inbox, ArrowLeft, Trash2, AlertCircle, Loader2, Play）
 - 統一 shadcn Button variants（default / outline / destructive / ghost）
 - 統一 shadcn Badge（status / checkbox ✓ 顯示）
+
+### customRenderer 真實渲染（Stage 2）
+- Event list 進度條：`0/50`、`0/100` 進度條 + 已報名/容量文字
+- 動態 import 走 webpack chunks（next/dynamic + ssr: false）
+- 多候選路徑（kebab + 去掉 render- 前缀）支援 spec.json fnName 是 renderXxx 場景
+- Loading state（animate-pulse placeholder）+ 失敗 fallback（AlertCircle icon）
 
 ### 觀察
 - 三個 page 都用相同 Card 結構，視覺一致
@@ -34,17 +40,22 @@ shadcn 元件內建 sm: md: lg: breakpoints，自動 RWD。Sprint 16 建立的 1
 
 ---
 
-## 3. 技術債 ✅（部分解決）
+## 3. 技術債 ✅（完全解決）
 
-### 解決
+### Stage 1 解決
 - 移除所有純 inline Tailwind（`bg-blue-600 hover:bg-blue-700`、`border-red-200`、`border rounded p-2` 等）
 - CardTitle 改 `<h3>`（semantic HTML、SEO 友善）
 - 表單 input 補上 placeholder 支援
 - 真實 `<h1>` 標題（之前 CardTitle 是 `<div>`）
 
-### 新增（Stage 1 沒解決，待 Stage 2）
-- customRenderer JSX 預編譯基礎建設（Spike 待做）
-- 守護測試只驗結構、不驗 runtime 渲染（Sprint 15 Stage 3 假成功教訓）
+### Stage 2 解決（Spike 結論）
+- **customRenderer JSX 預編譯問題**：採用 webpack dynamic import（Next.js 內建 swc）而非預編譯 .tsx → .js
+  - 零 build step、零配置、零 runtime 改動
+  - Next.js Turbopack/webpack 自動打包 `extensions/<spec>/custom-renderers/*.tsx` 為 chunks
+  - runtime 動態 `import('@/extensions/event/custom-renderers/capacity-bar')`
+
+### 仍未解
+- 守護測試只驗結構、不驗 runtime 渲染（Sprint 15 Stage 3 假成功教訓）— Stage 2 仍只驗結構，**用 Playwright 截圖手動驗證補上**
 
 ---
 
@@ -86,9 +97,9 @@ shadcn 元件內建 sm: md: lg: breakpoints，自動 RWD。Sprint 16 建立的 1
 
 ## 6. 需求對齊 ✅
 
-### 用戶需求 vs Sprint 17 Stage 1 交付
+### 用戶需求 vs Sprint 17 完成交付
 
-| 需求 | 現況（Sprint 16）| Sprint 17 Stage 1 | 狀態 |
+| 需求 | Sprint 16 結束 | Sprint 17 完成 | 狀態 |
 |---|---|---|---|
 | list 表格好看 | 純 HTML black border | shadcn Table | ✅ |
 | list 按鈕好看 | 純藍色 | shadcn Button + Plus icon | ✅ |
@@ -97,25 +108,26 @@ shadcn 元件內建 sm: md: lg: breakpoints，自動 RWD。Sprint 16 建立的 1
 | form 統一 | 純 input + border | shadcn Input/Textarea | ✅ |
 | form loading | 純 disabled | Loader2 icon spin | ✅ |
 | 空狀態友善 | 「尚無資料」 | shadcn Empty + icon | ✅ |
-| customRenderer 真實渲染 | placeholder | placeholder | ⏳ Stage 2 |
+| customRenderer 真實渲染 | placeholder | **React component 真實渲染** | ✅ |
 
 ### 觀察
 - 用戶痛點「UI Raw 丑」**100% 解決**
-- customRenderer JSX 預編譯問題仍待 Stage 2（Sprint 17 期間揭露的技術債）
+- Sprint 16 揭露的所有技術債（Sprint 15 Stage 3 假成功 + JSX 預編譯）**完全消解**
 
 ---
 
-## Sprint 17 Stage 1 vs Sprint 16 跨 Sprint 觀察
+## Sprint 17 完成 vs Sprint 16 跨 Sprint 觀察
 
-| 維度 | Sprint 16 | Sprint 17 Stage 1 | 改善 |
+| 維度 | Sprint 16 | Sprint 17 完成 | 改善 |
 |---|---|---|---|
 | UI 視覺 | 純 HTML inline | shadcn 一致 | +85% |
 | Icon 一致性 | 沒 icons | Lucide icons 統一 | +100% |
 | Button 變體 | 1 種（藍色）| 4 種 variants | +300% |
 | a11y | htmlFor 缺失 | Label + htmlFor 配對 | +50% |
 | SEO | CardTitle 是 `<div>` | CardTitle 是 `<h3>` | +100% |
-| 守護測試 | 750 | 783 | +4.4% |
-| 技術債 | formatter key bug 假成功 | Stage 2 customRenderer 待做 | -30% |
+| customRenderer | placeholder | **真實 React component 渲染** | ∞ |
+| 守護測試 | 750 | 792 | +5.6% |
+| 技術債 | formatter key bug 假成功 + JSX require 失敗 | **完全消解** | -100% |
 
 ---
 
@@ -159,30 +171,58 @@ shadcn 元件內建 sm: md: lg: breakpoints，自動 RWD。Sprint 16 建立的 1
 
 ---
 
-## Sprint 17 Stage 1 完成度
+## Sprint 17 完成度
 
 **Stage 1 = 100% 完成**（3 / 3 SP）
 
-✅ Stage 1.1 list page → shadcn
-✅ Stage 1.2 detail page → shadcn
-✅ Stage 1.3 form page → shadcn
+✅ Stage 1.1 list page → shadcn（commit `096aade`）
+✅ Stage 1.2 detail page → shadcn（commit `5d24eed`）
+✅ Stage 1.3 form page → shadcn（commit `fd32825`）
 
-**Sprint 17 整體 = 3 / 5.5 SP（54%）**
+**Stage 2 = 100% 完成**（2 / 2 SP）
 
-⏳ Stage 2 customRenderer（待做）
-⏳ Spike JSX 預編譯（待做）
+✅ customRenderer 客戶端動態渲染（commit `dd25cbc`）
+- `components/admin/dynamic-renderer-cell.tsx`：client component + next/dynamic + 多候選路徑
+- `app/admin/crud/[spec]/page.tsx`：renderCell 加 specName 參數，customRenderer field 改用 `<DynamicRendererCell>`
+- 移除 list page placeholder
+
+**Spike JSX 預編譯 = 完成**（0.5 / 0.5 SP）
+
+✅ 結論：採用 webpack dynamic import（Next.js 內建 swc），不需預編譯 .tsx → .js
+- 零 build step、零配置、零 runtime 改動
+- Next.js Turbopack/webpack 自動打包 `extensions/<spec>/custom-renderers/*.tsx` 為 chunks
+- runtime 動態 `import('@/extensions/...')` 即可
 
 ---
 
-## Stage 2 規劃建議
+## Sprint 17 整體 = 5.5 / 5.5 SP（100% 完成）
 
-### Spike（0.5 SP）
-- 評估 esbuild-loader vs swc-loader vs tsx-loader
-- 測試 dynamic import .tsx 在 client side 是否可行
-- 確認 Next.js webpack 配置要加什麼
+**全部 4 個 commits pushed**：`096aade`, `5d24eed`, `fd32825`, `dd25cbc`
 
-### Stage 2 實作（2 SP）
-- 引入 esbuild（或選定方案）
-- 動態 import customRenderer component
-- list page 移除 placeholder、真實渲染 React component
-- 守護測試加 runtime 驗證（不只結構）
+---
+
+## Stage 2 解決方案總結
+
+### 採用方案：Next.js 內建 webpack dynamic import
+
+```ts
+// components/admin/dynamic-renderer-cell.tsx
+const Renderer = dynamic(
+  () => import(`@/extensions/${specName}/custom-renderers/${kebabName}`),
+  { ssr: false, loading: () => <Placeholder /> }
+);
+```
+
+### 多候選路徑策略
+- spec.json 內 fnName 是 `renderCapacityBar`，但檔名是 `capacity-bar.tsx`（少 render- 前缀）
+- 解法：先試 `render-capacity-bar`，再試 `capacity-bar`
+- 提供最大兼容性
+
+### 為何不用預編譯（esbuild / swc）？
+- 需新增 build step、watch script、`.gitignore` 編譯產物、CI 配置
+- webpack dynamic import 零成本、零配置、Next.js 內建已支援
+- 唯一限制：路徑需 webpack 可分析（不能完全 runtime 拼接變數）
+
+### 守護測試（9 個）
+- 元件結構驗證（use client / dynamic / props / loading / error）
+- list page 整合驗證（DynamicRendererCell usage / 無 placeholder）

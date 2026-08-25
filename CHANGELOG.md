@@ -678,13 +678,44 @@ Sprint 16 完成 **Stage 1**（TECH-038b list formatter）和 **Stage 2**（TECH
 
 ### Sprint 17 測試基線
 
-| 項目 | Sprint 16 結束 | Sprint 17 Stage 1 |
+| 項目 | Sprint 16 結束 | Sprint 17 Stage 1 | Sprint 17 Stage 2 |
+|---|---|---|---|
+| vitest | 750 / 63 | **783 / 66**（+33）| **792 / 67**（+9）|
+| E2E | 43 | 43 | 43 |
+| Typecheck | ✅ 綠 | ✅ 綠 | ✅ 綠 |
+| UI 一致性 | 純 HTML + inline Tailwind | shadcn Table / Card / Input / Button / Badge / Empty 統一 | shadcn 統一 + customRenderer 真實渲染 |
+| customRenderer | placeholder（顯示 [fieldName]）| placeholder | **真實渲染 React component**（webpack dynamic import）|
+
+#### Sprint 17 Stage 2 — customRenderer 客戶端動態渲染（commit `dd25cbc`）
+
+**Sprint 16 Stage 1 揭露的問題**：customRenderer 用 placeholder（顯示 `[capacityBar]`），JSX server side `require()` 失敗（SyntaxError）。
+
+**Spike 結論**：選用 **webpack dynamic import**（Next.js 內建 swc）而非預編譯 .tsx → .js（避免 build step 複雜性）。
+- Next.js Turbopack/webpack 自動打包 `extensions/<spec>/custom-renderers/*.tsx` 為 chunks
+- runtime 動態 `import('@/extensions/event/custom-renderers/capacity-bar')`
+- 支援 `ssr: false`（client only）+ loading placeholder + 失敗 fallback
+
+**實作**：
+- **`components/admin/dynamic-renderer-cell.tsx`** 新增（client component）：
+  - `next/dynamic` + `ssr: false` 確保 client only + lazy load
+  - 多候選路徑（kebab + 去掉 `render-` 前缀）— 支援 spec.json 內 fnName 是 `renderXxx` 但檔名是 `xxx`
+  - loading state：placeholder + `animate-pulse`
+  - 失敗 fallback：AlertCircle icon + 「載入失敗」title + console.error 詳細 log
+- **`app/admin/crud/[spec]/page.tsx`**：`renderCell` 加 specName 參數；customRenderer field 改用 `<DynamicRendererCell>`（移除 placeholder）
+- **`tests/integration/tech-044-custom-renderer-client.test.ts`**：9 守護測試
+
+**驗證**：Event list customRenderer cell 真實渲染進度條（`0/50`, `0/100`），不再依賴 placeholder。
+
+### Sprint 17 完整測試基線
+
+| 項目 | Sprint 16 結束 | Sprint 17 完成 |
 |---|---|---|
-| vitest | 750 / 63 | **783 / 66**（+33）|
+| vitest | 750 / 63 | **792 / 67**（+42）|
 | E2E | 43 | 43 |
 | Typecheck | ✅ 綠 | ✅ 綠 |
-| UI 一致性 | 純 HTML + inline Tailwind（看起來像 1990 年代）| shadcn Table / Card / Input / Button / Badge / Empty 統一 |
-| Sprint 17 待做 | — | customRenderer 客戶端動態渲染（需 JSX 預編譯） |
+| UI 一致性 | 純 HTML inline | shadcn 統一 |
+| customRenderer | placeholder | **真實渲染** |
+| commits | — | `096aade` + `5d24eed` + `fd32825` + `dd25cbc` |
 
 ---
 
