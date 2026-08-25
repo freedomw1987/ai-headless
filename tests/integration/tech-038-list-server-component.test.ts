@@ -46,10 +46,11 @@ describe('Sprint 16 TECH-038 — list page Server Component 重構', () => {
       expect(content).not.toMatch(/loadCustomRenderers/);
     });
 
-    it('在 server side 渲染表格（tbody 內含 cells）', () => {
+    it('在 server side 渲染表格（TableBody 內含 TableCell）', () => {
+      // Sprint 17 Stage 1.1：改用 shadcn Table 元件，不再用純 HTML tbody/td
       const content = readFileSync(PAGE_PATH, 'utf-8');
-      expect(content).toMatch(/<tbody/);
-      expect(content).toMatch(/<td\b/);
+      expect(content).toMatch(/<TableBody/);
+      expect(content).toMatch(/<TableCell/);
     });
 
     it('「檢視」連結保留（不刪除既有導航功能）', () => {
@@ -76,10 +77,10 @@ describe('Sprint 16 TECH-038 — list page Server Component 重構', () => {
       expect(content).toMatch(/formatter/);
     });
 
-    it('customRenderer field 顯示 placeholder + 註明 Sprint 16 Stage 2', () => {
+    it('customRenderer field 顯示 placeholder + 註明 Sprint 17 Stage 2', () => {
       const content = readFileSync(PAGE_PATH, 'utf-8');
       expect(content).toMatch(/customRenderer/);
-      expect(content).toMatch(/Sprint 16 Stage 2/);
+      expect(content).toMatch(/Sprint 17 Stage 2/);
     });
   });
 });

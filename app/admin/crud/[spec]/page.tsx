@@ -1,5 +1,6 @@
 // Sprint 14 TECH-034 — Dynamic List Page（Server Component）
 // Sprint 16 TECH-038a + 038b — list page 完整 Server Component + formatter + customRenderer
+// Sprint 17 Stage 1.1 — list page UI 改進（用 shadcn/ui 元件）
 //
 // 從 spec 動態組裝 admin 列表頁。
 // URL: /admin/crud/<spec>
@@ -12,11 +13,16 @@
 // Sprint 16 架構改變：整個 list page 為 Server Component
 // - server side fetch items via createDynamicHandlers
 // - server side 套用 formatter（純函數）
-// - server side 呼叫 customRenderer（React component，inline 渲染）
 // - 沒有任何 client JS bundle（page 載入更快）
+//
+// Sprint 17 UI 改進：
+// - 改用 shadcn Table / Button / Badge / Card / Empty 元件
+// - 標題區改 Card 包裝，表格加 hover 效果
+// - 空狀態改 Empty 元件（含 icon + 說明）
 
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { Plus, ChevronRight, Inbox } from 'lucide-react';
 import { auth } from '@/lib/auth/config';
 import { hasPermission } from '@/lib/auth/rbac';
 import { loadSpec, listAvailableSpecs } from '@/lib/runtime/spec-loader';
@@ -25,6 +31,25 @@ import { createDynamicHandlers } from '@/lib/runtime/dynamic-handler';
 import { loadFormatters } from '@/lib/runtime/extension-loaders';
 import { getRequiredExtension } from '@/lib/specs/extension-derive';
 import { isExtensionEnabledByName } from '@/lib/extensions/extension-enabled';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from '@/components/ui/empty';
 import type { ListUIConfig } from '@/lib/runtime/ui-config';
 import type { FormatterFn } from '@/lib/runtime/extension-loaders';
 
@@ -35,7 +60,7 @@ type PageProps = {
 export default async function DynamicCrudPage({ params }: PageProps) {
   const { spec: specName } = await params;
 
-  // 1. Session check（admin 才進）
+  // 1. Session check
   const session = await auth();
   if (!session?.user) {
     redirect(`/admin/login?callbackUrl=/admin/crud/${specName}`);
@@ -43,7 +68,6 @@ export default async function DynamicCrudPage({ params }: PageProps) {
 
   // 2. Permission check
   if (!hasPermission(session.user.role, 'user.manage')) {
-    // viewer 也擋（admin only）
     return <div className="p-6">權限不足</div>;
   }
 
@@ -55,7 +79,7 @@ export default async function DynamicCrudPage({ params }: PageProps) {
     notFound();
   }
 
-  // 4. Disable guard — Sprint 15 TECH-040：從 spec.name 推導
+  // 4. Disable guard
   const extName = getRequiredExtension(spec);
   const enabled = await isExtensionEnabledByName(extName);
   if (!enabled) {
@@ -69,7 +93,7 @@ export default async function DynamicCrudPage({ params }: PageProps) {
     );
   }
 
-  // 5. Server side: 載入 UI config + formatters + customRenderers
+  // 5. Server side: 載入 UI config + formatters
   const uiConfig = buildListUIConfig(spec);
   const formatters = await loadFormatters(spec);
 
@@ -83,7 +107,7 @@ export default async function DynamicCrudPage({ params }: PageProps) {
   });
   const items = (listResult.data as { items?: unknown[] } | undefined)?.items ?? [];
 
-  // 7. 預渲染每個 cell（formatter > 預設）
+  // 7. 預渲染每個 cell
   const rows = items.map((raw) => {
     const item = raw as Record<string, unknown>;
     return {
@@ -93,51 +117,74 @@ export default async function DynamicCrudPage({ params }: PageProps) {
   });
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">{uiConfig.title}</h1>
-        <Link
-          href={`/admin/crud/${specName}/new`}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          新增
-        </Link>
+    <div className="space-y-6">
+      {/* 頁面標題 + 操作區（h1 給 SEO/a11y） */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{uiConfig.title}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            共 {items.length} 筆資料
+          </p>
+        </div>
+        <Button asChild>
+          <Link href={`/admin/crud/${specName}/new`}>
+            <Plus />
+            新增
+          </Link>
+        </Button>
       </div>
 
+      {/* 表格 / 空狀態 */}
       {items.length === 0 ? (
-        <div className="text-gray-500">尚無資料</div>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Inbox />
+            </EmptyMedia>
+            <EmptyTitle>尚無資料</EmptyTitle>
+            <EmptyDescription>
+              目前沒有任何{uiConfig.title}資料，點擊右上角「新增」建立第一筆
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button asChild>
+              <Link href={`/admin/crud/${specName}/new`}>
+                <Plus />
+                新增{uiConfig.title}
+              </Link>
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : (
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-50">
-              {uiConfig.fields.map((f) => (
-                <th key={f.name} className="border p-2 text-left text-sm font-medium">
-                  {f.label}
-                </th>
-              ))}
-              <th className="border p-2 text-left text-sm font-medium">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id}>
-                {row.cells.map((cell, idx) => (
-                  <td key={idx} className="border p-2">
-                    {cell}
-                  </td>
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {uiConfig.fields.map((f) => (
+                  <TableHead key={f.name}>{f.label}</TableHead>
                 ))}
-                <td className="border p-2">
-                  <Link
-                    href={`/admin/crud/${specName}/${row.id}`}
-                    className="text-blue-600 hover:underline"
-                  >
-                    檢視
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                <TableHead className="w-[100px] text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.cells.map((cell, idx) => (
+                    <TableCell key={idx}>{cell}</TableCell>
+                  ))}
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`/admin/crud/${specName}/${row.id}`}>
+                        檢視
+                        <ChevronRight />
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   );
@@ -145,15 +192,14 @@ export default async function DynamicCrudPage({ params }: PageProps) {
 
 // ==============================================
 // 渲染優先級（server side）：formatter > 預設
-// customRenderer 是 React component，require() 不能解析 JSX
-// 留待 Sprint 16 Stage 2（TECH-038a）以 client dynamic import 機制處理
+// customRenderer 留 Sprint 17 Stage 2 處理
 // ==============================================
 function renderCell(
   item: Record<string, unknown>,
   field: ListUIConfig['fields'][number],
   formatters: Record<string, FormatterFn>,
 ): React.ReactNode {
-  // 1. formatter（field-level）— Sprint 16 TECH-038b：list page formatter 完整支援
+  // 1. formatter（field-level）
   if (field.formatter) {
     const formatter = formatters[field.name];
     if (formatter) {
@@ -161,20 +207,24 @@ function renderCell(
     }
   }
 
-  // 2. customRenderer — Sprint 16 Stage 2 才支援（Sprint 16 Stage 1 只完成 formatter）
+  // 2. customRenderer placeholder
   if (field.customRenderer) {
     return (
       <span
-        className="text-xs text-gray-400 italic"
-        title={`customRenderer "${field.customRenderer}" 尚未在 list page 套用（Sprint 16 Stage 2）`}
+        className="text-xs text-muted-foreground italic"
+        title={`customRenderer "${field.customRenderer}" 尚未在 list page 套用（Sprint 17 Stage 2）`}
       >
         [{field.name}]
       </span>
     );
   }
 
-  // 3. 預設
-  return renderCellValue(item[field.name], field.inputType);
+  // 3. 預設（含 status 自動用 Badge 渲染）
+  const value = item[field.name];
+  if (field.inputType === 'checkbox') {
+    return value ? <Badge variant="default">✓</Badge> : null;
+  }
+  return renderCellValue(value, field.inputType);
 }
 
 function renderCellValue(value: unknown, inputType: string): string {
@@ -189,7 +239,7 @@ function renderCellValue(value: unknown, inputType: string): string {
   }
 }
 
-// 為了 static analysis — 不實際 export，但讓 Next.js 知道這個 page 是 dynamic
+// 為了 static analysis
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
