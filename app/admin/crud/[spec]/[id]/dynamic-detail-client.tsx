@@ -1,16 +1,26 @@
 'use client';
 
 // Sprint 14 TECH-034 — Dynamic Detail Client
+// Sprint 17 Stage 1.2 — detail page UI 改進（用 shadcn/ui 元件）
 //
 // 動態組裝詳情頁 + workflow transitions。
 //
 // Sprint 15 TECH-038：formatter 在 server side（detail page）已套用，client 只接 formattedValues map
-// 不再傳函數（Server Component 不能傳函數給 Client Component）
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, Trash2, Play, AlertCircle } from 'lucide-react';
 import type { DetailUIConfig } from '@/lib/runtime/ui-config';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 type Props = {
   config: DetailUIConfig;
@@ -35,7 +45,7 @@ export function DynamicDetailClient({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialItem !== null) return; // 已有 initial，跳過 fetch
+    if (initialItem !== null) return;
     let cancelled = false;
     setLoading(true);
     fetch(`/api/crud/${specName}?id=${id}`)
@@ -84,62 +94,130 @@ export function DynamicDetailClient({
     }
   };
 
-  if (loading) return <div className="p-6">載入中…</div>;
-  if (!item) return <div className="p-6">載入失敗：{error ?? 'Not found'}</div>;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="pt-6 text-sm text-muted-foreground">
+            載入中…
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+              <div>
+                <p className="font-medium">載入失敗</p>
+                <p className="text-sm text-muted-foreground">{error ?? 'Not found'}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">{config.title}</h1>
-        <div className="flex gap-2">
-          <Link
-            href={`/admin/crud/${specName}`}
-            className="px-3 py-1 border rounded hover:bg-gray-50"
-          >
-            ← 返回列表
-          </Link>
-          <button
-            onClick={handleDelete}
-            className="px-3 py-1 border border-red-200 text-red-600 rounded hover:bg-red-50"
-          >
-            刪除
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      {/* 標題 + 操作區（Card） */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle className="text-2xl">{config.title}</CardTitle>
+              <CardDescription>
+                {specName} · ID {id}
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button asChild variant="outline">
+                <Link href={`/admin/crud/${specName}`}>
+                  <ArrowLeft />
+                  返回列表
+                </Link>
+              </Button>
+              <Button variant="destructive" onClick={handleDelete}>
+                <Trash2 />
+                刪除
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
+      {/* 錯誤訊息 */}
       {error && (
-        <div className="p-3 mb-4 bg-red-50 border border-red-200 rounded text-sm">
-          {error}
-        </div>
+        <Card className="border-destructive/50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+              <p className="text-sm">{error}</p>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      <dl className="space-y-3">
-        {config.fields.map((field) => (
-          <div key={field.name} className="flex border-b pb-2">
-            <dt className="w-40 text-gray-600">{field.label}</dt>
-            <dd className="flex-1">
-              {formattedValues[field.name] ?? formatValue(item[field.name])}
-            </dd>
+      {/* 欄位列表（Card 包裝） */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">詳細資料</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="divide-y">
+            {config.fields.map((field) => {
+              const rawValue = item[field.name];
+              const display = formattedValues[field.name] ?? formatValue(rawValue);
+              return (
+                <div
+                  key={field.name}
+                  className="grid grid-cols-3 gap-4 py-3 first:pt-0 last:pb-0"
+                >
+                  <dt className="text-sm font-medium text-muted-foreground">
+                    {field.label}
+                  </dt>
+                  <dd className="col-span-2 text-sm">
+                    {field.inputType === 'checkbox' ? (
+                      rawValue ? <Badge>✓</Badge> : <Badge variant="secondary">—</Badge>
+                    ) : (
+                      display
+                    )}
+                  </dd>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </dl>
+        </CardContent>
+      </Card>
 
+      {/* Workflow Transitions */}
       {config.transitions.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-lg font-medium mb-3">Workflow Transitions</h2>
-          <div className="flex gap-2 flex-wrap">
-            {config.transitions.map((t) => (
-              <button
-                key={t.to}
-                onClick={() => handleTransition(t.event)}
-                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                data-testid={`transition-${t.to}`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Workflow Transitions</CardTitle>
+            <CardDescription>變更此資料的狀態</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 flex-wrap">
+              {config.transitions.map((t) => (
+                <Button
+                  key={t.to}
+                  onClick={() => handleTransition(t.event)}
+                  data-testid={`transition-${t.to}`}
+                >
+                  <Play />
+                  {t.label}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
