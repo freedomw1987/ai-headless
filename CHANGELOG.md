@@ -717,6 +717,36 @@ Sprint 16 完成 **Stage 1**（TECH-038b list formatter）和 **Stage 2**（TECH
 | customRenderer | placeholder | **真實渲染** |
 | commits | — | `096aade` + `5d24eed` + `fd32825` + `dd25cbc` |
 
+### Sprint 18 — CRUD 編輯功能 + 三個 shadcn 元件（commits `6e047c8`, `1371249`, `4892997`）
+
+**用戶反映 Sprint 14-17 CRUD 缺少 update 功能**（雖 PUT API 一直存在但前端沒入口），加上規劃內的 3 個 shadcn 元件。
+
+#### Stage 1 — CRUD 編輯功能（commit `6e047c8`）
+
+- `app/admin/crud/[spec]/[id]/edit/page.tsx` 新增（Server Component）
+  - loadSpec + 載入既有 record → DynamicFormClient (mode='edit', initialData=record)
+  - 重用 Sprint 14 form 邏輯 + Sprint 17 shadcn UI（零新 UI 程式碼）
+- list page + detail page 加「編輯」按鈕（Sprint 18 Stage 2 改用 DropdownMenu）
+- 守護測試 +15（9 edit page + 6 編輯按鈕）
+
+#### Stage 2 — 三個 shadcn 元件
+
+| Commit | 元件 | 範圍 |
+|---|---|---|
+| `1371249` | **dropdown-menu** | shadcn 標準 14 sub-components + `ListRowActions` (client component) 包裝 list page 的「⋯」三動作（檢視/編輯/刪除）|
+| `4892997` | **pagination** | shadcn 標準 7 sub-components + `ListPaginationNav` (client side 分頁，不動後端 API)|
+| (c6) | **skeleton** | shadcn 標準 + detail page loading state 從「載入中…」改為 4 個 Skeleton |
+
+### Sprint 18 完整測試基線
+
+| 項目 | Sprint 17 完成 | Sprint 18 完成 |
+|---|---|---|
+| vitest | 792 / 67 | **828 / 72**（+36）|
+| E2E | 43 | 43 |
+| Typecheck | ✅ 綠 | ✅ 綠 |
+| CRUD 完整度 | Create + Read（缺 Update）| **Create + Read + Update** 完整 |
+| shadcn 元件 | Table / Card / Button / Badge / Empty / Input / Textarea / Label | **+ DropdownMenu / Pagination / Skeleton** |
+
 ---
 
 ## Sprint 1 Review Fixes（7 SP）

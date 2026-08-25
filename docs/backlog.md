@@ -10,11 +10,11 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 17 — list/detail/form UI 改進 + customRenderer** ✅ 完成 5 / 5.5 SP（Stage 1 + Stage 2，Spike 並入 Stage 2）|
-| **Sprint 16 狀態** | ✅ 100% 收尾（partial 2/3 SP，customRenderer 留 Sprint 17）|
-| **測試基線** | **835 tests / 67 files** / 4 Gate 全綠（792 vitest + 43 E2E）|
-| **下一個 P0** | Sprint 18 規劃（dropdown-menu / pagination / skeleton）|
-| **路線圖關鍵** | ✅ Stage 1：list/detail/form 全面改 shadcn/ui + Stage 2：customRenderer 真實渲染 |
+| **當前 Sprint** | **Sprint 18 — CRUD 編輯功能 + 三個 shadcn 元件** ✅ 完成 6.5 / 6.5 SP |
+| **Sprint 17 狀態** | ✅ 100% 收尾（5.5/5.5 SP）|
+| **測試基線** | **871 tests / 72 files** / 4 Gate 全綠（828 vitest + 43 E2E）|
+| **下一個 P0** | Sprint 19 規劃（list page 整合 ListPaginationNav / server side 分頁）|
+| **路線圖關鍵** | ✅ CRUD 完整（Create + Read + **Update**）+ shadcn DropdownMenu/Pagination/Skeleton 元件齊全 |
 
 ### Sprint 15 進度（Runtime Spec 精簡化）
 
@@ -63,15 +63,14 @@
 | **Spike** | JSX 預編譯方案評估（tsx-loader / esbuild / swc）| 0.5 | Sprint 16 揭露 |
 | **合計** | | **5.5 SP** | |
 
-### Sprint 17 進度（Stage 1 + Stage 2 完成 5 / 5.5 SP）
+### Sprint 18 進度（完成 6.5 / 6.5 SP）
 
 | Task | 計劃 | 實際 | 狀態 |
 |---|---|---|---|
-| **Stage 1.1 list** | 1 SP | 1 SP | ✅ commit `096aade`（shadcn Table + Badge + Empty + Button） |
-| **Stage 1.2 detail** | 1 SP | 1 SP | ✅ commit `5d24eed`（shadcn Card + CardHeader/Title/Description + Badge） |
-| **Stage 1.3 form** | 1 SP | 1 SP | ✅ commit `fd32825`（shadcn Input + Textarea + Label + Button） |
-| **Stage 2 customRenderer** | 2 SP | 2 SP | ✅ commit `dd25cbc`（webpack dynamic import + DynamicRendererCell） |
-| **Spike JSX 預編譯** | 0.5 SP | 0 SP | ✅ 結論：採用 webpack dynamic import（內建），不需預編譯 |
+| **Stage 1 编辑 page** | 1.5 SP | 1.5 SP | ✅ commit `6e047c8`（edit page + list/detail 編輯按鈕） |
+| **Stage 2.1 dropdown-menu** | 1.5 SP | 1.5 SP | ✅ commit `1371249`（shadcn 14 sub-components + ListRowActions） |
+| **Stage 2.2 pagination** | 1 SP | 1 SP | ✅ commit `4892997`（shadcn 7 sub-components + ListPaginationNav） |
+| **Stage 2.3 skeleton** | 0.5 SP | 0.5 SP | ✅ commit (c6)（shadcn Skeleton + detail loading state） |
 
 **Sprint 17 Stage 1 完成後測試基線**：
 - vitest: 783 / 66 files（+33 from Sprint 16）
