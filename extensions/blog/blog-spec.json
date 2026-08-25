@@ -4,6 +4,24 @@
   "apiBase": "/api/blog",
   "uiBase": "/admin/blog",
   "requiresExtension": "blog",
+  "workflows": [
+    {
+      "name": "blogPost",
+      "initialState": "draft",
+      "states": {
+        "draft": { "label": "草稿", "badge": "default" },
+        "pending": { "label": "審核中", "badge": "warning" },
+        "published": { "label": "已發布", "badge": "success" },
+        "archived": { "label": "已封存", "badge": "danger" }
+      },
+      "transitions": [
+        { "from": "draft", "to": "pending" },
+        { "from": "pending", "to": "published" },
+        { "from": "pending", "to": "draft" },
+        { "from": "published", "to": "archived" }
+      ]
+    }
+  ],
   "models": [
     {
       "name": "BlogPost",

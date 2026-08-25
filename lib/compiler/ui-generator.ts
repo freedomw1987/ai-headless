@@ -488,12 +488,65 @@ export default function ${model.name}CreatePage() {
 // Edit Page
 // ==============================================
 
-function generateEditPage(spec: JsonSpec, model: Model): GeneratedPage {
+// ==============================================
+// Sprint 12 TECH-024 — Workflow Transition Buttons
+// ==============================================
+/**
+ * 從 JsonSpec.workflow（或 model.workflows）生 transition buttons 區塊
+ */
+function generateTransitionButtonsCode(
+  model: Model,
+  workflow: import('@/lib/specs/json-spec.types').Workflow,
+  kebabName: string,
+): string {
+  const stateSchema = {
+    id: workflow.name,
+    initial: workflow.initialState,
+    states: Object.fromEntries(
+      Object.entries(workflow.states).map(([key, sc]) => [
+        key,
+        {
+          on: Object.fromEntries(
+            workflow.transitions
+              .filter((t) => (Array.isArray(t.from) ? t.from.includes(key) : t.from === key))
+              .map((t) => [t.to, t.to]),
+          ),
+        },
+      ]),
+    ),
+  };
+
+  const schemaCode = JSON.stringify(stateSchema, null, 2);
+
+  return `
+      {form.status && (
+        <div className="mt-8 p-4 border rounded-lg bg-muted/30">
+          <h3 className="text-sm font-medium mb-3">狀態轉換</h3>
+          <TransitionButtons
+            schema={${schemaCode}}
+            currentStatus={String(form.status)}
+            resourceId={params.id}
+            endpoint="/api/crud/${kebabName}/{id}/transition"
+            onSuccess={() => router.refresh()}
+          />
+        </div>
+      )}`;
+}
+
+export function generateEditPage(spec: JsonSpec, model: Model): GeneratedPage {
   const kebabName = modelToKebab(model.name);
   const label = model.label ?? model.name;
   const editableFields = model.fields.filter(
     (f) => !f.ui?.hidden && f.ui?.editable !== false && !f.ui?.readonly,
   );
+
+  // Sprint 12 TECH-024: workflow transition buttons
+  // 取 model 第一個 workflow（或其他關聯）；沒或沒 transitions 則跳過
+  const workflow = (model.workflows ?? spec.workflows ?? [])[0];
+  const transitionButtons =
+    workflow && workflow.transitions.length > 0
+      ? generateTransitionButtonsCode(model, workflow, kebabName)
+      : '';
 
   // 生成 relation 欄位（belongsTo）— 使用 RelationSelect 自動從 API 載入選項
   const relationFields = (model.relations ?? [])
@@ -620,7 +673,7 @@ export default function ${model.name}EditPage() {
           <Button type="submit" disabled={submitting}>{submitting ? '處理中...' : '儲存'}</Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>取消</Button>
         </div>
-      </form>
+      </form>${transitionButtons}
     </div>
   );
 }
