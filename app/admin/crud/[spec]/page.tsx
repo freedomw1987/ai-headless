@@ -50,6 +50,7 @@ import {
   EmptyDescription,
   EmptyContent,
 } from '@/components/ui/empty';
+import { DynamicRendererCell } from '@/components/admin/dynamic-renderer-cell';
 import type { ListUIConfig } from '@/lib/runtime/ui-config';
 import type { FormatterFn } from '@/lib/runtime/extension-loaders';
 
@@ -112,7 +113,7 @@ export default async function DynamicCrudPage({ params }: PageProps) {
     const item = raw as Record<string, unknown>;
     return {
       id: item.id as string,
-      cells: uiConfig.fields.map((f) => renderCell(item, f, formatters)),
+      cells: uiConfig.fields.map((f) => renderCell(item, f, formatters, specName)),
     };
   });
 
@@ -191,13 +192,13 @@ export default async function DynamicCrudPage({ params }: PageProps) {
 }
 
 // ==============================================
-// 渲染優先級（server side）：formatter > 預設
-// customRenderer 留 Sprint 17 Stage 2 處理
+// 渲染優先級（server side）：formatter > customRenderer > 預設
 // ==============================================
 function renderCell(
   item: Record<string, unknown>,
   field: ListUIConfig['fields'][number],
   formatters: Record<string, FormatterFn>,
+  specName: string,
 ): React.ReactNode {
   // 1. formatter（field-level）
   if (field.formatter) {
@@ -207,15 +208,14 @@ function renderCell(
     }
   }
 
-  // 2. customRenderer placeholder
+  // 2. customRenderer（Sprint 17 Stage 2 — 動態載入 React component）
   if (field.customRenderer) {
     return (
-      <span
-        className="text-xs text-muted-foreground italic"
-        title={`customRenderer "${field.customRenderer}" 尚未在 list page 套用（Sprint 17 Stage 2）`}
-      >
-        [{field.name}]
-      </span>
+      <DynamicRendererCell
+        specName={specName}
+        rendererName={field.customRenderer}
+        record={item}
+      />
     );
   }
 
