@@ -326,16 +326,6 @@ export type JsonSpec = {
   /** 標籤（用於分類、搜尋）*/
   tags?: string[];
   /**
-   * @deprecated Sprint 14 起所有 CRUD 統一走 `/api/crud/<spec>`
-   * 保留欄位以向後兼容舊 spec.json，但 runtime 已忽略
-   */
-  apiBase?: string;
-  /**
-   * @deprecated Sprint 14 起所有 UI 統一走 `/admin/crud/<spec>`
-   * 保留欄位以向後兼容舊 spec.json，但 runtime 已忽略
-   */
-  uiBase?: string;
-  /**
    * Extension 名稱（如 'blog'），啟用 Disable Guard
    * 設了之後，compiler 生成的 API route 會自動呼叫 `guardExtensionApi(name)`
    * 未啟用 extension 時 API 返 403
