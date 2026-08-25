@@ -12,7 +12,7 @@
 2. **Convention over Configuration** —— 框架有強約定，AI 不用記住所有規則
 3. **Extension 是 first-class** —— Extension 不是 hack，是框架核心
 4. **混合模式（JSON + Extension Code）** —— **不是所有業務邏輯都能 JSON 表達**。簡單 CRUD 由 JSON 自動生成，複雜業務邏輯（狀態機、計算、副作用、外部整合）由 Extension 代碼表達，**AI 同時生成 JSON 和 Extension 代碼**。詳見 §13。
-5. **AI 是 Compiler + Author** —— AI 不只翻譯 JSON，還能「從零寫」Extension 程式碼（hook、computed、state machine、API 整合），因為 pi agent 能完整生成 TypeScript 代碼。
+5. **AI 是 Spec Author** —— AI 透過自然語言生成 JSON 規格（`spec.json`）和 Extension 程式碼（hook、computed、state machine、API 整合），因為 pi agent 能完整生成 TypeScript 代碼。**Runtime 層負責直譯** spec（Sprint 14 起），AI 不再負責生成 Prisma schema / API route。
 6. **TypeScript 全棧** —— 類型從 JSON Schema → TS Types → Prisma → Next.js 一路打通
 7. **pi agent 是 AI 執行者** —— AI Pipeline 用 pi agent 驅動（不直接呼叫 LLM API），因為 pi agent 讀過所有規範、會跑 SOP Gate、能自我迭代。詳見 §6。
 
@@ -68,11 +68,11 @@
        │                │        │  └────────────────┘  │
        │                │        │  ┌────────────────┐  │
        │                │        │  │ JSON           │  │
-│                │        │  │ Generator       │  │ │
+│                │        │  │ Spec Author    │  │ │
        │                │        │  └────────────────┘  │
        │                │        │  ┌────────────────┐  │
-       │                │        │  │ Code           │  │
-       │                │        │  │ Compiler       │  │
+       │                │        │  │ Runtime        │  │
+       │                │        │  │ Handler        │  │
        │                │        │  └────────────────┘  │
        │                │        └──────────────────────┘
        │                │                  │
@@ -101,7 +101,7 @@
 | Module | 路徑 | 職責 | 依賴 |
 |---|---|---|---|
 | **M0 — Architecture** | `docs/` | 系統架構、規範文檔 | — |
-| **M1 — Framework Core** | `lib/compiler/`、`lib/extensions/`、`docs/specs/` | JSON 規範、AI Pipeline、Extension 機制 | — |
+| **M1 — Framework Core** | `lib/runtime/`、`lib/extensions/`、`docs/specs/` | JSON 規範、Runtime 直譯、Extension 機制 | — |
 | **M2 — Auth & RBAC** | `lib/auth/`、`lib/rbac/`、`app/(auth)/` | 用戶管理、登入、權限 | M1 |
 | **M3 — Blog** | `extensions/blog/`、`app/(admin)/blog/` | 第一個 CRUD 範例 | M1, M2 |
 | **M4 — AI Config** | `lib/ai/`、`app/(admin)/ai-config/` | AI 模型配置（OpenAI + Claude） | M1 |
@@ -178,12 +178,10 @@ ai-headless/
 │   │   └── guard.ts
 │   ├── db/                             # 資料庫
 │   │   └── prisma.ts                   # Prisma client singleton
-│   ├── compiler/                       # M1: JSON → 代碼 compiler
-│   │   ├── json-parser.ts              # 解析 JSON 規範
-│   │   ├── schema-generator.ts         # 生成 Prisma schema
-│   │   ├── api-generator.ts            # 生成 API routes
-│   │   ├── ui-generator.ts             # 生成前端組件
-│   │   └── index.ts
+│   ├── runtime/                        # M1: JSON → runtime 直譯（Sprint 14）
+│   │   ├── spec-loader.ts              # 載入 + cache spec.json
+│   │   ├── dynamic-handler.ts          # 動態組裝 CRUD handler
+│   │   └── ui-config.ts                # 動態產生 UI config
 │   ├── extensions/                     # M1, M6: Extension runtime
 │   │   ├── registry.ts                 # Extension 註冊
 │   │   ├── loader.ts                   # 動態加載
@@ -296,22 +294,28 @@ ai-headless 的 AI Pipeline **不用純 LLM API**（如直接呼叫 OpenAI），
 │   │   - 執行測試確認通過                                     │    │
 │   └────────────────────────────────────────────────────────┘    │
 │   ┌────────────────────────────────────────────────────────┐    │
-│   │ Stage 5: 寫 Schema / API / UI / 業務邏輯                   │    │
-│   │   - Schema Generator → prisma/schema.prisma             │    │
-│   │   - API Generator → app/api/<name>/route.ts             │    │
-│   │   - UI Generator → app/(admin)/<name>/page.tsx          │    │
-│   │   - Permission / Menu 註冊                                │    │
-│   │   - Extension Code Generator（如需要）                    │    │
+│   │ Stage 5: 生成 spec.json + Extension Code                 │    │
+│   │   - 寫 spec.json（資料模型 + UI config + workflow JSON） │    │
+│   │   - 手動維護 prisma/schema.prisma（規格決定）             │    │
+│   │   - Runtime 層自動直譯（不寫程式碼）：                    │    │
+│   │     * lib/runtime/spec-loader.ts 載入 spec                │    │
+│   │     * lib/runtime/dynamic-handler.ts 產生 API handler      │    │
+│   │     * lib/runtime/ui-config.ts 產生 UI config              │    │
+│   │   - Extension Code （如需要）                             │    │
 │   │     * hooks/*.ts（beforeCreate / afterUpdate 等）        │    │
 │   │     * actions/*.ts（自定義 action）                     │    │
 │   │     * computed/*.ts（computed field）                   │    │
 │   │     * workflows/*.ts（state machine / 審批流程）          │    │
 │   │   - 跑 prisma migrate dev                                │    │
 │   │                                                            │    │
+│   │   Sprint 14 重要轉變：AI 只生成 spec + extension code，     │    │
+│   │   不再生成 Prisma schema / API route / UI page。          │    │
+│   │   Runtime 層負責把 spec 變成可用的 API + UI。              │    │
+│   │                                                            │    │
 │   │   判斷何時需要寫代碼：                                    │    │
 │   │     - JSON 規範引用 {{fn:...}} → 生成對應函數            │    │
-│   │     - 用戶需求包含狀態機、計算、外部 API → 生成代碼      │    │
-│   │     - 純 CRUD 功能                       → 只生成 Schema/API/UI │    │
+│   │     - 用戶需求包含狀態機、計算、外部 API → 生成 extension │    │
+│   │     - 純 CRUD 功能                       → 只寫 spec.json │    │
 │   └────────────────────────────────────────────────────────┘    │
 │   ┌────────────────────────────────────────────────────────┐    │
 │   │ Stage 6: Lint Gate                                      │    │
@@ -350,12 +354,12 @@ import { runAgent } from '@/lib/ai/agent-runner';
 
 export async function POST(request: Request) {
   const { userInput } = await request.json();
-  
+
   const result = await runAgent({
-    agent: 'json-spec-compiler',
-    task: `用戶需求：${userInput}\n請按 docs/specs/json-spec.md 生成對應的 CRUD 規範與代碼。`,
+    agent: 'json-spec-author',
+    task: `用戶需求：${userInput}\n請按 docs/specs/json-spec.md 生成對應的 CRUD spec.json。Runtime 層會自動直譯 spec。`,
   });
-  
+
   return Response.json(result);
 }
 ```
@@ -368,7 +372,7 @@ import { runs } from 'pi-subagents';
 
 export const crudGenerationPipeline = runs.all([
   { key: 'analyze', agent: 'analyst', task: '分析需求...' },
-  { key: 'spec', agent: 'json-spec-generator', task: '生成 JSON...' },
+  { key: 'spec', agent: 'json-spec-author', task: '生成 spec.json...' },
   { key: 'tdd', agent: 'tdd-test-writer', task: '寫測試...' },
   { key: 'code', agent: 'dev', task: '寫代碼...' },
   { key: 'review', agent: 'reviewer', task: '校驗...' },
@@ -642,14 +646,16 @@ model ChatMessage {
 │  • Permissions、Menu、Page metadata          │
 │  • Hook 引用（hooks: { beforeCreate: ...}）  │
 └──────────────────┬───────────────────────────┘
-                   ↓ JSON Compiler 生成
+                   ↓ Runtime 直譯（Sprint 14）
 ┌──────────────────────────────────────────────┐
-│           框架自動生成層                       │
+│           Runtime 直譯層                       │
 │                                              │
-│  • Prisma schema                              │
-│  • REST API routes（GET/POST/PUT/DELETE）     │
-│  • CRUD 頁面（list / form / detail）           │
-│  • Permission 註冊                            │
+│  • lib/runtime/spec-loader.ts                 │
+│  • lib/runtime/dynamic-handler.ts             │
+│    （GET/POST/PATCH/DELETE /api/crud/<spec>） │
+│  • lib/runtime/ui-config.ts                   │
+│    （list / form / detail /admin/crud/<spec>）│
+│  • Prisma schema（手動維護）                   │
 └──────────────────┬───────────────────────────┘
                    ↓ 業務需求時
 ┌──────────────────────────────────────────────┐

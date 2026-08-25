@@ -4,7 +4,17 @@
 > **模組名稱**：Framework Core
 > **版本**：1.0.0
 > **最後更新**：2026-08-24
-> **狀態**：Ready for Sprint 1
+> **狀態**：~~Ready for Sprint 1~~ **已被 Sprint 14 實際架構取代**
+
+---
+
+> ⚠️ **重要更新（2026-08-26）**：本 PRD 是早期設計文件（描述 JSON Compiler / Code Compiler 架構）。**Sprint 14 決定採用 Runtime 直譯架構**（lib/runtime/），完全移除 lib/compiler/。
+>
+> **請參考以下文件取代本 PRD**：
+> - [System Design §13 混合模式架構](../system-design.md#13-混合模式架構json--extension-code) — 現在的中間層是 Runtime 直譯（不是 Compiler 生成）
+> - [Sprint 14 Reflection](../reflection/sprint-14.md) — 方向大轉彎的完整原因與決策
+>
+> 本檔保留作為設計思路歷史參考，但**不代表目前架構**。未來 Sprint 15+ 如要重寫 Framework Core PRD，請以 Sprint 14 路線為基礎。
 
 ---
 
