@@ -54,8 +54,14 @@ describe('Sprint 16 TECH-038 — list page Server Component 重構', () => {
     });
 
     it('「檢視」連結保留（不刪除既有導航功能）', () => {
+      // Sprint 18 Stage 2：檢視連結搬遷到 ListRowActions client component
       const content = readFileSync(PAGE_PATH, 'utf-8');
-      expect(content).toMatch(/href=\{`\/admin\/crud\/\$\{specName\}\/\$\{row\.id\}\`\}/);
+      // list page 用 ListRowActions
+      expect(content).toMatch(/ListRowActions/);
+      // ListRowActions 內含「檢視」連結
+      const rowActionsPath = resolve(ROOT, 'components/admin/list-row-actions.tsx');
+      const rowActionsContent = readFileSync(rowActionsPath, 'utf-8');
+      expect(rowActionsContent).toMatch(/href=\{`\/admin\/crud\/\$\{specName\}\/\$\{rowId\}`\}/);
     });
 
     it('「新增」連結保留', () => {

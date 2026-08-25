@@ -25,22 +25,27 @@ const DETAIL_PAGE_PATH = resolve(ROOT, 'app/admin/crud/[spec]/[id]/dynamic-detai
 
 describe('Sprint 18 Stage 1 — CRUD 編輯按鈕', () => {
   describe('list page 編輯按鈕', () => {
-    it('list page 有「編輯」連結到 /edit', () => {
+    it('list page 透過 ListRowActions 提供「編輯」連結到 /edit', () => {
+      // Sprint 18 Stage 2：list page 是 Server Component，編輯按鈕搬遷到 ListRowActions (client component)
       const content = readFileSync(LIST_PAGE_PATH, 'utf-8');
-      expect(content).toMatch(/href=\{?`\/admin\/crud\/\$\{specName\}\/\$\{row\.id\}\/edit`\}?/);
+      expect(content).toMatch(/ListRowActions/);
+      // ListRowActions 內含「編輯」連結
+      const rowActionsPath = resolve(ROOT, 'components/admin/list-row-actions.tsx');
+      const rowActionsContent = readFileSync(rowActionsPath, 'utf-8');
+      expect(rowActionsContent).toMatch(/\/admin\/crud\/\$\{specName\}\/\$\{rowId\}\/edit/);
     });
 
-    it('list page 有 Edit icon import（lucide-react）', () => {
-      const content = readFileSync(LIST_PAGE_PATH, 'utf-8');
-      expect(content).toMatch(/import.*\{[^}]*\bEdit\b[^}]*\}.*from\s+['"]lucide-react['"]/);
+    it('ListRowActions 用 Pencil icon（取代 Edit）', () => {
+      const rowActionsPath = resolve(ROOT, 'components/admin/list-row-actions.tsx');
+      const rowActionsContent = readFileSync(rowActionsPath, 'utf-8');
+      expect(rowActionsContent).toMatch(/import.*\{[^}]*\bPencil\b[^}]*\}.*from\s+['"]lucide-react['"]/);
     });
 
-    it('list page 編輯按鈕用 Button asChild + Link pattern', () => {
-      const content = readFileSync(LIST_PAGE_PATH, 'utf-8');
-      // 找「編輯」文字附近的 Button asChild 結構
-      expect(content).toMatch(/<Button[^>]*asChild[^>]*>\s*<Link[^>]*edit/);
-      expect(content).toMatch(/<Edit\s*\/?>/);
-      expect(content).toMatch(/編輯/);
+    it('ListRowActions 編輯按鈕是 DropdownMenuItem + Link pattern', () => {
+      const rowActionsPath = resolve(ROOT, 'components/admin/list-row-actions.tsx');
+      const rowActionsContent = readFileSync(rowActionsPath, 'utf-8');
+      // DropdownMenuItem 包 Link + Pencil icon + 編輯文字
+      expect(rowActionsContent).toMatch(/<DropdownMenuItem[\s\S]*?編輯[\s\S]*?<\/DropdownMenuItem>/);
     });
   });
 

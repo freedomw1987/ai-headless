@@ -57,14 +57,15 @@ test.describe('Sprint 16 TECH-039 — RWD list page', () => {
         await expect(table).toBeVisible();
 
         // 4. 若有 items，「檢視」連結至少一個可見（在 viewport 內或可水平捲動）
-        const viewLinks = page.locator('a[href*="/admin/crud/"]').filter({ hasText: '檢視' });
-        const count = await viewLinks.count();
+        // Sprint 18 Stage 2: list row actions 改用 DropdownMenu（⋯按鈕）
+        const rowActions = page.locator('[data-testid^="row-actions-"]');
+        const count = await rowActions.count();
         if (count > 0) {
-          // 至少第一個檢視連結存在於 DOM（不一定在 viewport 內）
-          await expect(viewLinks.first()).toHaveCount(1);
+          // 至少第一個 dropdown trigger 存在於 DOM（不一定在 viewport 內）
+          await expect(rowActions.first()).toHaveCount(1);
         } else {
-          // 無資料 → 顯示「尚無資料」
-          await expect(page.getByText('尚無資料')).toBeVisible();
+          // 無資料 → 顯示 shadcn Empty 元件（含「尚無」文字）
+          await expect(page.getByText(/尚無/)).toBeVisible();
         }
       });
     }
