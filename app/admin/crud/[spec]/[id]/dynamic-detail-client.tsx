@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Props = {
   config: DetailUIConfig;
@@ -98,8 +99,15 @@ export function DynamicDetailClient({
     return (
       <div className="space-y-6">
         <Card>
-          <CardContent className="pt-6 text-sm text-muted-foreground">
-            載入中…
+          <CardHeader>
+            {/* Sprint 18 Stage 2: 用 Skeleton 取代文字「載入中…」 */}
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-4 w-1/4 mt-2" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-4/6" />
           </CardContent>
         </Card>
       </div>
