@@ -74,16 +74,14 @@ test.describe('Disable Guard — Sidebar E2E', () => {
     await setExtensionEnabled('todo', true);
   });
 
-  test('登入後 Sidebar 預設顯示 3 個 extension 連結（部落格/活動/待辦）', async ({ page }) => {
+  test('登入後 Sidebar 預設顯示 4 個 extension 連結（部落格/活動/訂單/待辦）', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin`, { waitUntil: 'networkidle' });
 
-    // 應顯示 3 個有 DB 記錄的 extension
+    // Sprint 11 補完：Order 也有 manifest → Sidebar 顯示 4 個
     await expect(page.locator('aside a[href="/admin/blog"]')).toBeVisible();
     await expect(page.locator('aside a[href="/admin/event"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/orders"]')).toBeVisible();
     await expect(page.locator('aside a[href="/admin/todo"]')).toBeVisible();
-
-    // 「訂單」不在 DB（order 缺 manifest）→ 不顯示
-    await expect(page.locator('aside a[href="/admin/orders"]')).not.toBeVisible();
   });
 
   test('Disable blog → Sidebar 不含「部落格」連結，其他仍在', async ({ page }) => {

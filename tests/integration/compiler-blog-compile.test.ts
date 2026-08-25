@@ -95,6 +95,35 @@ describe('Sprint 11 TECH-018: Compiler 產出程式碼可 typecheck', () => {
       await fs.rm(path.join(ROOT, '_compiled'), { recursive: true, force: true });
     }
   });
+
+  // Sprint 11 TECH-022: Disable Guard 自動注入
+  describe('TECH-022: Disable Guard 自動注入', () => {
+    it('blog spec 設了 requiresExtension → 產出應有 guardExtensionApi 呼叫', async () => {
+      const routeFile = path.join(OUTPUT, 'api/blog/route.ts');
+      const content = await fs.readFile(routeFile, 'utf-8');
+
+      expect(content).toContain('import { guardExtensionApi }');
+      expect(content).toContain(`guardExtensionApi('blog')`);
+      // 應該在 GET + POST 都有
+      const guardCount = (content.match(/guardExtensionApi\('blog'\)/g) ?? []).length;
+      expect(guardCount).toBe(2); // GET + POST
+    });
+
+    it('[id]/route.ts 也應該有 guard（3 個 method）', async () => {
+      const idRouteFile = path.join(OUTPUT, 'api/blog/[id]/route.ts');
+      const content = await fs.readFile(idRouteFile, 'utf-8');
+
+      const guardCount = (content.match(/guardExtensionApi\('blog'\)/g) ?? []).length;
+      expect(guardCount).toBe(3); // GET + PATCH + DELETE
+    });
+
+    it('actions/publish/route.ts 也應該有 guard', async () => {
+      const publishRouteFile = path.join(OUTPUT, 'api/blog/[id]/actions/publish/route.ts');
+      const content = await fs.readFile(publishRouteFile, 'utf-8');
+
+      expect(content).toContain(`guardExtensionApi('blog')`);
+    });
+  });
 });
 
 async function getFiles(dir: string): Promise<string[]> {

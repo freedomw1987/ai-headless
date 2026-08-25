@@ -301,6 +301,38 @@
 - `pnpm vitest run` → 783 tests / 57 files（+6 新測試）
 - `lib/compiler/api-generator.test.ts` → 16 tests 全綠
 
+### ✅ Sprint 11 Phase B 完成 — TECH-022 Disable Guard + TD-522 Order manifest
+
+#### Modified
+- `lib/specs/json-spec.types.ts`：JsonSpec 加 `requiresExtension?` 欄位
+- `lib/compiler/api-generator.ts`：HEADER_IMPORTS 加 `guardExtensionApi` + 加 `extensionGuard(spec)` helper + 6 個 handler 注入
+- `extensions/blog/blog-spec.json`：加 `requiresExtension: "blog"`
+
+#### Added
+- `extensions/order/manifest.json`（新）：補完 Order manifest
+- `tests/integration/td-522-order-manifest.test.ts`：2 個測試
+- `docs/reflection/sprint-11-phase-b.md`：Phase B 反省
+
+#### 修改測試（3 files）
+- `tests/e2e/disable-guard-api.spec.ts`：Order `describe.skip` → `describe`
+- `tests/e2e/disable-guard-sidebar.spec.ts`：3 → 4 extensions
+- `tests/integration/td-405-extensions-admin-smoke.test.ts`：3 → 4 extensions
+
+#### 驗證結果
+- `pnpm typecheck` 全綠
+- `pnpm vitest run` → 788 tests / 58 files（+5 新測試）
+- Playwright → 22 E2E 全綠（含 2 個 Order 從 skip 變 pass）
+
+#### Sprint 11 全完成（6.5 / 9.5 SP）
+| Task | SP | 狀態 |
+|---|---|---|
+| TECH-018 | 1 | ✅ |
+| TECH-019 | 1 | ✅ |
+| TECH-020 | 0 | ✅ |
+| TECH-021 | 2 | ✅ |
+| TECH-022 | 2 | ✅ |
+| TD-522 | 0.5 | ✅ |
+
 ---
 
 ## Sprint 1 Review Fixes（7 SP）

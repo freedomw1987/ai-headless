@@ -31,12 +31,13 @@ describe('TD-405 /admin/extensions smoke', () => {
     expect(Array.isArray(json.data)).toBe(true);
   });
 
-  it('Gate B: 3 個 extensions 都在（filesystem 掃描正確）', () => {
+  it('Gate B: 4 個 extensions 都在（filesystem 掃描正確）', () => {
+    // Sprint 11 補完：Order 也有 manifest.json，加入掃描
     const names = new Set(
       (json.data as { name: string }[]).map((e) => e.name),
     );
-    expect(names.size).toBe(3);
-    for (const expected of ['blog', 'todo', 'event']) {
+    expect(names.size).toBe(4);
+    for (const expected of ['blog', 'todo', 'event', 'order']) {
       expect(names.has(expected)).toBe(true);
     }
   });

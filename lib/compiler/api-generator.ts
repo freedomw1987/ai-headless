@@ -73,6 +73,7 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
 import { checkPermission } from '@/lib/auth/rbac';
 import { invokeHook } from '@/lib/extensions/hooks';
+import { guardExtensionApi } from '@/lib/extensions/api-guard';
 `;
 
 function permissionCheck(action: string): string {
@@ -86,6 +87,19 @@ function permissionCheck(action: string): string {
   if (!hasPermission) {
     return NextResponse.json({ error: 'Forbidden: ${action}' }, { status: 403 });
   }
+`;
+}
+
+/**
+ * Extension Disable Guard（Sprint 11 TECH-022）
+ * 如 spec.requiresExtension 設定，自動注入 guardExtensionApi(name)
+ * 未啟用 extension 時返 403
+ */
+function extensionGuard(spec: JsonSpec): string {
+  if (!spec.requiresExtension) return '';
+  return `
+  const guard = await guardExtensionApi('${spec.requiresExtension}');
+  if (guard) return guard;
 `;
 }
 
@@ -125,7 +139,7 @@ function generateListHandler(
   const code = `${HEADER_IMPORTS}
 
 export async function ${'GET'}(request: NextRequest) {
-  ${permissionCheck(`${tableName}.read`)}
+  ${extensionGuard(spec)}${permissionCheck(`${tableName}.read`)}
 
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get('page') ?? '1');
@@ -194,7 +208,7 @@ function generateReadHandler(
   const code = `${HEADER_IMPORTS}
 
 export async function ${'GET'}(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  ${permissionCheck(`${tableName}.read`)}
+  ${extensionGuard(spec)}${permissionCheck(`${tableName}.read`)}
 
   const { id } = await params;
 
@@ -265,7 +279,7 @@ ${zodFields}
 });
 
 export async function ${'POST'}(request: NextRequest) {
-  ${permissionCheck(`${tableName}.create`)}
+  ${extensionGuard(spec)}${permissionCheck(`${tableName}.create`)}
 
   const body = await request.json();
   const parsed = ${model.name}CreateSchema.safeParse(body);
@@ -332,7 +346,7 @@ ${zodFields}
 });
 
 export async function ${'PATCH'}(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  ${permissionCheck(`${tableName}.update`)}
+  ${extensionGuard(spec)}${permissionCheck(`${tableName}.update`)}
 
   const { id } = await params;
   const body = await request.json();
@@ -403,7 +417,7 @@ function generateDeleteHandler(
   const code = `${HEADER_IMPORTS}
 
 export async function ${'DELETE'}(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  ${permissionCheck(`${tableName}.delete`)}
+  ${extensionGuard(spec)}${permissionCheck(`${tableName}.delete`)}
 
   const { id } = await params;
 
@@ -452,7 +466,7 @@ function generateActionHandler(
   const code = `${HEADER_IMPORTS}
 
 export async function ${'POST'}(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  ${permissionCheck(permAction)}
+  ${extensionGuard(spec)}${permissionCheck(permAction)}
 
   const { id } = await params;
   const body = await request.json().catch(() => ({}));

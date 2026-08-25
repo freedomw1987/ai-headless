@@ -127,10 +127,8 @@ test.describe('Disable Guard — API E2E', () => {
     });
   });
 
-  test.describe.skip('Order Extension', () => {
-    // ⚠️ Order 沒有 manifest.json，不被 extension-manager 識別
-    // （後端 API guard 仍可工作，但 /api/extensions 看不到 order）
-    // 詳見 Backlog: TD-522 Order Extension manifest 缺失
+  test.describe('Order Extension', () => {
+    // Sprint 11 補完：Order 加了 manifest.json，可被 extension-manager 識別
 
     test('Disable → GET /api/order → 403', async ({ request: req }) => {
       await setExtensionEnabled('order', false);

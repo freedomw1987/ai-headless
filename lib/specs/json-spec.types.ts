@@ -336,6 +336,13 @@ export type JsonSpec = {
    * 例如 blog spec 設 uiBase: '/admin/blog' → 所有 page 用這個 prefix
    */
   uiBase?: string;
+  /**
+   * Extension 名稱（如 'blog'），啟用 Disable Guard
+   * 設了之後，compiler 生成的 API route 會自動呼叫 `guardExtensionApi(name)`
+   * 未啟用 extension 時 API 返 403
+   * Sprint 11 TECH-022 新增
+   */
+  requiresExtension?: string;
 };
 
 // ==============================================

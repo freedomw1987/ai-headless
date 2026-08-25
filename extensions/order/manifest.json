@@ -1,0 +1,13 @@
+{
+  "name": "order",
+  "version": "1.0.0",
+  "label": "訂單管理",
+  "description": "訂單系統 — 展示 StateMachine Library 真實應用（US-204）",
+  "author": "ai-headless team",
+  "hooks": ["order.onOrderTransition"],
+  "actions": [],
+  "computed": [],
+  "workflows": ["order.lifecycle"],
+  "permissions": ["order.create", "order.read", "order.update", "order.delete", "order.transition"],
+  "dependencies": []
+}
