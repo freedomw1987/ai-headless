@@ -1,0 +1,141 @@
+// Sprint 14 TECH-033 — Dynamic CRUD Route
+//
+// 單一檔案處理所有 extension 的 CRUD + workflow transition。
+// URL pattern:
+//   GET    /api/crud/<spec>           → list
+//   GET    /api/crud/<spec>?id=<id>   → get one
+//   POST   /api/crud/<spec>           → create
+//   PUT    /api/crud/<spec>?id=<id>   → update
+//   DELETE /api/crud/<spec>?id=<id>   → delete
+//   GET    /api/crud/<spec>?id=<id>&event=<event> → transition
+//   POST   /api/crud/<spec>?id=<id>&event=<event> → transition (body 方式)
+//
+// 設計理由：
+// - Next.js App Router 禁止 `[...catchAll]` 後再有靜態/dynamic segment
+// - 所以 catch-all 用 single `[spec]`，id 用 query param
+// - 80% 標準 CRUD 走這條；20% 自定義走 /api/<spec>/<action>
+
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth/config';
+import { loadSpec } from '@/lib/runtime/spec-loader';
+import { createDynamicHandlers } from '@/lib/runtime/dynamic-handler';
+
+type RouteContext = { params: Promise<{ spec: string }> };
+
+async function setup(request: NextRequest, ctx: RouteContext) {
+  const { spec: specName } = await ctx.params;
+  if (!specName) {
+    return { error: NextResponse.json({ error: 'spec name 必填' }, { status: 400 }) };
+  }
+
+  let spec;
+  try {
+    spec = await loadSpec(specName);
+  } catch {
+    return { error: NextResponse.json({ error: `Spec "${specName}" not found` }, { status: 404 }) };
+  }
+
+  const session = await auth();
+  const user = session?.user
+    ? { id: session.user.id, role: (session.user as { role: string }).role }
+    : undefined;
+
+  return { spec, handlers: createDynamicHandlers(spec), user };
+}
+
+export async function GET(request: NextRequest, ctx: RouteContext) {
+  const r = await setup(request, ctx);
+  if ('error' in r) return r.error;
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id') ?? undefined;
+  const event = searchParams.get('event') ?? undefined;
+
+  // Transition (event query)
+  if (event) {
+    if (!id) return NextResponse.json({ error: 'id 必填' }, { status: 400 });
+    if (!r.handlers.transition) {
+      return NextResponse.json(
+        { error: `Spec "${r.spec.name}" 沒有 workflow` },
+        { status: 400 },
+      );
+    }
+    const result = await r.handlers.transition({
+      user: r.user,
+      params: { id },
+      body: { event },
+    });
+    return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
+  }
+
+  // Single get
+  if (id) {
+    const result = await r.handlers.get({ user: r.user, params: { id } });
+    return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
+  }
+
+  // List
+  const result = await r.handlers.list({ user: r.user });
+  return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
+}
+
+export async function POST(request: NextRequest, ctx: RouteContext) {
+  const r = await setup(request, ctx);
+  if ('error' in r) return r.error;
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id') ?? undefined;
+  const event = searchParams.get('event') ?? undefined;
+
+  const body = await request.json().catch(() => ({}));
+
+  // Transition via POST
+  if (event) {
+    if (!id) return NextResponse.json({ error: 'id 必填' }, { status: 400 });
+    if (!r.handlers.transition) {
+      return NextResponse.json(
+        { error: `Spec "${r.spec.name}" 沒有 workflow` },
+        { status: 400 },
+      );
+    }
+    const result = await r.handlers.transition({
+      user: r.user,
+      params: { id },
+      body: { event, ...(body as Record<string, unknown>) },
+    });
+    return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
+  }
+
+  const result = await r.handlers.create({ user: r.user, body });
+  return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
+}
+
+export async function PUT(request: NextRequest, ctx: RouteContext) {
+  const r = await setup(request, ctx);
+  if ('error' in r) return r.error;
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'id 必填' }, { status: 400 });
+
+  const body = await request.json().catch(() => ({}));
+  const result = await r.handlers.update({
+    user: r.user,
+    params: { id },
+    body,
+  });
+  return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
+}
+
+export async function DELETE(request: NextRequest, ctx: RouteContext) {
+  const r = await setup(request, ctx);
+  if ('error' in r) return r.error;
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'id 必填' }, { status: 400 });
+
+  const result = await r.handlers.delete({ user: r.user, params: { id } });
+  if (result.status === 204) return new NextResponse(null, { status: 204 });
+  return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
+}

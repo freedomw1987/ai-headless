@@ -33,8 +33,10 @@
           "name": "priority",
           "type": "enum",
           "label": "優先級",
-          "options": ["low", "medium", "high"],
-          "validation": { "default": "medium" }
+          "validation": {
+            "enum": ["low", "medium", "high"],
+            "default": "medium"
+          }
         }
       ],
       "computed": [
