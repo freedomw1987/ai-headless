@@ -74,8 +74,13 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
     return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
   }
 
-  // List
-  const result = await r.handlers.list({ user: r.user });
+  // List（Sprint 19 Stage 1: server side 分頁）
+  const page = searchParams.get('page') ?? undefined;
+  const pageSize = searchParams.get('pageSize') ?? undefined;
+  const result = await r.handlers.list({
+    user: r.user,
+    query: { page, pageSize },
+  });
   return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
 }
 

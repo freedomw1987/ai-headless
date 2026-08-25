@@ -203,20 +203,54 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
     // 讀取不強迫權限（dynamic handler 適用所有 spec）
     // Permission check 由 route 層 / page 層負責
 
-    // @ts-expect-error dynamic Prisma access
-    const items = await (db as unknown as Record<string, { findMany: (args?: unknown) => Promise<unknown[]> }>)[tableName].findMany({
-      where: model.softDelete ? { deletedAt: null } : undefined,
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
+    // Sprint 19 Stage 1: Server Side 分頁
+    // 從 ctx.query 讀取 page / pageSize（URL ?page= ?pageSize=）
+    const rawPage = Number(ctx.query?.page ?? 1);
+    const rawPageSize = Number(ctx.query?.pageSize ?? 10);
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+    const pageSize =
+      Number.isFinite(rawPageSize) && rawPageSize > 0 && rawPageSize <= 100
+        ? Math.floor(rawPageSize)
+        : 10;
+    const skip = (page - 1) * pageSize;
+
+    const modelClient = (db as unknown as Record<string, {
+      findMany: (args?: unknown) => Promise<unknown[]>;
+      count: (args?: unknown) => Promise<number>;
+    }>)[tableName];
+
+    if (!modelClient) {
+      return { status: 500, error: `找不到 model: ${tableName}` };
+    }
+
+    const where = model.softDelete ? { deletedAt: null } : undefined;
+
+    // 平行查詢 items + total（效能優化）
+    const [items, total] = await Promise.all([
+      modelClient.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      modelClient.count({ where }),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
     const afterList = parseHookReference(spec.models[0]?.hooks?.afterList);
     if (afterList && hasHook(afterList)) {
-      const r = await invokeHook(afterList, { result: items, model: model.name });
+      const r = await invokeHook(afterList, {
+        result: { items, total, page, pageSize, totalPages },
+        model: model.name,
+      });
       return { status: 200, data: r };
     }
 
-    return { status: 200, data: { items } };
+    return {
+      status: 200,
+      data: { items, total, page, pageSize, totalPages },
+    };
   };
 
   // ==============================================

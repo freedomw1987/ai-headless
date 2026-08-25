@@ -57,10 +57,22 @@ import type { FormatterFn } from '@/lib/runtime/extension-loaders';
 
 type PageProps = {
   params: Promise<{ spec: string }>;
+  searchParams: Promise<{
+    page?: string;
+    pageSize?: string;
+  }>;
 };
 
-export default async function DynamicCrudPage({ params }: PageProps) {
+export default async function DynamicCrudPage({ params, searchParams }: PageProps) {
   const { spec: specName } = await params;
+
+  // Sprint 19 Stage 1: Server Side 分頁
+  const searchData = await searchParams;
+  const page = Math.max(1, parseInt(searchData.page ?? '1', 10) || 1);
+  const pageSize = Math.max(
+    1,
+    Math.min(100, parseInt(searchData.pageSize ?? '10', 10) || 10),
+  );
 
   // 1. Session check
   const session = await auth();
@@ -106,8 +118,19 @@ export default async function DynamicCrudPage({ params }: PageProps) {
       id: session.user.id,
       role: session.user.role as 'admin' | 'editor' | 'viewer',
     },
+    query: {
+      page: String(page),
+      pageSize: String(pageSize),
+    },
   });
-  const items = (listResult.data as { items?: unknown[] } | undefined)?.items ?? [];
+  const listData = listResult.data as {
+    items?: unknown[];
+    total?: number;
+    totalPages?: number;
+  } | undefined;
+  const items = listData?.items ?? [];
+  const total = listData?.total ?? items.length;
+  const totalPages = listData?.totalPages ?? 1;
 
   // 7. 預渲染每個 cell
   const rows = items.map((raw) => {
@@ -125,7 +148,7 @@ export default async function DynamicCrudPage({ params }: PageProps) {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{uiConfig.title}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            共 {items.length} 筆資料
+            共 {total} 筆資料（第 {page} / {totalPages} 頁）
           </p>
         </div>
         <Button asChild>
@@ -137,6 +160,7 @@ export default async function DynamicCrudPage({ params }: PageProps) {
       </div>
 
       {/* 表格 / 空狀態 */}
+      <div className="space-y-4">
       {items.length === 0 ? (
         <Empty>
           <EmptyHeader>
@@ -184,6 +208,12 @@ export default async function DynamicCrudPage({ params }: PageProps) {
           </Table>
         </Card>
       )}
+
+      {/* Sprint 19 Stage 1: 分頁資訊（純顯示，UI 在 ListPaginationNav）*/}
+      <div className="text-sm text-muted-foreground">
+        第 {page} / {totalPages} 頁（顯示第 {(page - 1) * pageSize + 1} 到 {Math.min(page * pageSize, total)} 筆，共 {total} 筆）
+      </div>
+      </div>
     </div>
   );
 }
