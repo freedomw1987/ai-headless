@@ -10,11 +10,11 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 15 — Runtime Spec 精簡化** ✅ partial 完成（3.5 SP / 4.5 SP 計劃） |
-| **Sprint 14 狀態** | ✅ 100% 收尾（2 commits + Reflection）|
-| **測試基線** | **764 tests / 62 files** / 4 Gate 全綠（735 vitest + 29 E2E）|
-| **下一個 P0** | Sprint 16 — TECH-038 收尾 + RWD E2E（3 SP / 見 Sprint 15 reflection）|
-| **路線圖關鍵** | ✅ 移除 apiBase/uiBase + 統一 disable guard（總是 guard）+ formatters/customRenderers API + detail formatter 真實套用驗證 |
+| **當前 Sprint** | **Sprint 17 — list/detail/form UI 改進 + customRenderer** ✅ Stage 1 完成（3 SP） |
+| **Sprint 16 狀態** | ✅ 100% 收尾（partial 2/3 SP，customRenderer 留 Sprint 17）|
+| **測試基線** | **826 tests / 66 files** / 4 Gate 全綠（783 vitest + 43 E2E）|
+| **下一個 P0** | Sprint 17 Stage 2 — customRenderer 客戶端動態渲染（2 SP） + JSX 預編譯 Spike（0.5 SP）|
+| **路線圖關鍵** | ✅ Stage 1：list/detail/form 全面改 shadcn/ui + customRenderer 待 Stage 2 |
 
 ### Sprint 15 進度（Runtime Spec 精簡化）
 
@@ -52,13 +52,49 @@
 - E2E: 43（含 14 新 RWD）
 - Typecheck: ✅ 綠
 
-### Sprint 17 規劃（customRenderer 客戶端 + JSX 預編譯基礎建設）
+### Sprint 17 規劃（customRenderer 客戶端 + JSX 預編譯基礎建設 + UI 改進）
 
 | Task | 內容 | SP | 來源 |
 |---|---|---|---|
+| **Stage 1.1** | list page 改 shadcn/ui 元件 | 1 | 用戶痛點：UI Raw 丑 |
+| **Stage 1.2** | detail page 改 shadcn/ui 元件 | 1 | 用戶痛點：UI Raw 丑 |
+| **Stage 1.3** | form page 改 shadcn/ui 元件 | 1 | 用戶痛點：UI Raw 丑 |
+| **Stage 2** | customRenderer 客戶端 React component 動態渲染 | 2 | Sprint 16 Stage 1 留 |
 | **Spike** | JSX 預編譯方案評估（tsx-loader / esbuild / swc）| 0.5 | Sprint 16 揭露 |
-| **TECH-038a** | customRenderer 客戶端 React component 動態渲染（搭配 JSX 預編譯）| 2 | Sprint 16 Stage 1 留 |
-| **合計** | | **2.5 SP** | |
+| **合計** | | **5.5 SP** | |
+
+### Sprint 17 進度（Stage 1 完成 3 / 5.5 SP）
+
+| Task | 計劃 | 實際 | 狀態 |
+|---|---|---|---|
+| **Stage 1.1 list** | 1 SP | 1 SP | ✅ commit `096aade`（shadcn Table + Badge + Empty + Button） |
+| **Stage 1.2 detail** | 1 SP | 1 SP | ✅ commit `5d24eed`（shadcn Card + CardHeader/Title/Description + Badge） |
+| **Stage 1.3 form** | 1 SP | 1 SP | ✅ commit `fd32825`（shadcn Input + Textarea + Label + Button） |
+| **Stage 2 customRenderer** | 2 SP | 0 SP | ⏳ 待做（需 JSX 預編譯） |
+| **Spike JSX 預編譯** | 0.5 SP | 0 SP | ⏳ 待做 |
+
+**Sprint 17 Stage 1 完成後測試基線**：
+- vitest: 783 / 66 files（+33 from Sprint 16）
+- E2E: 43
+- Typecheck: ✅ 綠
+- 新增 shadcn 元件：Badge, Empty
+- 改進 shadcn 元件：CardTitle 改為 `<h3>`
+- 統一 Lucide icons：Plus, ChevronRight, Inbox, ArrowLeft, Trash2, AlertCircle, Loader2, Play
+
+**Sprint 17 Stage 1 收尾改動**：
+- `components/ui/badge.tsx` 新增（4 variants）
+- `components/ui/empty.tsx` 新增（6 sub-components）
+- `components/ui/card.tsx` CardTitle 改 `<h3>`
+- `app/admin/crud/[spec]/page.tsx` 改用 shadcn Table + Empty
+- `app/admin/crud/[spec]/[id]/dynamic-detail-client.tsx` 改用 shadcn Card
+- `app/admin/crud/[spec]/dynamic-form-client.tsx` 改用 shadcn Input/Textarea/Label
+- 3 個守護測試檔：tech-041/042/043-shadcn-*.test.ts（共 37 tests）
+- tech-038-list-server-component.test.ts 2 個測試更新（tbody→TableBody + Sprint 16→17 Stage 2 註記）
+
+**Sprint 17 Stage 2 待做事項**：
+- Spike JSX 預編譯方案（esbuild 最可能，因為 Next.js 13+ 內建支援）
+- customRenderer 客戶端動態載入 .tsx component
+- list page 移除 placeholder + 真實渲染 React component
 
 ### Sprint 6 進度
 

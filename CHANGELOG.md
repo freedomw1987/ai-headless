@@ -626,6 +626,68 @@ Sprint 16 完成 **Stage 1**（TECH-038b list formatter）和 **Stage 2**（TECH
 
 ---
 
+## Sprint 17 — list / detail / form page UI 改進 + customRenderer（2.5 SP）
+
+### Sprint 17 Stage 1 — UI 改進（用 shadcn/ui 元件，4 spec） ✅ 3 / 3
+
+**用戶痛點**：原本 list / detail / form 都用純 HTML + inline Tailwind（看起來像 1990 年代）。Sprint 14 為了快速建立 dynamic CRUD 沒用 shadcn。Sprint 17 一次完整改用 shadcn/ui 元件。
+
+#### Sprint 17 Stage 1.1 — list page 改 shadcn（commit `096aade`）
+
+- **`components/ui/badge.tsx`** — 新增 shadcn Badge 元件（4 variants：default / secondary / destructive / outline）
+- **`components/ui/empty.tsx`** — 新增 shadcn Empty 元件（Empty + EmptyHeader + EmptyMedia + EmptyTitle + EmptyDescription + EmptyContent）
+- **`components/ui/card.tsx`** — `CardTitle` 改為 `<h3>`（semantic HTML、SEO 友善）
+- **`app/admin/crud/[spec]/page.tsx`** — list page 完整改用 shadcn：
+  - shadcn Table（TableHeader / TableBody / TableRow / TableHead / TableCell，含 hover、列分隔）
+  - shadcn Button + Lucide Plus / ChevronRight / Inbox icons
+  - shadcn Badge for status / checkbox 欄位
+  - shadcn Empty for 空狀態（含 icon + 說明 + 新增 CTA）
+  - 真實 `<h1>` 標題（給 SEO / a11y / E2E 用）
+
+#### Sprint 17 Stage 1.2 — detail page 改 shadcn（commit `5d24eed`）
+
+- **`app/admin/crud/[spec]/[id]/dynamic-detail-client.tsx`** — 完整改用 shadcn：
+  - 標題 + 操作區 Card（CardHeader + CardTitle + CardDescription + Button asChild + ArrowLeft 返回 / Trash2 刪除）
+  - 錯誤訊息 Card（border-destructive/50 + AlertCircle icon）
+  - 欄位列表 Card（divide-y + grid grid-cols-3 label/value 對齊）
+  - Workflow Transitions Card（Button + Play icon）
+- 移除純 HTML `<dl><dt><dd>` + border-b 條列
+- 移除純 Tailwind bg-blue-600 / border-red-200 樣式
+- checkbox field 用 shadcn Badge（✓ / —）
+
+#### Sprint 17 Stage 1.3 — form page 改 shadcn（commit `fd32825`）
+
+- **`app/admin/crud/[spec]/dynamic-form-client.tsx`** — 完整改用 shadcn：
+  - 標題區 Card（CardHeader + CardTitle + CardDescription + 返回按鈕）
+  - 錯誤訊息 Card（border-destructive/50 + AlertCircle icon）
+  - 表單 Card（CardContent + Label + Input / Textarea / Select）
+  - text input 用 shadcn Input（含 placeholder 支援）
+  - textarea 用 shadcn Textarea（5 rows 預設）
+  - date input 用 shadcn Input type="date"
+  - select 用 shadcn-style 自訂樣式（含 focus-visible:ring）
+  - submit 按鈕用 shadcn Button + Loader2 icon（loading state）
+  - cancel 按鈕用 shadcn Button variant="outline"
+  - required 標示用 text-destructive（紅色 *）
+
+#### Sprint 17 Stage 1 守護測試
+
+- **`tests/integration/tech-041-shadcn-list-ui.test.ts`** — 11 守護測試
+- **`tests/integration/tech-042-shadcn-detail-ui.test.ts`** — 11 守護測試
+- **`tests/integration/tech-043-shadcn-form-ui.test.ts`** — 15 守護測試
+- **`tests/integration/tech-038-list-server-component.test.ts`** — 2 個測試更新（`<tbody>` → `<TableBody>` + 「Sprint 16 Stage 2」→「Sprint 17 Stage 2」）
+
+### Sprint 17 測試基線
+
+| 項目 | Sprint 16 結束 | Sprint 17 Stage 1 |
+|---|---|---|
+| vitest | 750 / 63 | **783 / 66**（+33）|
+| E2E | 43 | 43 |
+| Typecheck | ✅ 綠 | ✅ 綠 |
+| UI 一致性 | 純 HTML + inline Tailwind（看起來像 1990 年代）| shadcn Table / Card / Input / Button / Badge / Empty 統一 |
+| Sprint 17 待做 | — | customRenderer 客戶端動態渲染（需 JSX 預編譯） |
+
+---
+
 ## Sprint 1 Review Fixes（7 SP）
 
 ### TD-305 Relation 二元性統一（2 SP）
