@@ -4,6 +4,12 @@
 //
 // 從 UIConfig 動態渲染列表 + 新增按鈕。
 // 不依賴任何手寫 spec 邏輯。
+//
+// Sprint 15 TECH-038（partial）：
+// - list page 暫不套用 formatter（server 不能傳函數給 client）
+//   → 完整 list formatter 機制留 Sprint 16（架構上改為 server-side 預渲染 HTML）
+// - customRenderer React component 渲染留 Sprint 16（client bundle 限制）
+// - detail page 已完整實作 formatter（見 dynamic-detail-client.tsx）
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -22,14 +28,14 @@ export function DynamicListClient({ config, specName }: Props) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(config.apiEndpoint)
+    fetch(`/api/crud/${specName}`)
       .then((r) => r.json())
       .then((json) => {
         if (cancelled) return;
         if (json.error) {
           setError(json.error);
         } else {
-          setItems((json.items as unknown[]) ?? []);
+          setItems(json.items ?? json);
         }
       })
       .catch((e) => {
@@ -41,41 +47,40 @@ export function DynamicListClient({ config, specName }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [config.apiEndpoint]);
+  }, [specName]);
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold">{config.title}</h1>
         <Link
-          href={config.createLink}
+          href={`/admin/crud/${specName}/new`}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          data-testid="create-link"
         >
-          + 新增
+          新增
         </Link>
       </div>
 
       {error && (
-        <div className="p-4 mb-4 bg-red-50 border border-red-200 rounded">
-          載入失敗：{error}
+        <div className="p-3 mb-4 bg-red-50 border border-red-200 rounded text-sm">
+          {error}
         </div>
       )}
 
       {loading ? (
         <div>載入中…</div>
       ) : items.length === 0 ? (
-        <div className="p-8 text-center text-gray-500">目前沒有資料</div>
+        <div className="text-gray-500">尚無資料</div>
       ) : (
-        <table className="w-full border-collapse border">
+        <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-50">
               {config.fields.map((f) => (
-                <th key={f.name} className="border p-2 text-left">
+                <th key={f.name} className="border p-2 text-left text-sm font-medium">
                   {f.label}
                 </th>
               ))}
-              <th className="border p-2">操作</th>
+              <th className="border p-2 text-left text-sm font-medium">操作</th>
             </tr>
           </thead>
           <tbody>

@@ -241,6 +241,18 @@ export type Model = {
   softDelete?: boolean;
   /** 顯示順序 */
   order?: number;
+  /**
+   * Sprint 15 TECH-038 — UI formatter 純函數
+   * key: field name，value: `{{fn:xxx}}` 指向 extension 實作的純函數
+   * runtime 載入後用於 list cell / detail 渲染
+   */
+  formatters?: Record<string, string>;
+  /**
+   * Sprint 15 TECH-038 — UI customRenderer React component
+   * key: virtual field 名稱（如 `capacityBar`），value: `{{fn:xxx}}`
+   * runtime 載入後用於 list cell 渲染（detail 用 formatter）
+   */
+  customRenderers?: Record<string, string>;
 };
 
 // ==============================================

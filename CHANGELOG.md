@@ -489,6 +489,93 @@
 
 ---
 
+## Sprint 15 — Runtime Spec 精簡化（partial：1.5 + 2 SP）
+
+### Sprint 15 全完成（3.5 / 4.5 SP）
+
+| Task | SP | 狀態 | Commit |
+|---|---|---|---|
+| TECH-037 移除 `apiBase`/`uiBase` 死代碼 | 0.5 | ✅ Stage 1 | `e4797a5` |
+| TECH-040 `requiresExtension` 統一從 `spec.name` 推導 | 1 | ✅ Stage 2 | `55664fd` |
+| TECH-038 `formatters` + `customRenderers` 在 spec 內定義 | 2 | ✅ Stage 3 partial | (本 commit) |
+| TECH-039 E2E RWD 測試 | 1 | ⏳ Sprint 16 | — |
+
+### Stage 1 — TECH-037 移除 apiBase/uiBase（commit `e4797a5`）
+
+#### Added
+- `tests/integration/tech-037-no-apibase-uibase.test.ts` — 4 個守護測試（確保 JsonSpec 型別不再有 apiBase/uiBase 字段）
+
+#### Removed
+- `lib/specs/json-spec.types.ts` — 刪除 `apiBase?` / `uiBase?` 字段（-10 行）
+- Sprint 14 後這兩個字段已無用（runtime 全部走 `/api/crud/<spec>` + `/admin/crud/<spec>` 動態路由）
+
+### Stage 2 — TECH-040 requiresExtension 統一從 spec.name 推導（commit `55664fd`）
+
+#### Added
+- `lib/specs/extension-derive.ts` — `getRequiredExtension(spec)` helper（顯式覆寫 → `spec.name` 推導）
+- `tests/integration/tech-040-derive-requires-extension.test.ts` — 5 個守護測試
+
+#### Changed
+- 4 個檔案改用 helper：
+  - `lib/runtime/dynamic-handler.ts` `checkDisabled` — 移除 `if (!spec.requiresExtension) return null` 守衛
+  - `app/admin/crud/[spec]/page.tsx`（含 listAvailableSpecs 區塊）
+  - `app/admin/crud/[spec]/new/page.tsx`
+  - `app/admin/crud/[spec]/[id]/page.tsx`
+- **disable guard 改為「總是 guard」**：用 `getRequiredExtension(spec)` + `isExtensionEnabledByName(extName)`，不再用 `if (spec.requiresExtension)` 守衛（Sprint 14 揭露的 false claim 模式）
+
+### Stage 3 — TECH-038 formatters + customRenderers（本 commit）
+
+#### Added
+- `lib/runtime/extension-loaders.ts` — `loadFormatters(spec)` + `loadCustomRenderers(spec)` + `parseFnRef()` + `toKebabCase()` + `resolveExistingPath()`
+  - 雙檔名支援：camelCase (`formatEventTime.ts`) + kebab-case (`format-event-time.ts`)
+  - 用 `/* webpackIgnore: true */` 讓 Next.js Turbopack 跳過靜態分析
+- `extensions/event/formatters/format-event-time.ts` — 格式化 DateTime 為 `YYYY/MM/DD HH:mm`（zh-TW locale）
+- `extensions/event/custom-renderers/capacity-bar.tsx` — capacity progress bar 組件
+- `tests/integration/tech-038-formatters-renderers.test.ts` — 11 個守護測試
+
+#### Changed
+- `lib/specs/json-spec.types.ts` — `Model` 加 `formatters?` + `customRenderers?` 字段
+  ```json
+  {
+    "name": "event",
+    "models": [{
+      "name": "Event",
+      "fields": [...],
+      "formatters": { "startAt": "{{fn:formatEventTime}}", "endAt": "{{fn:formatEventTime}}" },
+      "customRenderers": { "capacityBar": "{{fn:renderCapacityBar}}" }
+    }]
+  }
+  ```
+- `lib/runtime/ui-config.ts` — `UIField` 加 `formatter?` + `customRenderer?` 字段；`buildListUIConfig` 把 customRenderer 加為虛擬 UIField（`inputType: 'hidden'`，`name=rendererKey`）
+- `extensions/event/event-spec.json` — 加 `formatters` + `customRenderers` 區塊（API + 第一個真實範例）
+- `app/admin/crud/[spec]/[id]/page.tsx` — **server side** 預 fetch item + 預套用 formatter → 傳 `formattedValues: Record<fieldName, string>` 給 client
+- `app/admin/crud/[spec]/[id]/dynamic-detail-client.tsx` — 接受 `initialItem` + `formattedValues`，避免 client 二次 fetch
+
+#### Sprint 15 Stage 3 揭露並修正的問題
+
+**Server Component 不能傳函數給 Client Component** — Next.js Server Component 序列化限制，`{{fn:xxx}}` 解析出的純函數 formatter 不能從 page.tsx 傳給 `dynamic-detail-client.tsx`。修正策略：
+- **server side 預套用**：detail page 在 server side fetch item + 呼叫 formatter + 傳 formatted string map 給 client
+- **initialItem 預先 fetch**：避免 client 二次 fetch 同一筆資料
+- **手動驗證確認**：`/admin/crud/event/<id>` 的「開始時間」顯示 `2030/12/1 下午6:00:00`（格式化成功），不是 raw `2026-08-24`
+
+**CustomRenderer 客戶端 React component 動態渲染 — 架構限制** — Next.js client bundle 不能動態 `require()` .tsx 檔案，且 React component 不能跨越 RSC 邊界傳遞。**Sprint 16 再處理**：
+- list page 移除 client side customRenderer 渲染（API 已準備）
+- 完整 list formatter 機制留 Sprint 16（架構上改為 server-side 預渲染 HTML）
+
+### Sprint 15 測試基線
+
+| 項目 | Sprint 14 結束 | Sprint 15 Stage 1 | Sprint 15 Stage 2 | Sprint 15 Stage 3 |
+|---|---|---|---|---|
+| vitest | 719 / 60 | **723 / 61** | **728 / 62** | **735 / 62** |
+| E2E | 29 | 29 | 29 | 29 |
+| Typecheck | ✅ 綠 | ✅ 綠 | ✅ 綠 | ✅ 綠 |
+| 真實可用性 | dev server E2E 4 spec 綠 | **+ sprint-15 守護測試** | **+ sprint-15 守護測試** | **+ detail formatter 套用驗證** |
+| Sprint 16 待做 | — | — | — | customRenderer client + list formatter + RWD E2E |
+
+完整 reflection 見 [`docs/reflection/sprint-15.md`](docs/reflection/sprint-15.md)。
+
+---
+
 ## Sprint 1 Review Fixes（7 SP）
 
 ### TD-305 Relation 二元性統一（2 SP）

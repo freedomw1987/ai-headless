@@ -7,6 +7,8 @@ import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth/config';
 import { loadSpec } from '@/lib/runtime/spec-loader';
 import { buildDetailUIConfig } from '@/lib/runtime/ui-config';
+import { loadFormatters } from '@/lib/runtime/extension-loaders';
+import { db } from '@/lib/db';
 import { isExtensionEnabledByName } from '@/lib/extensions/extension-enabled';
 import { getRequiredExtension } from '@/lib/specs/extension-derive';
 import { DynamicDetailClient } from './dynamic-detail-client';
@@ -38,12 +40,41 @@ export default async function DynamicCrudDetailPage({ params }: PageProps) {
   }
 
   const uiConfig = buildDetailUIConfig(spec);
+  const formatters = await loadFormatters(spec);
+
+  // Sprint 15 TECH-038：server side fetch item + 套用 formatter（避免把函數傳給 Client Component）
+  let initialItem: Record<string, unknown> | null = null;
+  let formattedValues: Record<string, string> = {};
+  try {
+    const model = spec.models[0];
+    if (!model) throw new Error('No model in spec');
+    const tableName = model.name.charAt(0).toLowerCase() + model.name.slice(1);
+    const dbClient = db as unknown as Record<string, { findFirst: (args: unknown) => Promise<unknown> }>;
+    const item = await dbClient[tableName]!.findFirst({
+      where: model.softDelete ? { id, deletedAt: null } : { id },
+    });
+    if (item) {
+      initialItem = item as Record<string, unknown>;
+      // 套用 formatter 到每個有 formatter 的 field
+      for (const field of uiConfig.fields) {
+        const formatter = field.formatter ? formatters[field.formatter] : undefined;
+        if (formatter) {
+          formattedValues[field.name] = formatter(initialItem[field.name], initialItem);
+        }
+      }
+    }
+  } catch (err) {
+    // 拿不到 item 也不擋 detail page 顯示（client side 會重 fetch）
+    console.warn('[detail page] failed to pre-fetch item:', err);
+  }
 
   return (
     <DynamicDetailClient
       config={uiConfig}
       specName={specName}
       id={id}
+      initialItem={initialItem}
+      formattedValues={formattedValues}
     />
   );
 }

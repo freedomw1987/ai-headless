@@ -12,7 +12,11 @@
           "name": "title",
           "type": "string",
           "label": "活動標題",
-          "validation": { "required": true, "min": 1, "max": 200 }
+          "validation": {
+            "required": true,
+            "min": 1,
+            "max": 200
+          }
         },
         {
           "name": "description",
@@ -23,13 +27,17 @@
           "name": "startAt",
           "type": "datetime",
           "label": "開始時間",
-          "validation": { "required": true }
+          "validation": {
+            "required": true
+          }
         },
         {
           "name": "endAt",
           "type": "datetime",
           "label": "結束時間",
-          "validation": { "required": true }
+          "validation": {
+            "required": true
+          }
         },
         {
           "name": "location",
@@ -40,14 +48,23 @@
           "name": "capacity",
           "type": "integer",
           "label": "容量",
-          "validation": { "default": 0 }
+          "validation": {
+            "default": 0
+          }
         },
         {
           "name": "status",
           "type": "enum",
           "label": "狀態",
-          "options": ["upcoming", "ongoing", "past", "cancelled"],
-          "validation": { "default": "upcoming" }
+          "options": [
+            "upcoming",
+            "ongoing",
+            "past",
+            "cancelled"
+          ],
+          "validation": {
+            "default": "upcoming"
+          }
         }
       ],
       "computed": [
@@ -85,7 +102,11 @@
           "name": "registerAttendee",
           "label": "報名",
           "input": [
-            { "name": "userId", "type": "string", "required": true }
+            {
+              "name": "userId",
+              "type": "string",
+              "required": true
+            }
           ],
           "implementation": "{{fn:registerAttendee}}"
         },
@@ -103,11 +124,17 @@
           "states": {
             "upcoming": {
               "label": "即將開始",
-              "allowedActions": ["START", "CANCEL"]
+              "allowedActions": [
+                "START",
+                "CANCEL"
+              ]
             },
             "ongoing": {
               "label": "進行中",
-              "allowedActions": ["END", "CANCEL"]
+              "allowedActions": [
+                "END",
+                "CANCEL"
+              ]
             },
             "past": {
               "label": "已結束",
@@ -119,14 +146,37 @@
             }
           },
           "transitions": [
-            { "from": "upcoming", "to": "ongoing", "effect": "sendStartNotification" },
-            { "from": "ongoing", "to": "past", "effect": "sendEndNotification" },
-            { "from": "upcoming", "to": "cancelled", "effect": "sendCancellationNotification" },
-            { "from": "ongoing", "to": "cancelled", "effect": "sendCancellationNotification" }
+            {
+              "from": "upcoming",
+              "to": "ongoing",
+              "effect": "sendStartNotification"
+            },
+            {
+              "from": "ongoing",
+              "to": "past",
+              "effect": "sendEndNotification"
+            },
+            {
+              "from": "upcoming",
+              "to": "cancelled",
+              "effect": "sendCancellationNotification"
+            },
+            {
+              "from": "ongoing",
+              "to": "cancelled",
+              "effect": "sendCancellationNotification"
+            }
           ]
         }
       ],
-      "softDelete": true
+      "softDelete": true,
+      "formatters": {
+        "startAt": "{{fn:formatEventTime}}",
+        "endAt": "{{fn:formatEventTime}}"
+      },
+      "customRenderers": {
+        "capacityBar": "{{fn:renderCapacityBar}}"
+      }
     },
     {
       "name": "Registration",
@@ -136,7 +186,10 @@
         {
           "name": "eventId",
           "type": "reference",
-          "relation": { "type": "belongsTo", "model": "Event" }
+          "relation": {
+            "type": "belongsTo",
+            "model": "Event"
+          }
         },
         {
           "name": "userId",

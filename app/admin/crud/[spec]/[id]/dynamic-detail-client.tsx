@@ -3,6 +3,9 @@
 // Sprint 14 TECH-034 — Dynamic Detail Client
 //
 // 動態組裝詳情頁 + workflow transitions。
+//
+// Sprint 15 TECH-038：formatter 在 server side（detail page）已套用，client 只接 formattedValues map
+// 不再傳函數（Server Component 不能傳函數給 Client Component）
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -13,15 +16,26 @@ type Props = {
   config: DetailUIConfig;
   specName: string;
   id: string;
+  /** Sprint 15 TECH-038：server side 預先 fetch 的 item，避免 client 二次 fetch */
+  initialItem?: Record<string, unknown> | null;
+  /** Sprint 15 TECH-038：server side 預先套用 formatter 後的 value map（fieldName → formatted string）*/
+  formattedValues?: Record<string, string>;
 };
 
-export function DynamicDetailClient({ config, specName, id }: Props) {
+export function DynamicDetailClient({
+  config,
+  specName,
+  id,
+  initialItem = null,
+  formattedValues = {},
+}: Props) {
   const router = useRouter();
-  const [item, setItem] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [item, setItem] = useState<Record<string, unknown> | null>(initialItem);
+  const [loading, setLoading] = useState(initialItem === null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialItem !== null) return; // 已有 initial，跳過 fetch
     let cancelled = false;
     setLoading(true);
     fetch(`/api/crud/${specName}?id=${id}`)
@@ -43,7 +57,7 @@ export function DynamicDetailClient({ config, specName, id }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [specName, id]);
+  }, [specName, id, initialItem]);
 
   const handleTransition = async (event: string) => {
     setError(null);
@@ -103,7 +117,9 @@ export function DynamicDetailClient({ config, specName, id }: Props) {
         {config.fields.map((field) => (
           <div key={field.name} className="flex border-b pb-2">
             <dt className="w-40 text-gray-600">{field.label}</dt>
-            <dd className="flex-1">{formatValue(item[field.name])}</dd>
+            <dd className="flex-1">
+              {formattedValues[field.name] ?? formatValue(item[field.name])}
+            </dd>
           </div>
         ))}
       </dl>

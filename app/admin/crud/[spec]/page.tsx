@@ -60,7 +60,12 @@ export default async function DynamicCrudPage({ params }: PageProps) {
 
   const uiConfig = buildListUIConfig(spec);
 
-  return <DynamicListClient config={uiConfig} specName={specName} />;
+  return (
+    <DynamicListClient
+      config={uiConfig}
+      specName={specName}
+    />
+  );
 }
 
 // 為了 static analysis — 不實際 export，但讓 Next.js 知道這個 page 是 dynamic

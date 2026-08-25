@@ -6,25 +6,34 @@
 
 ---
 
-## 📌 當前狀態（2026-08-25）
+## 📌 當前狀態（2026-08-26）
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 14 — Runtime 取代 Compiler** ✅ 完成（9.5 SP / 10.5 SP 實際） |
-| **Sprint 13 狀態** | ✅ 100% 收尾（1 commit + Reflection）|
-| **測試基線** | **748 tests / 60 files** / 4 Gate 全綠（719 vitest + 29 E2E）|
-| **下一個 P0** | Sprint 15 — TECH-037~040（5 SP / 見 Sprint 14 reflection）|
-| **路線圖關鍵** | ✅ Compiler 完全移除 + Runtime CRUD 全切換 + 4 spec 統一路徑 + 手動 dev server 驗證揭露 event/todo 需 `requiresExtension` |
+| **當前 Sprint** | **Sprint 15 — Runtime Spec 精簡化** ✅ partial 完成（3.5 SP / 4.5 SP 計劃） |
+| **Sprint 14 狀態** | ✅ 100% 收尾（2 commits + Reflection）|
+| **測試基線** | **764 tests / 62 files** / 4 Gate 全綠（735 vitest + 29 E2E）|
+| **下一個 P0** | Sprint 16 — TECH-038 收尾 + RWD E2E（3 SP / 見 Sprint 15 reflection）|
+| **路線圖關鍵** | ✅ 移除 apiBase/uiBase + 統一 disable guard（總是 guard）+ formatters/customRenderers API + detail formatter 真實套用驗證 |
 
-### Sprint 15 規劃（Runtime 路線優化）
+### Sprint 15 進度（Runtime Spec 精簡化）
 
-| Task | 內容 | SP |
-|---|---|---|
-| **TECH-037** | 移除 `apiBase` / `uiBase`（標 `@deprecated` → 完全刪除）| 0.5 |
-| **TECH-038** | `lib/runtime/ui-config.ts` 補 extension 自訂 layout 入口（讓 extension 可注入 columns / fields）| 2 |
-| **TECH-039** | E2E RWD 測試（Playwright viewport 切換 768/375）| 1 |
-| **TECH-040** | `requiresExtension` 統一從 manifest 推導（spec 內可省略）| 1 |
-| **合計** | | **4.5 SP** |
+| Task | 內容 | SP | 狀態 |
+|---|---|---|---|
+| **TECH-037** | 移除 `apiBase` / `uiBase` | 0.5 | ✅ Stage 1 (`e4797a5`) |
+| **TECH-040** | `requiresExtension` 統一從 `spec.name` 推導（總是 guard）| 1 | ✅ Stage 2 (`55664fd`) |
+| **TECH-038** | `formatters` + `customRenderers` 在 spec 內定義 | 2 | ✅ Stage 3 partial（本 commit）|
+| **TECH-039** | E2E RWD 測試 | 1 | ⏳ Sprint 16 |
+| **合計** | | **3.5 / 4.5 SP (78%)** | |
+
+### Sprint 16 規劃（Runtime Spec 精簡化收尾 + RWD）
+
+| Task | 內容 | SP | 來源 |
+|---|---|---|---|
+| **TECH-038a** | customRenderer 客戶端 React component 動態渲染機制 | 1 | Sprint 15 Stage 3 留 |
+| **TECH-038b** | list page formatter 完整支援（server-side 預渲染 HTML）| 1 | Sprint 15 Stage 3 留 |
+| **TECH-039** | E2E RWD 測試（Playwright viewport 切換 768/375）| 1 | Sprint 15 Stage 4 留 |
+| **合計** | | **3 SP** | |
 
 ### Sprint 6 進度
 

@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 14 完成）
+> **最後更新**：2026-08-26（Sprint 15 partial 完成）
 
 ---
 
@@ -21,6 +21,7 @@
 | Sprint 11 Phase B | [sprint-11-phase-b.md](./sprint-11-phase-b.md) | ✅ | 100% | ✅ 全綠 | Disable Guard 自動注入 |
 | Sprint 13 | [sprint-13.md](./sprint-13.md) | ✅ | 100% | ✅ 全綠 | Order Schema + 11 個 bug |
 | **Sprint 14** | [**sprint-14.md**](./sprint-14.md) | ✅ | **100%** | ✅ **全綠** | **方向大轉彎：Compiler → Runtime** |
+| **Sprint 15** | [**sprint-15.md**](./sprint-15.md) | ✅ | **78%** (3.5/4.5) | ✅ **全綠** | **移除 apiBase/uiBase + 統一 disable guard + formatters/customRenderers** |
 
 ---
 
@@ -39,15 +40,31 @@
 
 ---
 
+## 🏆 Sprint 15 重點發現（partial）
+
+- **Stage 1 + 2**：移除 Sprint 14 殘留死代碼（`apiBase`/`uiBase`）+ 統一 disable guard 推導邏輯
+- **Stage 3**：TECH-038 formatters + customRenderers 機制（partial — Server Component 函數傳遞限制揭露）
+- **揭露並修正真實問題**：
+  1. **Server Component 不能傳函數給 Client Component** — Next.js RSC 序列化限制
+  2. **Next.js Turbopack 把動態 `require()` 視為靜態分析目標** — 需加 `webpackIgnore` comment
+  3. **`{{fn:fnName}}` 語法內 fnName 駝峰 vs 檔名 kebab-case** — 雙檔名支援（toKebabCase + resolveExistingPath）
+- **手動 dev server 驗證**：detail page formatter 套用成功（`2030/12/1 下午6:00:00`）
+- **partial 決策誠實**：list page formatter 留 Sprint 16（架構上需 server-side 預渲染 HTML）
+- **Sprint 16 待做**：customRenderer client rendering + list formatter + RWD E2E（3 SP）
+
+---
+
 ## 📐 跨 Sprint 共同觀察
 
-| 觀察 | Sprint 5 | Sprint 6 | Sprint 11-14 |
+| 觀察 | Sprint 5 | Sprint 6 | Sprint 11-14 | Sprint 15 |
 |------|----------|----------|--------------|
 | Reviewer P1 重要 | ✅ TD-501 | ✅ TD-601 | ✅ setExtensionEnabled race |
 | 重構揭露深層 bug | ✅ TD-501 | ✅ TD-508 | ✅ Compiler 揭露 11+ bug |
 | 預防機制投資高 | ✅ JWT augmentation | ✅ no-floating-promises | ✅ Manual dev server verification |
-| E2E 是下一個缺口 | ⚠️ TD-503 | ✅ 已補 | ✅ Sprint 14 E2E 29/29 綠 |
-| Typecheck ≠ 真能用 | - | - | ✅ Sprint 13/14 兩次揭露 |
+| E2E 是下一個缺口 | ⚠️ TD-503 | ✅ 已補 | ✅ Sprint 14 E2E 29/29 綠 | ⚠️ RWD E2E 留 Sprint 16 |
+| Typecheck ≠ 真能用 | - | - | ✅ Sprint 13/14 兩次揭露 | ✅ Sprint 15 揭露「Server Component 函數傳遞限制」 |
+| 守衛檢查演進 | - | - | Sprint 9「每個 spec 都有 disable guard」是 false claim | ✅ Sprint 15「總是 guard」修正 |
+| SoT 擴展 | - | - | spec.json 是 manifest/API/UI 的 SoT | ✅ spec.json 是 formatter/customRenderer 的 SoT |
 
 ---
 
