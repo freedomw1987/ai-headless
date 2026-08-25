@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Trash2, Play, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Trash2, Play, AlertCircle, Edit } from 'lucide-react';
 import type { DetailUIConfig } from '@/lib/runtime/ui-config';
 import {
   Card,
@@ -141,6 +141,13 @@ export function DynamicDetailClient({
                 <Link href={`/admin/crud/${specName}`}>
                   <ArrowLeft />
                   返回列表
+                </Link>
+              </Button>
+              {/* Sprint 18 Stage 1 — 編輯按鈕（Sprint 14-17 一直缺少）*/}
+              <Button asChild variant="outline">
+                <Link href={`/admin/crud/${specName}/${id}/edit`}>
+                  <Edit />
+                  編輯
                 </Link>
               </Button>
               <Button variant="destructive" onClick={handleDelete}>

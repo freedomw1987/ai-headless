@@ -22,7 +22,7 @@
 
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { Plus, ChevronRight, Inbox } from 'lucide-react';
+import { Plus, ChevronRight, Inbox, Edit } from 'lucide-react';
 import { auth } from '@/lib/auth/config';
 import { hasPermission } from '@/lib/auth/rbac';
 import { loadSpec, listAvailableSpecs } from '@/lib/runtime/spec-loader';
@@ -174,12 +174,21 @@ export default async function DynamicCrudPage({ params }: PageProps) {
                     <TableCell key={idx}>{cell}</TableCell>
                   ))}
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/admin/crud/${specName}/${row.id}`}>
-                        檢視
-                        <ChevronRight />
-                      </Link>
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      {/* Sprint 18 Stage 1 — 編輯按鈕（Sprint 14-17 一直缺少）*/}
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/admin/crud/${specName}/${row.id}/edit`}>
+                          <Edit />
+                          編輯
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/admin/crud/${specName}/${row.id}`}>
+                          檢視
+                          <ChevronRight />
+                        </Link>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
