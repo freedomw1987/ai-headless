@@ -1,6 +1,7 @@
 {
   "name": "todo",
   "label": "待辦事項",
+  "requiresExtension": "todo",
   "models": [
     {
       "name": "Todo",

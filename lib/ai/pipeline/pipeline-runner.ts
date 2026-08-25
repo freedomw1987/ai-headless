@@ -1,6 +1,6 @@
 /**
  * ==============================================
- *  AI Pipeline Runner — Stage-based Orchestrator
+ *  AI Pipeline Runner — Sprint 14 Runtime 版
  * ==============================================
  *
  * 對應：docs/prd/01-framework-core.md §4 + docs/prd/06-ai-chat.md
@@ -9,17 +9,17 @@
  * - 每個 Stage 接受上一個的輸出，產出下一個的輸入
  * - 支援 dry-run（不執行副作用）
  * - 錯誤時中斷，保留 history
- * - 預設 5 Stage：AI Spec → Schema → API → UI → RBAC
+ *
+ * Sprint 14 改造：
+ * - 移除 lib/compiler/ 依賴
+ * - 各 stage 改為「指向 runtime」而非「產生 source code」
+ * - runtime handler 已就緒 → pipeline 記錄就緒狀態
+ *
+ * Stage 流程：
+ *   ai-spec → schema → api → ui → rbac
  */
 
-import { generatePrismaSchema } from '@/lib/compiler/schema-generator';
-import { generateRouteHandlers } from '@/lib/compiler/api-generator';
-import { generateUIPages } from '@/lib/compiler/ui-generator';
-import {
-  generateRBACConfig,
-  generateCheckPermissionSource,
-} from '@/lib/compiler/permission-generator';
-import type { JsonSpec } from '@/lib/specs/json-spec.types';
+import type { JsonSpec, Model } from '@/lib/specs/json-spec.types';
 import { mergeRelationsInSpec } from '@/lib/specs/relation-merge';
 
 // ==============================================
@@ -39,221 +39,216 @@ export type PipelineContext = {
   state: PipelineState;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PipelineStage<TIn = any, TOut = any> = {
-  /** Stage 名稱（用於 log / error） */
+export type PipelineStage<TIn = unknown, TOut = unknown> = {
   name: string;
-  /** 執行邏輯 */
   run: (input: TIn, ctx: PipelineContext) => Promise<TOut>;
-  /** 是否跳過（返回 true 時不執行 run） */
-  shouldSkip?: (input: TIn, ctx: PipelineContext) => boolean;
+  /** 條件跳過（返回 true 時整個 stage 不執行） */
+  shouldSkip?: (input: unknown, ctx: PipelineContext) => boolean;
 };
 
-export type PipelineHistoryEntry = {
+export type StageHistoryEntry = {
   stage: string;
-  value: unknown;
-  timestamp: number;
-  skipped?: boolean;
+  input: unknown;
+  output?: unknown;
+  value?: unknown; // alias for output (向後兼容)
+  error?: Error;
 };
 
-export type PipelineResult<TFinal = unknown> = {
-  /** 最終輸出（成功時） */
-  value: TFinal | null;
-  /** 每個 Stage 的歷史記錄 */
-  history: PipelineHistoryEntry[];
-  /** 錯誤（失敗時） */
-  error?: {
-    stage: string;
-    message: string;
-    cause?: Error;
-  };
+export type PipelineResult<T> = {
+  value?: T;
+  error?: PipelineStageError;
+  history: StageHistoryEntry[];
 };
 
-export type Pipeline<TSteps extends ReadonlyArray<PipelineStage> = ReadonlyArray<PipelineStage>> = {
-  stages: TSteps;
-};
-
-// ==============================================
-// Pipeline Builder
-// ==============================================
-
-/**
- * 將多個 Stage 鏈接成 Pipeline
- *
- * 透過 variadic tuple types 強制 type chain：
- * stage[N+1].TIn === stage[N].TOut
- *
- * 不匹配時 type error。
- */
-export function createPipeline<TStages extends ReadonlyArray<PipelineStage>>(
-  ...stages: TStages
-): Pipeline<TStages> {
-  return { stages };
+/** Pipeline stage 錯誤（附 stage 名稱） */
+export class PipelineStageError extends Error {
+  readonly stage: string;
+  constructor(stage: string, cause: unknown) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    super(message);
+    this.name = 'PipelineStageError';
+    this.stage = stage;
+  }
 }
 
 // ==============================================
-// Pipeline Runner
+// Pipeline 引擎
 // ==============================================
 
-export async function runPipeline<TIn = unknown, TFinal = unknown>(
-  pipeline: Pipeline,
-  initialInput: TIn,
-  ctxInit: Partial<Omit<PipelineContext, 'state'>> = {},
+export function createPipeline(...stages: Array<PipelineStage<any, any>>): PipelineStage[] {
+  return stages as PipelineStage[];
+}
+
+export async function runPipeline<TInitial, TFinal>(
+  pipeline: PipelineStage[],
+  initialInput: TInitial,
+  ctx?: Omit<PipelineContext, 'state'> & { state?: PipelineState },
 ): Promise<PipelineResult<TFinal>> {
-  const ctx: PipelineContext = {
-    ...ctxInit,
-    state: {},
+  const fullCtx: PipelineContext = {
+    dryRun: ctx?.dryRun ?? false,
+    state: ctx?.state ?? {},
+    userId: ctx?.userId,
+    cwd: ctx?.cwd,
   };
+  const history: StageHistoryEntry[] = [];
+  let currentInput: unknown = initialInput;
 
-  const history: PipelineHistoryEntry[] = [];
-  let current: unknown = initialInput;
-
-  for (const stage of pipeline.stages) {
-    try {
-      // 檢查是否跳過
-      const shouldSkip = stage.shouldSkip?.(current as never, ctx) ?? false;
-
-      if (shouldSkip) {
-        history.push({
-          stage: stage.name,
-          value: current,
-          timestamp: Date.now(),
-          skipped: true,
-        });
-        continue;
-      }
-
-      // 執行
-      const output = await stage.run(current as never, ctx);
-
+  for (const stage of pipeline) {
+    if (stage.shouldSkip?.(currentInput, fullCtx)) {
       history.push({
         stage: stage.name,
-        value: output,
-        timestamp: Date.now(),
+        input: currentInput,
+        output: currentInput, // skip 時 output = input
+        value: currentInput,
       });
-
-      current = output;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      return {
-        value: null,
-        history,
-        error: {
-          stage: stage.name,
-          message: error.message,
-          cause: error,
-        },
-      };
+      continue;
+    }
+    try {
+      const output = await stage.run(currentInput, fullCtx);
+      history.push({
+        stage: stage.name,
+        input: currentInput,
+        output,
+        value: output,
+      });
+      currentInput = output;
+    } catch (e) {
+      const err = new PipelineStageError(stage.name, e);
+      // 不 push error entry — history 只記錄已成功的 stage
+      return { value: null as unknown as TFinal, error: err, history };
     }
   }
 
-  return {
-    value: current as TFinal,
-    history,
-  };
+  return { value: currentInput as TFinal, history };
 }
 
 // ==============================================
-// Helpers
+// Stage 1: AI Spec（自然語言 → JsonSpec）
 // ==============================================
 
-function isJsonSpec(v: unknown): v is JsonSpec {
-  return typeof v === 'object' && v !== null && 'models' in v;
-}
-
-// ==============================================
-// 預設 Stage 工廠
-// ==============================================
-
-/**
- * Stage 1: AI 生成 JsonSpec
- *
- * @param getSpec 自然語言 → JsonSpec 的函式（通常呼叫 OpenAI / Anthropic）
- */
-export function aiSpecStage(getSpec: (input: string) => Promise<JsonSpec> | JsonSpec): PipelineStage {
+export function aiSpecStage(
+  getSpec: (input: string) => Promise<JsonSpec> | JsonSpec,
+): PipelineStage<string, { spec: JsonSpec }> {
   return {
     name: 'ai-spec',
-    run: async (input) => {
-      const spec = await getSpec(String(input));
-      // TD-305: 統一 field.relation / model.relations 二元性
-      return mergeRelationsInSpec(spec);
+    run: async (input: string) => {
+      const spec = await getSpec(input);
+      // 合併 relations（內部處理，spec 對外是完整的）
+      const merged = mergeRelationsInSpec(spec);
+      return { spec: merged };
     },
   };
 }
 
-/**
- * Stage 2: Schema Generator（JsonSpec → Prisma Schema）
- */
-export function schemaStage(): PipelineStage {
+// ==============================================
+// Stage 2: Schema（Runtime 不再產 Prisma schema）
+// ==============================================
+
+export function schemaStage(): PipelineStage<{ spec: JsonSpec }, { spec: JsonSpec; message: string }> {
   return {
     name: 'schema',
-    run: async (input: unknown) => {
-      if (!isJsonSpec(input)) throw new Error('schemaStage: input is not a JsonSpec');
+    run: async (input: { spec: JsonSpec }) => {
+      if (!input?.spec) throw new Error('schemaStage: input is not a JsonSpec');
       return {
-        spec: input,
-        prismaSchema: generatePrismaSchema(input),
+        spec: input.spec,
+        message:
+          `Sprint 14: Prisma schema 由 prisma/schema.prisma 手動維護，runtime dynamic CRUD 直接讀 model。`,
       };
     },
   };
 }
 
-/**
- * Stage 3: API Generator（JsonSpec → REST routes）
- */
-export function apiStage(): PipelineStage {
+// ==============================================
+// Stage 3: API（指向 runtime handler）
+// ==============================================
+
+export type ApiStageOutput = {
+  spec: JsonSpec;
+  endpoint: string;
+  runtimeReady: true;
+};
+
+export function apiStage(): PipelineStage<{ spec: JsonSpec }, ApiStageOutput> {
   return {
     name: 'api',
-    run: async (input: unknown) => {
-      const obj = input as { spec: JsonSpec; prismaSchema: string };
-      if (!obj?.spec) throw new Error('apiStage: input invalid');
+    run: async (input: { spec: JsonSpec }) => {
+      if (!input?.spec) throw new Error('apiStage: input invalid');
       return {
-        ...obj,
-        apiRoutes: generateRouteHandlers(obj.spec),
+        spec: input.spec,
+        endpoint: `/api/crud/${input.spec.name}`,
+        runtimeReady: true,
       };
     },
   };
 }
 
-/**
- * Stage 4: UI Generator（JsonSpec → CRUD pages）
- */
-export function uiStage(): PipelineStage {
+// ==============================================
+// Stage 4: UI（指向 runtime dynamic page）
+// ==============================================
+
+export type UiStageOutput = {
+  spec: JsonSpec;
+  path: string;
+  runtimeReady: true;
+};
+
+export function uiStage(): PipelineStage<ApiStageOutput, UiStageOutput> {
   return {
     name: 'ui',
-    run: async (input: unknown) => {
-      const obj = input as { spec: JsonSpec; prismaSchema: string; apiRoutes: unknown[] };
-      if (!obj?.spec) throw new Error('uiStage: input invalid');
+    run: async (input: ApiStageOutput) => {
+      if (!input?.spec) throw new Error('uiStage: input invalid');
       return {
-        ...obj,
-        uiPages: generateUIPages(obj.spec),
+        spec: input.spec,
+        path: `/admin/crud/${input.spec.name}`,
+        runtimeReady: true,
       };
     },
   };
 }
 
-/**
- * Stage 5: RBAC Generator（JsonSpec → RBAC config + checkPermission source）
- */
-export function rbacStage(): PipelineStage {
+// ==============================================
+// Stage 5: RBAC（用 RBAC matrix 推導權限）
+// ==============================================
+
+export type RbacStageOutput = {
+  spec: JsonSpec;
+  permissions: string[];
+  runtimeReady: true;
+};
+
+export function rbacStage(): PipelineStage<UiStageOutput, RbacStageOutput> {
   return {
     name: 'rbac',
-    run: async (input: unknown) => {
-      const obj = input as { spec: JsonSpec };
-      if (!obj?.spec) throw new Error('rbacStage: input invalid');
-      const rbac = generateRBACConfig(obj.spec);
-      const rbacSource = generateCheckPermissionSource(obj.spec);
+    run: async (input: UiStageOutput) => {
+      if (!input?.spec) throw new Error('rbacStage: input invalid');
       return {
-        ...obj,
-        rbac,
-        rbacSource,
+        spec: input.spec,
+        permissions: derivePermissions(input.spec),
+        runtimeReady: true,
       };
     },
   };
 }
 
-/**
- * 預設完整 pipeline（自然語言 → 完整編譯產物）
- */
+// ==============================================
+// Internal：RBAC 推導
+// ==============================================
+
+function derivePermissions(spec: JsonSpec): string[] {
+  const permissions: string[] = [];
+  for (const model of spec.models) {
+    permissions.push(`${spec.name}.create`);
+    permissions.push(`${spec.name}.read`);
+    permissions.push(`${spec.name}.update`);
+    permissions.push(`${spec.name}.delete`);
+  }
+  return permissions;
+}
+
+// ==============================================
+// 預設完整 pipeline
+// ==============================================
+
 export function createDefaultPipeline(getSpec: (input: string) => Promise<JsonSpec> | JsonSpec) {
   return createPipeline(
     aiSpecStage(getSpec),
@@ -263,3 +258,9 @@ export function createDefaultPipeline(getSpec: (input: string) => Promise<JsonSp
     rbacStage(),
   );
 }
+
+// Helper for type guard
+function _isModel(m: unknown): m is Model {
+  return typeof m === 'object' && m !== null && 'fields' in m;
+}
+void _isModel;

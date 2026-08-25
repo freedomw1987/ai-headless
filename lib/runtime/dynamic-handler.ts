@@ -198,7 +198,7 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
   const list: DynamicHandlers['list'] = async (ctx) => {
     const disabled = await checkDisabled(spec);
     if (disabled) return disabled;
-    // 讀取不強迫權限（參考現有 /api/blog、/api/todo 路由）
+    // 讀取不強迫權限（dynamic handler 適用所有 spec）
     // Permission check 由 route 層 / page 層負責
 
     // @ts-expect-error dynamic Prisma access

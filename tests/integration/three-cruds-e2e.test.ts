@@ -11,7 +11,7 @@
  *     Sprint 4+ 可整合 docker-postgres 做完整 round-trip。
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 
 // ==============================================
@@ -106,14 +106,16 @@ describe('S3.3 CRUD Operations Round-trip', () => {
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { generatePrismaSchema } from '@/lib/compiler/schema-generator';
-import { generateRouteHandlers } from '@/lib/compiler/api-generator';
-import { generatePermissionMatrix } from '@/lib/compiler/permission-generator';
+import { invalidateSpecCache, loadSpec } from '@/lib/runtime/spec-loader';
+import { createDynamicHandlers } from '@/lib/runtime/dynamic-handler';
+import { buildListUIConfig, buildDetailUIConfig } from '@/lib/runtime/ui-config';
 import { validateJsonSpec } from '@/lib/specs/json-spec.validator';
 import type { JsonSpec } from '@/lib/specs/json-spec.types';
 
-describe('S3.3 E2E Pipeline: JSON Spec → DB', () => {
-  it('Todo Extension: spec → schema → API → permissions 完整 chain', () => {
+describe('S3.3 E2E Pipeline: JSON Spec → Runtime', () => {
+  beforeEach(() => invalidateSpecCache());
+
+  it('Todo Extension: spec → runtime handler → UI config 完整 chain', async () => {
     const todoRaw = fs.readFileSync(
       path.join(process.cwd(), 'extensions/todo/todo-spec.json'),
       'utf-8',
@@ -123,25 +125,29 @@ describe('S3.3 E2E Pipeline: JSON Spec → DB', () => {
     // 1. Validation
     expect(() => validateJsonSpec(spec)).not.toThrow();
 
-    // 2. Prisma Schema
-    const prismaSchema = generatePrismaSchema(spec);
-    expect(prismaSchema).toContain('model Todo');
-    expect(prismaSchema).toContain('title');
-    expect(prismaSchema).toContain('completed');
+    // 2. Runtime loader 能載入
+    const loaded = await loadSpec('todo');
+    expect(loaded.name).toBe('todo');
 
-    // 3. API Routes
-    const apiRoutes = generateRouteHandlers(spec);
-    const todoRoutes = apiRoutes.filter((r) => r.model === 'Todo');
-    expect(todoRoutes.length).toBeGreaterThanOrEqual(5);
-    expect(todoRoutes.find((r) => r.operation === 'list')).toBeDefined();
-    expect(todoRoutes.find((r) => r.operation === 'create')).toBeDefined();
+    // 3. Dynamic handler 5 CRUD
+    const handlers = createDynamicHandlers(loaded);
+    expect(typeof handlers.list).toBe('function');
+    expect(typeof handlers.get).toBe('function');
+    expect(typeof handlers.create).toBe('function');
+    expect(typeof handlers.update).toBe('function');
+    expect(typeof handlers.delete).toBe('function');
 
-    // 4. Permission Matrix
-    const permissions = generatePermissionMatrix(spec);
-    expect(permissions.actions.length).toBeGreaterThan(0);
+    // 4. UI config 自動生成
+    const listConfig = buildListUIConfig(loaded);
+    expect(listConfig.title).toBe('待辦');
+    expect(listConfig.fields.length).toBeGreaterThan(0);
+
+    const detailConfig = buildDetailUIConfig(loaded);
+    // todo 沒 workflow → transitions = []
+    expect(detailConfig.transitions).toEqual([]);
   });
 
-  it('Event Extension: spec 含 2 個 Models + workflow', () => {
+  it('Event Extension: spec 含 2 個 Models + workflow', async () => {
     const raw = fs.readFileSync(
       path.join(process.cwd(), 'extensions/event/event-spec.json'),
       'utf-8',
@@ -155,9 +161,11 @@ describe('S3.3 E2E Pipeline: JSON Spec → DB', () => {
     expect(eventModel.workflows).toBeDefined();
     expect(eventModel.workflows![0]!.initialState).toBe('upcoming');
 
-    const prisma = generatePrismaSchema(spec);
-    expect(prisma).toContain('model Event');
-    expect(prisma).toContain('model Registration');
+    // runtime 能偵測 workflow transitions
+    const loaded = await loadSpec('event');
+    const detailConfig = buildDetailUIConfig(loaded);
+    // event 有 workflow → transitions > 0
+    expect(detailConfig.transitions.length).toBeGreaterThan(0);
   });
 });
 

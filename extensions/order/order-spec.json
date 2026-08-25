@@ -1,8 +1,6 @@
 {
   "name": "order",
   "label": "Order",
-  "apiBase": "/api/order",
-  "uiBase": "/admin/orders",
   "requiresExtension": "order",
   "workflows": [
     {

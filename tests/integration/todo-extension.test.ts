@@ -13,7 +13,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { generatePrismaSchema } from '@/lib/compiler/schema-generator';
+import { loadSpec } from '@/lib/runtime/spec-loader';
 import { validateJsonSpec } from '@/lib/specs/json-spec.validator';
 import type { JsonSpec } from '@/lib/specs/json-spec.types';
 
@@ -100,35 +100,40 @@ describe('S3.1 Todo JsonSpec', () => {
 // 3. Prisma Schema 生成
 // ==============================================
 
-describe('S3.1 Todo → Prisma Schema', () => {
-  it('生成正確的 Prisma schema', () => {
+describe('S3.1 Todo → Runtime Loader', () => {
+  it('Runtime loader 能讀取所有 Todo 欄位', async () => {
     const raw = fs.readFileSync(
       path.join(process.cwd(), 'extensions/todo/todo-spec.json'),
       'utf-8',
     );
     const spec: JsonSpec = JSON.parse(raw);
 
-    const prisma = generatePrismaSchema(spec);
-
-    expect(prisma).toContain('model Todo');
-    expect(prisma).toContain('title');
-    expect(prisma).toContain('description');
-    expect(prisma).toContain('completed');
-    expect(prisma).toContain('dueDate');
-    expect(prisma).toContain('priority');
+    // Sprint 14: runtime loader 取代 compiler
+    const loaded = await loadSpec('todo');
+    expect(loaded.models).toHaveLength(1);
+    const model = loaded.models[0]!;
+    expect(model.name).toBe('Todo');
+    const fieldNames = model.fields.map((f) => f.name);
+    expect(fieldNames).toContain('title');
+    expect(fieldNames).toContain('description');
+    expect(fieldNames).toContain('completed');
+    expect(fieldNames).toContain('dueDate');
+    expect(fieldNames).toContain('priority');
   });
 
-  it('priority 欄位帶有預設值 "medium"', () => {
-    const raw = fs.readFileSync(
-      path.join(process.cwd(), 'extensions/todo/todo-spec.json'),
+  it('priority 欄位帶有預設值 "medium"', async () => {
+    // Prisma schema 仍手動維護（在 prisma/schema.prisma）
+    const prismaRaw = fs.readFileSync(
+      path.join(process.cwd(), 'prisma/schema.prisma'),
       'utf-8',
     );
-    const spec: JsonSpec = JSON.parse(raw);
+    expect(prismaRaw).toContain('priority');
+    expect(prismaRaw).toMatch(/priority\s+String\s+@default\("medium"\)/);
 
-    const prisma = generatePrismaSchema(spec);
-
-    expect(prisma).toContain('priority');
-    expect(prisma).toMatch(/priority\s+String\s+@default\("medium"\)/);
+    // spec 同步驗證
+    const loaded = await loadSpec('todo');
+    const priorityField = loaded.models[0]!.fields.find((f) => f.name === 'priority');
+    expect(priorityField?.validation?.default).toBe('medium');
   });
 });
 

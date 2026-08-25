@@ -1,6 +1,7 @@
 {
   "name": "event",
   "label": "活動管理",
+  "requiresExtension": "event",
   "models": [
     {
       "name": "Event",

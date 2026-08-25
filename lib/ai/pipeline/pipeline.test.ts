@@ -18,8 +18,6 @@ import {
   type PipelineContext,
 } from './pipeline-runner';
 import type { JsonSpec } from '@/lib/specs/json-spec.types';
-import type { GeneratedRoute } from '@/lib/compiler/api-generator';
-import type { RBACConfig } from '@/lib/compiler/permission-generator';
 
 // ==============================================
 // Mock 工具：建立測試用的 Stage
@@ -169,30 +167,28 @@ describe('Pipeline 實戰：自然語言 → JsonSpec → 編譯', () => {
       },
     };
 
-    const schemaStage: PipelineStage<JsonSpec, string> = {
+    const schemaStage: PipelineStage<JsonSpec, { spec: JsonSpec; message: string }> = {
       name: 'schema',
-      run: async (spec) => {
-        // mock — 實際上會呼叫 schema-generator
-        return `// generated schema for ${spec.name}`;
-      },
+      run: async (spec) => ({
+        spec,
+        message: 'mock schema stage',
+      }),
     };
 
-    const apiStage: PipelineStage<JsonSpec, GeneratedRoute[]> = {
+    const apiStage: PipelineStage<JsonSpec, { spec: JsonSpec; endpoint: string }> = {
       name: 'api',
-      run: async (_spec) => {
-        // mock — 實際上會呼叫 api-generator
-        return [
-          { path: '/api/crud/todo', method: 'GET', handler: 'GET', code: '', model: 'Todo', operation: 'list' },
-        ];
-      },
+      run: async (spec) => ({
+        spec,
+        endpoint: `/api/crud/${spec.name}`,
+      }),
     };
 
-    const rbacStage: PipelineStage<JsonSpec, RBACConfig> = {
+    const rbacStage: PipelineStage<JsonSpec, { spec: JsonSpec; permissions: string[] }> = {
       name: 'rbac',
-      run: async (_spec) => {
-        // mock — 實際上會呼叫 permission-generator
-        return { permissions: [], roles: [] };
-      },
+      run: async (spec) => ({
+        spec,
+        permissions: [],
+      }),
     };
 
     const pipeline = createPipeline(aiStage, schemaStage, apiStage, rbacStage);

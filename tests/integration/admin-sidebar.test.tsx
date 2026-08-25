@@ -34,10 +34,10 @@ const fakeUser = {
 
 // Sprint 12：模擬從 manifest.nav 生成的 nav items
 const defaultExtensionNavItems: ExtensionNavItem[] = [
-  { href: '/admin/orders', label: '訂單', requiresExtension: 'order' },
-  { href: '/admin/blog', label: '部落格', requiresExtension: 'blog' },
-  { href: '/admin/event', label: '活動', requiresExtension: 'event' },
-  { href: '/admin/todo', label: '待辦', requiresExtension: 'todo' },
+  { href: '/admin/crud/order', label: '訂單', requiresExtension: 'order' },
+  { href: '/admin/crud/blog', label: '部落格', requiresExtension: 'blog' },
+  { href: '/admin/crud/event', label: '活動', requiresExtension: 'event' },
+  { href: '/admin/crud/todo', label: '待辦', requiresExtension: 'todo' },
 ];
 
 function renderSidebar(
@@ -141,10 +141,10 @@ describe('AdminSidebar — Nav Link href', () => {
   it('正確的 href', () => {
     renderSidebar(['blog', 'event', 'todo', 'order']);
     const blogLink = screen.getByRole('link', { name: '部落格' });
-    expect(blogLink.getAttribute('href')).toBe('/admin/blog');
+    expect(blogLink.getAttribute('href')).toBe('/admin/crud/blog');
 
     const eventLink = screen.getByRole('link', { name: '活動' });
-    expect(eventLink.getAttribute('href')).toBe('/admin/event');
+    expect(eventLink.getAttribute('href')).toBe('/admin/crud/event');
   });
 
   it('disabled 的 extension 連結根本不存在', () => {

@@ -65,7 +65,7 @@ async function main() {
   console.log(`\n🎉 Done! Created ${3} demo orders`);
   console.log('\n現在可以：');
   console.log('  1. 啟動 pnpm dev');
-  console.log('  2. 登入 admin → /admin/orders');
+  console.log('  2. 登入 admin → /admin/crud/order');
   console.log('  3. 點任一訂單詳情 → 按狀態切換按鈕');
 }
 

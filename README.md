@@ -115,7 +115,7 @@ ai-headless/
 │   ├── ai/                    # AI Pipeline（Pipeline Runner）
 │   ├── chat/                  # Chat 工具（Markdown / JsonSpec extraction）
 │   ├── auth/                  # Auth.js v5 + RBAC
-│   ├── compiler/              # 4 個 Generator（Schema / API / UI / Permission）
+│   ├── compiler/              # Sprint 14 已移除（被 runtime 取代）
 │   ├── computed/              # Computed SDK
 │   ├── actions/               # Action SDK
 │   ├── hooks/                 # Hook SDK

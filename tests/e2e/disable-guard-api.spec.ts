@@ -19,21 +19,19 @@ const BASE_URL = process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://localhost:3000'
 async function setExtensionEnabled(name: string, enabled: boolean) {
   // 透過 toggle API 反覆切，直到達到目標狀態
   const apiContext = await pwRequest.newContext({ baseURL: BASE_URL });
-  const statusRes = await apiContext.get('/api/extensions');
-  const statusData = await statusRes.json();
-  const current = statusData.data.find((e: { name: string; isEnabled: boolean }) => e.name === name);
-
-  if (!current) {
-    throw new Error(`Extension '${name}' not found`);
-  }
 
   let attempts = 0;
-  while (current.isEnabled !== enabled && attempts < 5) {
+  while (attempts < 5) {
+    const statusRes = await apiContext.get('/api/extensions');
+    const statusData = await statusRes.json();
+    const current = statusData.data.find((e: { name: string; isEnabled: boolean }) => e.name === name);
+
+    if (!current) {
+      throw new Error(`Extension '${name}' not found`);
+    }
+    if (current.isEnabled === enabled) break;
+
     await apiContext.post(`/api/extensions/${name}/toggle`);
-    const newStatus = await apiContext.get('/api/extensions');
-    const newData = await newStatus.json();
-    const updated = newData.data.find((e: { name: string; isEnabled: boolean }) => e.name === name);
-    if (updated.isEnabled === enabled) break;
     attempts++;
   }
   await apiContext.dispose();
@@ -53,40 +51,39 @@ test.describe('Disable Guard — API E2E', () => {
       await setExtensionEnabled('blog', true);
     });
 
-    test('Enable → GET /api/blog → 200', async ({ request: req }) => {
+    test('Enable → GET /api/crud/blog → 200', async ({ request: req }) => {
       await setExtensionEnabled('blog', true);
-      const res = await req.get(`${BASE_URL}/api/blog`);
+      const res = await req.get(`${BASE_URL}/api/crud/blog`);
       expect(res.status()).toBe(200);
     });
 
-    test('Disable → GET /api/blog → 403 ExtensionDisabled', async ({ request: req }) => {
+    test('Disable → GET /api/crud/blog → 403', async ({ request: req }) => {
       await setExtensionEnabled('blog', false);
-      const res = await req.get(`${BASE_URL}/api/blog`);
+      const res = await req.get(`${BASE_URL}/api/crud/blog`);
       expect(res.status()).toBe(403);
       const body = await res.json();
-      expect(body.error).toBe('ExtensionDisabled');
-      expect(body.extension).toBe('blog');
+      expect(body.error).toMatch(/blog.*disabled/i);
     });
 
-    test('Disable → POST /api/blog → 403', async ({ request: req }) => {
+    test('Disable → POST /api/crud/blog → 403', async ({ request: req }) => {
       await setExtensionEnabled('blog', false);
-      const res = await req.post(`${BASE_URL}/api/blog`, {
+      const res = await req.post(`${BASE_URL}/api/crud/blog`, {
         data: { title: 'test' },
       });
       expect(res.status()).toBe(403);
     });
 
-    test('Disable → POST /api/blog/{id}/transition → 403', async ({ request: req }) => {
+    test('Disable → POST /api/crud/blog/{id}/transition → 403', async ({ request: req }) => {
       await setExtensionEnabled('blog', false);
-      const res = await req.post(`${BASE_URL}/api/blog/dummy-id/transition`, {
+      const res = await req.post(`${BASE_URL}/api/crud/blog?id=dummy-id&event=submit`, {
         data: { event: 'submit' },
       });
       expect(res.status()).toBe(403);
     });
 
-    test('Re-enable → GET /api/blog → 200', async ({ request: req }) => {
+    test('Re-enable → GET /api/crud/blog → 200', async ({ request: req }) => {
       await setExtensionEnabled('blog', true);
-      const res = await req.get(`${BASE_URL}/api/blog`);
+      const res = await req.get(`${BASE_URL}/api/crud/blog`);
       expect(res.status()).toBe(200);
     });
   });
@@ -96,15 +93,15 @@ test.describe('Disable Guard — API E2E', () => {
       await setExtensionEnabled('event', true);
     });
 
-    test('Disable → GET /api/event → 403', async ({ request: req }) => {
+    test('Disable → GET /api/crud/event → 403', async ({ request: req }) => {
       await setExtensionEnabled('event', false);
-      const res = await req.get(`${BASE_URL}/api/event`);
+      const res = await req.get(`${BASE_URL}/api/crud/event`);
       expect(res.status()).toBe(403);
     });
 
-    test('Re-enable → GET /api/event → 200', async ({ request: req }) => {
+    test('Re-enable → GET /api/crud/event → 200', async ({ request: req }) => {
       await setExtensionEnabled('event', true);
-      const res = await req.get(`${BASE_URL}/api/event`);
+      const res = await req.get(`${BASE_URL}/api/crud/event`);
       expect(res.status()).toBe(200);
     });
   });
@@ -114,15 +111,15 @@ test.describe('Disable Guard — API E2E', () => {
       await setExtensionEnabled('todo', true);
     });
 
-    test('Disable → GET /api/todo → 403', async ({ request: req }) => {
+    test('Disable → GET /api/crud/todo → 403', async ({ request: req }) => {
       await setExtensionEnabled('todo', false);
-      const res = await req.get(`${BASE_URL}/api/todo`);
+      const res = await req.get(`${BASE_URL}/api/crud/todo`);
       expect(res.status()).toBe(403);
     });
 
-    test('Re-enable → GET /api/todo → 200', async ({ request: req }) => {
+    test('Re-enable → GET /api/crud/todo → 200', async ({ request: req }) => {
       await setExtensionEnabled('todo', true);
-      const res = await req.get(`${BASE_URL}/api/todo`);
+      const res = await req.get(`${BASE_URL}/api/crud/todo`);
       expect(res.status()).toBe(200);
     });
   });
@@ -130,15 +127,15 @@ test.describe('Disable Guard — API E2E', () => {
   test.describe('Order Extension', () => {
     // Sprint 11 補完：Order 加了 manifest.json，可被 extension-manager 識別
 
-    test('Disable → GET /api/order → 403', async ({ request: req }) => {
+    test('Disable → GET /api/crud/order → 403', async ({ request: req }) => {
       await setExtensionEnabled('order', false);
-      const res = await req.get(`${BASE_URL}/api/order`);
+      const res = await req.get(`${BASE_URL}/api/crud/order`);
       expect(res.status()).toBe(403);
     });
 
-    test('Re-enable → GET /api/order → 200', async ({ request: req }) => {
+    test('Re-enable → GET /api/crud/order → 200', async ({ request: req }) => {
       await setExtensionEnabled('order', true);
-      const res = await req.get(`${BASE_URL}/api/order`);
+      const res = await req.get(`${BASE_URL}/api/crud/order`);
       expect(res.status()).toBe(200);
     });
   });

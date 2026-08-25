@@ -10,14 +10,21 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 10 — Compiler Pipeline** Phase 1 ✅ 完成（修正 Sprint 9 違背 §13 問題） |
-| **Sprint 9 狀態** | ✅ 100% 收尾（4 commits + Reflection）|
-| **測試基線** | 777 tests / 56 files / 4 Gate 全綠（compiler 既存測試 + Phase 1 都綠）|
-| **下一個 P0** | Sprint 12 — TECH-023 Sidebar（2 SP） / TECH-024 Workflow button（3 SP） |
-| **下一個 P1** | Sprint 12 — TECH-025~027 4 個 extension schema.json + 撤手寫（6 SP） |
-| **下一個 P2** | TD-522 Order manifest ✅ Done（Sprint 11） |
-| **Sprint 11 規劃** | ✅ 100% 完成（Phase A + Phase B）|
-| **路線圖關鍵** | Sprint 11 證明 compiler 產出可 typecheck + guard 自動注入；剩 sidebar/workflow button |
+| **當前 Sprint** | **Sprint 14 — Runtime 取代 Compiler** ✅ 完成（9.5 SP / 10.5 SP 實際） |
+| **Sprint 13 狀態** | ✅ 100% 收尾（1 commit + Reflection）|
+| **測試基線** | **748 tests / 60 files** / 4 Gate 全綠（719 vitest + 29 E2E）|
+| **下一個 P0** | Sprint 15 — TECH-037~040（5 SP / 見 Sprint 14 reflection）|
+| **路線圖關鍵** | ✅ Compiler 完全移除 + Runtime CRUD 全切換 + 4 spec 統一路徑 + 手動 dev server 驗證揭露 event/todo 需 `requiresExtension` |
+
+### Sprint 15 規劃（Runtime 路線優化）
+
+| Task | 內容 | SP |
+|---|---|---|
+| **TECH-037** | 移除 `apiBase` / `uiBase`（標 `@deprecated` → 完全刪除）| 0.5 |
+| **TECH-038** | `lib/runtime/ui-config.ts` 補 extension 自訂 layout 入口（讓 extension 可注入 columns / fields）| 2 |
+| **TECH-039** | E2E RWD 測試（Playwright viewport 切換 768/375）| 1 |
+| **TECH-040** | `requiresExtension` 統一從 manifest 推導（spec 內可省略）| 1 |
+| **合計** | | **4.5 SP** |
 
 ### Sprint 6 進度
 
@@ -85,6 +92,22 @@
 | **TECH-022** | Disable Guard 自動注入 | 2 SP | 2 SP | ✅ |
 | **TD-522** | Order Extension manifest 缺失 | 0.5 SP | 0.5 SP | ✅ |
 | **合計** | **9.5 SP**（預估）/ 6.5 SP 實際 | | | **全完成 ✅ 788 tests** |
+
+### Sprint 14 進度（Runtime 取代 Compiler，9.5 / 9.5 SP）
+
+| Task | 內容 | 預估 | 實際 | 狀態 |
+|---|---|---|---|---|
+| **TECH-031** | spec-loader（啟動時一次載入 + cache） | 1 SP | 1 SP | ✅ Phase 1 |
+| **TECH-032** | dynamic-handler（list/get/create/update/delete + transition） | 2 SP | 2 SP | ✅ Phase 1 |
+| **TECH-033** | catch-all route（`/api/crud/[spec]` + query param） | 1 SP | 1 SP | ✅ Phase 1 |
+| **TECH-034** | dynamic UI page（ui-config + 3 個 client component） | 2 SP | 2 SP | ✅ Phase 2 |
+| **TECH-035** | 完全移除 `lib/compiler/` + 重構 pipeline 為 runtime 指向 | 3 SP | 3 SP | ✅ Phase 2 |
+| **TECH-036b** | 4 spec 全切換（刪 19 手寫 + 更新 manifest + 補 requiresExtension） | 1.5 SP | 2 SP | ✅ Phase 2 |
+| **合計** | | **9.5 SP** | **10.5 SP** | **全完成 ✅ 748 tests（719 vitest + 29 E2E）** |
+
+> ⚠️ **方向轉變**：Sprint 13 reflection 原規劃 Sprint 14 為「修撤手寫誤區」（繼續 compiler 路線）。Sprint 13 完成後用戶反思：「不需要 compiler，系統可以直接根據 json-spec 變動而生成」。Sprint 14 整個推翻 compiler 路線。
+
+> ⚠️ **本 session 揭露**：event / todo spec 缺 `requiresExtension`（Sprint 9 false claim）。Sprint 14 E2E 驗證時揭露，手動補完。
 
 ### Backlog ID 編號規則（本次重整確立）
 
@@ -305,6 +328,7 @@
 | Sprint 4 | [sprint-4-reflection.md](reflection/sprint-4-reflection.md) | RWD/UX 改進 |
 | Sprint 5 | [sprint-5-reflection.md](reflection/sprint-5-reflection.md) | Chat 重構 + 6 個 Tech Debt 一次清 |
 | **Sprint 6** | [sprint-6-reflection.md](reflection/sprint-6-reflection.md) | 發現 → 修復 → 預防 pattern + 揭露 TD-514 P0（CI 缺失）|
+| **Sprint 14** | [sprint-14.md](reflection/sprint-14.md) | **方向大轉彎**：Compiler → Runtime 路線 + 揭露 event/todo 缺 requiresExtension |
 
 完整索引見 [reflection/index.md](reflection/index.md)
 

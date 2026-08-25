@@ -29,7 +29,7 @@
   ],
   "dependencies": [],
   "nav": {
-    "path": "/admin/event",
+    "path": "/admin/crud/event",
     "label": "活動",
     "order": 50
   }

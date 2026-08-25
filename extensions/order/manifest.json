@@ -11,7 +11,7 @@
   "permissions": ["order.create", "order.read", "order.update", "order.delete", "order.transition"],
   "dependencies": [],
   "nav": {
-    "path": "/admin/orders",
+    "path": "/admin/crud/order",
     "label": "訂單",
     "order": 30
   }

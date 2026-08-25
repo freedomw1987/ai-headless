@@ -14,7 +14,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { generatePrismaSchema } from '@/lib/compiler/schema-generator';
 import { validateJsonSpec } from '@/lib/specs/json-spec.validator';
 import type { JsonSpec } from '@/lib/specs/json-spec.types';
 
@@ -113,17 +112,14 @@ describe('S3.2 Event JsonSpec', () => {
 // ==============================================
 
 describe('S3.2 Event → Prisma Schema', () => {
-  it('生成 Event + Registration 兩個 model', () => {
-    const raw = fs.readFileSync(
-      path.join(process.cwd(), 'extensions/event/event-spec.json'),
+  it('Sprint 14: Prisma schema 含 Event + EventRegistration', () => {
+    // Sprint 14: compiler 已移除，Prisma schema 由 prisma/schema.prisma 手動維護
+    const prisma = fs.readFileSync(
+      path.join(process.cwd(), 'prisma/schema.prisma'),
       'utf-8',
     );
-    const spec: JsonSpec = JSON.parse(raw);
-
-    const prisma = generatePrismaSchema(spec);
-
     expect(prisma).toContain('model Event');
-    expect(prisma).toContain('model Registration');
+    expect(prisma).toContain('model EventRegistration');
     expect(prisma).toContain('startAt');
     expect(prisma).toContain('endAt');
     expect(prisma).toContain('capacity');

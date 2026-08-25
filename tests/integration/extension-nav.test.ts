@@ -41,27 +41,27 @@ function makeManifest(
 describe('getEnabledExtensionNavItems — 從 manifest 生 nav items', () => {
   it('全啟用 → 4 個 nav items，按 order 排序', () => {
     const manifests: ExtensionManifestView[] = [
-      makeManifest('blog', { nav: { path: '/admin/blog', label: '部落格', order: 40 }, isEnabled: true }),
-      makeManifest('order', { nav: { path: '/admin/orders', label: '訂單', order: 30 }, isEnabled: true }),
-      makeManifest('event', { nav: { path: '/admin/event', label: '活動', order: 50 }, isEnabled: true }),
-      makeManifest('todo', { nav: { path: '/admin/todo', label: '待辦', order: 60 }, isEnabled: true }),
+      makeManifest('blog', { nav: { path: '/admin/crud/blog', label: '部落格', order: 40 }, isEnabled: true }),
+      makeManifest('order', { nav: { path: '/admin/crud/order', label: '訂單', order: 30 }, isEnabled: true }),
+      makeManifest('event', { nav: { path: '/admin/crud/event', label: '活動', order: 50 }, isEnabled: true }),
+      makeManifest('todo', { nav: { path: '/admin/crud/todo', label: '待辦', order: 60 }, isEnabled: true }),
     ];
 
     const items = getEnabledExtensionNavItems(manifests);
 
     expect(items).toEqual([
-      { href: '/admin/orders', label: '訂單', requiresExtension: 'order' },
-      { href: '/admin/blog', label: '部落格', requiresExtension: 'blog' },
-      { href: '/admin/event', label: '活動', requiresExtension: 'event' },
-      { href: '/admin/todo', label: '待辦', requiresExtension: 'todo' },
+      { href: '/admin/crud/order', label: '訂單', requiresExtension: 'order' },
+      { href: '/admin/crud/blog', label: '部落格', requiresExtension: 'blog' },
+      { href: '/admin/crud/event', label: '活動', requiresExtension: 'event' },
+      { href: '/admin/crud/todo', label: '待辦', requiresExtension: 'todo' },
     ]);
   });
 
   it('部分 disabled → 只顯示 enabled 的', () => {
     const manifests: ExtensionManifestView[] = [
-      makeManifest('blog', { nav: { path: '/admin/blog', label: '部落格', order: 40 }, isEnabled: false }),
-      makeManifest('order', { nav: { path: '/admin/orders', label: '訂單', order: 30 }, isEnabled: true }),
-      makeManifest('event', { nav: { path: '/admin/event', label: '活動', order: 50 }, isEnabled: true }),
+      makeManifest('blog', { nav: { path: '/admin/crud/blog', label: '部落格', order: 40 }, isEnabled: false }),
+      makeManifest('order', { nav: { path: '/admin/crud/order', label: '訂單', order: 30 }, isEnabled: true }),
+      makeManifest('event', { nav: { path: '/admin/crud/event', label: '活動', order: 50 }, isEnabled: true }),
     ];
 
     const items = getEnabledExtensionNavItems(manifests);
@@ -72,8 +72,8 @@ describe('getEnabledExtensionNavItems — 從 manifest 生 nav items', () => {
 
   it('全 disabled → 空陣列', () => {
     const manifests: ExtensionManifestView[] = [
-      makeManifest('blog', { nav: { path: '/admin/blog', label: '部落格', order: 40 }, isEnabled: false }),
-      makeManifest('order', { nav: { path: '/admin/orders', label: '訂單', order: 30 }, isEnabled: false }),
+      makeManifest('blog', { nav: { path: '/admin/crud/blog', label: '部落格', order: 40 }, isEnabled: false }),
+      makeManifest('order', { nav: { path: '/admin/crud/order', label: '訂單', order: 30 }, isEnabled: false }),
     ];
 
     expect(getEnabledExtensionNavItems(manifests)).toEqual([]);
@@ -81,7 +81,7 @@ describe('getEnabledExtensionNavItems — 從 manifest 生 nav items', () => {
 
   it('沒 nav 欄位的 manifest → 跳過', () => {
     const manifests: ExtensionManifestView[] = [
-      makeManifest('blog', { nav: { path: '/admin/blog', label: '部落格', order: 40 }, isEnabled: true }),
+      makeManifest('blog', { nav: { path: '/admin/crud/blog', label: '部落格', order: 40 }, isEnabled: true }),
       makeManifest('order', { isEnabled: true }), // 沒有 nav
     ];
 
@@ -93,8 +93,8 @@ describe('getEnabledExtensionNavItems — 從 manifest 生 nav items', () => {
 
   it('order 未設 → 按 manifest 陣列順序', () => {
     const manifests: ExtensionManifestView[] = [
-      makeManifest('blog', { nav: { path: '/admin/blog', label: '部落格' }, isEnabled: true }),
-      makeManifest('order', { nav: { path: '/admin/orders', label: '訂單' }, isEnabled: true }),
+      makeManifest('blog', { nav: { path: '/admin/crud/blog', label: '部落格' }, isEnabled: true }),
+      makeManifest('order', { nav: { path: '/admin/crud/order', label: '訂單' }, isEnabled: true }),
     ];
 
     const items = getEnabledExtensionNavItems(manifests);
@@ -104,9 +104,9 @@ describe('getEnabledExtensionNavItems — 從 manifest 生 nav items', () => {
 
   it('order 重複 → 仍穩定排序（不丟失）', () => {
     const manifests: ExtensionManifestView[] = [
-      makeManifest('blog', { nav: { path: '/admin/blog', label: '部落格', order: 30 }, isEnabled: true }),
-      makeManifest('order', { nav: { path: '/admin/orders', label: '訂單', order: 30 }, isEnabled: true }),
-      makeManifest('event', { nav: { path: '/admin/event', label: '活動', order: 50 }, isEnabled: true }),
+      makeManifest('blog', { nav: { path: '/admin/crud/blog', label: '部落格', order: 30 }, isEnabled: true }),
+      makeManifest('order', { nav: { path: '/admin/crud/order', label: '訂單', order: 30 }, isEnabled: true }),
+      makeManifest('event', { nav: { path: '/admin/crud/event', label: '活動', order: 50 }, isEnabled: true }),
     ];
 
     const items = getEnabledExtensionNavItems(manifests);

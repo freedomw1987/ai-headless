@@ -15,8 +15,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { generatePrismaSchema } from '@/lib/compiler/schema-generator';
-import { generateRouteHandlers } from '@/lib/compiler/api-generator';
 import { validateJsonSpec } from '@/lib/specs/json-spec.validator';
 import { beforeCreateBlogPost } from '@/extensions/blog/hooks/before-create';
 import { computeReadingTime } from '@/extensions/blog/computed/reading-time';
@@ -315,18 +313,26 @@ describe('S4.5 Blog Compiler 整合', () => {
     spec = JSON.parse(raw);
   });
 
-  it('生成 Prisma schema 含 BlogPost', () => {
-    const schema = generatePrismaSchema(spec);
+  it('Sprint 14: Prisma schema（手動維護）含 BlogPost', () => {
+    // Sprint 14: compiler 已移除，Prisma schema 由 prisma/schema.prisma 手動維護
+    const schema = fs.readFileSync(
+      path.join(process.cwd(), 'prisma/schema.prisma'),
+      'utf-8',
+    );
     expect(schema).toContain('model BlogPost');
     expect(schema).toContain('slug');
     expect(schema).toContain('@unique'); // slug unique
   });
 
-  it('生成 API route handlers', () => {
-    const routes = generateRouteHandlers(spec);
-    expect(routes.length).toBeGreaterThan(0);
-
-    const blogPostRoutes = routes.filter((r) => r.model === 'BlogPost');
-    expect(blogPostRoutes.length).toBeGreaterThanOrEqual(4); // list/create/get/update/delete
+  it('Sprint 14: spec.json 自動生成 runtime handler', async () => {
+    // Sprint 14: spec → runtime handler 取代 compiler 產出
+    const { loadSpec } = await import('@/lib/runtime/spec-loader');
+    const { createDynamicHandlers } = await import('@/lib/runtime/dynamic-handler');
+    const loaded = await loadSpec('blog');
+    const handlers = createDynamicHandlers(loaded);
+    expect(typeof handlers.list).toBe('function');
+    expect(typeof handlers.create).toBe('function');
+    expect(typeof handlers.update).toBe('function');
+    expect(typeof handlers.delete).toBe('function');
   });
 });

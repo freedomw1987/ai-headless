@@ -11,7 +11,7 @@
   "permissions": ["blog.create", "blog.read", "blog.update", "blog.delete"],
   "dependencies": [],
   "nav": {
-    "path": "/admin/blog",
+    "path": "/admin/crud/blog",
     "label": "部落格",
     "order": 40
   }

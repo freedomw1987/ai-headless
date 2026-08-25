@@ -10,7 +10,7 @@
   "permissions": ["todo.create", "todo.read", "todo.update", "todo.delete"],
   "dependencies": [],
   "nav": {
-    "path": "/admin/todo",
+    "path": "/admin/crud/todo",
     "label": "待辦",
     "order": 60
   }

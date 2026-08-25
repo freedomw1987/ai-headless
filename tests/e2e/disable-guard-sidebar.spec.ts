@@ -10,7 +10,7 @@
  * 2. Disable blog → 重新整理 → Sidebar 不含「部落格」連結
  * 3. Re-enable blog → 重新整理 → Sidebar 恢復含「部落格」連結
  * 4. Disable 多個 → 只剩 enabled 的
- * 5. 直接打 /admin/blog → redirect 到 /admin（page guard 也 work）
+ * 5. 直接打 /admin/crud/blog → redirect 到 /admin（page guard 也 work）
  *
  * 注意：
  * - 用 admin@ai-headless.local / admin123（prisma seed 帳號）
@@ -78,10 +78,10 @@ test.describe('Disable Guard — Sidebar E2E', () => {
     await page.goto(`${BASE_URL}/admin`, { waitUntil: 'networkidle' });
 
     // Sprint 11 補完：Order 也有 manifest → Sidebar 顯示 4 個
-    await expect(page.locator('aside a[href="/admin/blog"]')).toBeVisible();
-    await expect(page.locator('aside a[href="/admin/event"]')).toBeVisible();
-    await expect(page.locator('aside a[href="/admin/orders"]')).toBeVisible();
-    await expect(page.locator('aside a[href="/admin/todo"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/blog"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/event"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/order"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/todo"]')).toBeVisible();
   });
 
   test('Disable blog → Sidebar 不含「部落格」連結，其他仍在', async ({ page }) => {
@@ -90,10 +90,10 @@ test.describe('Disable Guard — Sidebar E2E', () => {
     await page.goto(`${BASE_URL}/admin`, { waitUntil: 'networkidle' });
 
     // 部落格消失
-    await expect(page.locator('aside a[href="/admin/blog"]')).not.toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/blog"]')).not.toBeVisible();
     // 其他 2 個仍在
-    await expect(page.locator('aside a[href="/admin/event"]')).toBeVisible();
-    await expect(page.locator('aside a[href="/admin/todo"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/event"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/todo"]')).toBeVisible();
   });
 
   test('Disable event → Sidebar 不含「活動」連結', async ({ page }) => {
@@ -101,9 +101,9 @@ test.describe('Disable Guard — Sidebar E2E', () => {
 
     await page.goto(`${BASE_URL}/admin`, { waitUntil: 'networkidle' });
 
-    await expect(page.locator('aside a[href="/admin/event"]')).not.toBeVisible();
-    await expect(page.locator('aside a[href="/admin/blog"]')).toBeVisible();
-    await expect(page.locator('aside a[href="/admin/todo"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/event"]')).not.toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/blog"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/todo"]')).toBeVisible();
   });
 
   test('Disable todo → Sidebar 不含「待辦」連結', async ({ page }) => {
@@ -111,9 +111,9 @@ test.describe('Disable Guard — Sidebar E2E', () => {
 
     await page.goto(`${BASE_URL}/admin`, { waitUntil: 'networkidle' });
 
-    await expect(page.locator('aside a[href="/admin/todo"]')).not.toBeVisible();
-    await expect(page.locator('aside a[href="/admin/blog"]')).toBeVisible();
-    await expect(page.locator('aside a[href="/admin/event"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/todo"]')).not.toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/blog"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/event"]')).toBeVisible();
   });
 
   test('Disable 多個 → 只剩 enabled 的', async ({ page }) => {
@@ -123,9 +123,9 @@ test.describe('Disable Guard — Sidebar E2E', () => {
 
     await page.goto(`${BASE_URL}/admin`, { waitUntil: 'networkidle' });
 
-    await expect(page.locator('aside a[href="/admin/blog"]')).not.toBeVisible();
-    await expect(page.locator('aside a[href="/admin/event"]')).not.toBeVisible();
-    await expect(page.locator('aside a[href="/admin/todo"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/blog"]')).not.toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/event"]')).not.toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/todo"]')).toBeVisible();
   });
 
   test('全部 disable → 3 個 extension 連結全部消失，基礎連結仍在', async ({ page }) => {
@@ -136,9 +136,9 @@ test.describe('Disable Guard — Sidebar E2E', () => {
     await page.goto(`${BASE_URL}/admin`, { waitUntil: 'networkidle' });
 
     // 3 個 extension 連結消失
-    await expect(page.locator('aside a[href="/admin/blog"]')).not.toBeVisible();
-    await expect(page.locator('aside a[href="/admin/event"]')).not.toBeVisible();
-    await expect(page.locator('aside a[href="/admin/todo"]')).not.toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/blog"]')).not.toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/event"]')).not.toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/todo"]')).not.toBeVisible();
 
     // 基礎連結仍在
     await expect(page.locator('aside a[href="/admin"]')).toBeVisible();
@@ -150,17 +150,17 @@ test.describe('Disable Guard — Sidebar E2E', () => {
     // beforeEach 已設 blog = true，直接驗證
     await page.goto(`${BASE_URL}/admin`, { waitUntil: 'networkidle' });
 
-    await expect(page.locator('aside a[href="/admin/blog"]')).toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/blog"]')).toBeVisible();
   });
 
-  test('Disable blog 後直接打 /admin/blog → redirect 到 /admin（page guard）', async ({ page }) => {
+  test('Disable blog 後直接打 /admin/crud/blog → 顯示 Extension 已停用訊息', async ({ page }) => {
     await setExtensionEnabled('blog', false);
 
-    await page.goto(`${BASE_URL}/admin/blog`);
+    await page.goto(`${BASE_URL}/admin/crud/blog`);
 
-    // 應該被 page guard 重定向回 /admin
-    await expect(page).toHaveURL(/\/admin\/?$/);
+    // Sprint 14 設計：disabled 時不 redirect，是渲染提示訊息
+    await expect(page.locator('h1:has-text("Extension 已停用")')).toBeVisible();
     // Sidebar 也不含「部落格」
-    await expect(page.locator('aside a[href="/admin/blog"]')).not.toBeVisible();
+    await expect(page.locator('aside a[href="/admin/crud/blog"]')).not.toBeVisible();
   });
 });

@@ -326,14 +326,13 @@ export type JsonSpec = {
   /** 標籤（用於分類、搜尋）*/
   tags?: string[];
   /**
-   * 自訂 API base path（預設 /api/crud/[model-kebab]）
-   * 例如 blog spec 設 apiBase: '/api/blog' → 所有 CRUD route 用這個 prefix
-   * Sprint 10 新增：讓每個 spec 可以自訂 URL，兼容 Sprint 9 手寫風格
+   * @deprecated Sprint 14 起所有 CRUD 統一走 `/api/crud/<spec>`
+   * 保留欄位以向後兼容舊 spec.json，但 runtime 已忽略
    */
   apiBase?: string;
   /**
-   * 自訂 UI base path（預設 /admin/[model-kebab]）
-   * 例如 blog spec 設 uiBase: '/admin/blog' → 所有 page 用這個 prefix
+   * @deprecated Sprint 14 起所有 UI 統一走 `/admin/crud/<spec>`
+   * 保留欄位以向後兼容舊 spec.json，但 runtime 已忽略
    */
   uiBase?: string;
   /**

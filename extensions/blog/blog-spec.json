@@ -1,8 +1,6 @@
 {
   "name": "blog",
   "label": "Blog",
-  "apiBase": "/api/blog",
-  "uiBase": "/admin/blog",
   "requiresExtension": "blog",
   "workflows": [
     {
