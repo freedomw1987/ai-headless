@@ -66,7 +66,8 @@ describe('TECH-038 — formatters + customRenderers', () => {
       const startsAtField = config.fields.find((f) => f.name === 'startsAt');
 
       expect(titleField?.formatter).toBeUndefined();
-      expect(startsAtField?.formatter).toBe('{{fn:formatEventTime}}');
+      // Sprint 16 TECH-038：拆 fnRef 出純 fnName（之前 Sprint 15 Stage 3 傳 raw 字符串是 bug）
+      expect(startsAtField?.formatter).toBe('formatEventTime');
     });
 
     it('customRenderers 加為虛擬 UIField（component 渲染 Sprint 16）', async () => {
@@ -91,7 +92,8 @@ describe('TECH-038 — formatters + customRenderers', () => {
       // customRenderer 加為虛擬 UIField（inputType='hidden'，name=rendererKey）
       const capacityBarField = config.fields.find((f) => f.name === 'capacityBar');
       expect(capacityBarField).toBeDefined();
-      expect(capacityBarField?.customRenderer).toBe('{{fn:renderCapacityBar}}');
+      // Sprint 16 TECH-038：拆 fnRef 出純 fnName
+      expect(capacityBarField?.customRenderer).toBe('renderCapacityBar');
     });
 
     it('沒 formatters / customRenderers 時不帶 formatter 欄位（fallback 預設渲染）', async () => {
@@ -133,7 +135,8 @@ describe('TECH-038 — formatters + customRenderers', () => {
       const config = buildDetailUIConfig(spec);
       const field = config.fields.find((f) => f.name === 'startsAt');
 
-      expect(field?.formatter).toBe('{{fn:formatEventTime}}');
+      // Sprint 16 TECH-038：拆 fnRef 出純 fnName
+      expect(field?.formatter).toBe('formatEventTime');
     });
   });
 

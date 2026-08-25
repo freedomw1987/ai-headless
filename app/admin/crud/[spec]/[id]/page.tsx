@@ -56,10 +56,14 @@ export default async function DynamicCrudDetailPage({ params }: PageProps) {
     if (item) {
       initialItem = item as Record<string, unknown>;
       // 套用 formatter 到每個有 formatter 的 field
+      // Sprint 16 TECH-038：formatters map 的 key 是 fieldName（不是 fnName），
+      // Sprint 15 Stage 3 這裡寫 formatters[field.formatter] 是 bug，剛好沒生效但 client fallback 補上
       for (const field of uiConfig.fields) {
-        const formatter = field.formatter ? formatters[field.formatter] : undefined;
-        if (formatter) {
-          formattedValues[field.name] = formatter(initialItem[field.name], initialItem);
+        if (field.formatter) {
+          const formatter = formatters[field.name];
+          if (formatter) {
+            formattedValues[field.name] = formatter(initialItem[field.name], initialItem);
+          }
         }
       }
     }

@@ -8,6 +8,7 @@
 // 純函式，方便測試。
 
 import type { JsonSpec, Field, FieldType } from '@/lib/specs/json-spec.types';
+import { parseFnRef } from '@/lib/runtime/extension-loaders';
 
 export type UIInputType =
   | 'text'
@@ -72,13 +73,15 @@ export function buildListUIConfig(spec: JsonSpec): ListUIConfig {
   // Sprint 15 TECH-038：customRenderer 是「組合欄位」，加為虛擬 UIField
   // 用 name = customRenderer key，前端根據 customRenderer 渲染
   for (const [name, fnRef] of Object.entries(customRenderers)) {
+    // Sprint 16 TECH-038：customRenderer 屬性要傳拆過的 fnName，不是 raw '{{fn:xxx}}'
+    const fnName = parseFnRef(fnRef);
     fields.push({
       name,
       label: name,
       inputType: 'hidden',
       required: false,
       showInList: true,
-      customRenderer: fnRef,
+      customRenderer: fnName ?? fnRef,
     });
   }
 
@@ -155,11 +158,9 @@ function toUIField(
     options: field.validation?.enum,
     showInList,
     placeholder: field.description ?? undefined,
-    // Sprint 15 TECH-038：帶 formatter 名稱到 UIField（runtime 再載入）
-    formatter: formatters[field.name],
-    // customRenderer 對應「組合欄位」（如 capacityBar 用 capacity + registeredCount），
-    // 不對應單一 field.name，所以這裡留空，由 caller 在迴圈中 push 虛擬 UIField
-    customRenderer: customRenderers[field.name],
+    // Sprint 16 TECH-038：拆 fnRef 出 fnName（之前直接傳 '{{fn:xxx}}' 字串是 bug）
+    formatter: parseFnRef(formatters[field.name] ?? '') ?? undefined,
+    customRenderer: parseFnRef(customRenderers[field.name] ?? '') ?? undefined,
   };
 }
 

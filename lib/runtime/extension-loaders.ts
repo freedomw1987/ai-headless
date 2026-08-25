@@ -96,18 +96,32 @@ export async function loadCustomRenderers(
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const candidates = [
+        // Sprint 16 TECH-038：檔名慣例是 rendererName kebab-case（如 capacity-bar.tsx）
+        // 不是 fnName（renderCapacityBar）。先試 rendererName，再退回 fnName。
+        `extensions/${spec.name}/custom-renderers/${toKebabCase(rendererName)}.tsx`,
+        `extensions/${spec.name}/custom-renderers/${toKebabCase(rendererName)}.ts`,
+        `extensions/${spec.name}/custom-renderers/${rendererName}.tsx`,
+        `extensions/${spec.name}/custom-renderers/${rendererName}.ts`,
         `extensions/${spec.name}/custom-renderers/${fnName}.tsx`,
-        `extensions/${spec.name}/custom-renderers/${fnName}.ts`,
         `extensions/${spec.name}/custom-renderers/${toKebabCase(fnName)}.tsx`,
       ];
       const extPath = resolveExistingPath(candidates);
       const mod = require(/* webpackIgnore: true */ extPath) as { default?: CustomRendererComponent; [k: string]: unknown };
       const Component: CustomRendererComponent | undefined = mod.default ?? mod[fnName] as CustomRendererComponent | undefined;
       if (typeof Component === 'function') {
-        result[rendererName] = Component;
+        // Sprint 16 TECH-038：用 fnName 作 key（與 loadFormatters 對稱）
+        // UIField.customRenderer 拆 fnRef 後 = fnName，這裡要一致才能在 renderCell 查得到
+        result[fnName] = Component;
       }
-    } catch {
-      // 找不到 renderer 檔案 → 跳過
+    } catch (err) {
+      // 找不到 renderer 檔案或 JSX 解析失敗 → 靜默跳過
+      // Sprint 16 TODO：customRenderer 客戶端渲染需預編譯 .tsx → .js（Next.js require() 不支援 JSX）
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(
+          `[loadCustomRenderers] Skip "${rendererName}":`,
+          err instanceof Error ? err.message : err,
+        );
+      }
     }
   }
 
@@ -125,6 +139,9 @@ function parseFnRef(ref: string): string | null {
   const match = ref.match(/^\{\{fn:([^}]+)\}\}$/);
   return match?.[1] ?? ref;
 }
+
+/** Export parseFnRef — Sprint 16 TECH-038a：buildListUIConfig 用它拆 customRenderer key */
+export { parseFnRef };
 
 /** camelCase → kebab-case：formatEventTime → format-event-time */
 function toKebabCase(s: string): string {
