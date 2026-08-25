@@ -8,6 +8,7 @@ import { auth } from '@/lib/auth/config';
 import { loadSpec } from '@/lib/runtime/spec-loader';
 import { buildDetailUIConfig } from '@/lib/runtime/ui-config';
 import { isExtensionEnabledByName } from '@/lib/extensions/extension-enabled';
+import { getRequiredExtension } from '@/lib/specs/extension-derive';
 import { DynamicDetailClient } from './dynamic-detail-client';
 
 type PageProps = {
@@ -29,11 +30,11 @@ export default async function DynamicCrudDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  if (spec.requiresExtension) {
-    const enabled = await isExtensionEnabledByName(spec.requiresExtension);
-    if (!enabled) {
-      return <div className="p-6">Extension 已停用</div>;
-    }
+  // Sprint 15 TECH-040：從 spec.name 推導 extension name
+  const extName = getRequiredExtension(spec);
+  const enabled = await isExtensionEnabledByName(extName);
+  if (!enabled) {
+    return <div className="p-6">Extension 已停用</div>;
   }
 
   const uiConfig = buildDetailUIConfig(spec);

@@ -4,7 +4,7 @@
 // - list / get / create / update / delete
 // - Zod runtime 驗證（從 spec.fields 推導）
 // - Workflow transition（從 spec.workflows + extension code）
-// - Disable Guard（從 spec.requiresExtension + manifest.isEnabled）
+// - Disable Guard（從 spec.name 推導 extension name，Sprint 15 TECH-040）
 //
 // 80% 標準 CRUD 走這裡；20% 自定義邏輯仍走 extension workflow.ts。
 //
@@ -13,6 +13,7 @@
 
 import { z } from 'zod';
 import { db } from '@/lib/db';
+import { getRequiredExtension } from '@/lib/specs/extension-derive';
 import { hasPermission } from '@/lib/auth/rbac';
 import { guardExtensionApi } from '@/lib/extensions/api-guard';
 import { parseHookReference } from '@/lib/specs/json-spec.validator';
@@ -153,10 +154,11 @@ function checkPermission(
 }
 
 async function checkDisabled(spec: JsonSpec): Promise<HandlerResult | null> {
-  if (!spec.requiresExtension) return null;
-  const guard = await guardExtensionApi(spec.requiresExtension);
+  // Sprint 15 TECH-040：從 spec.name 推導 extension name（除非顯式 override）
+  const extName = getRequiredExtension(spec);
+  const guard = await guardExtensionApi(extName);
   return guard
-    ? { status: 403, error: `Extension "${spec.requiresExtension}" is disabled` }
+    ? { status: 403, error: `Extension "${extName}" is disabled` }
     : null;
 }
 

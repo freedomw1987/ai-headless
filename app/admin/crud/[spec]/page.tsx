@@ -13,6 +13,7 @@ import { auth } from '@/lib/auth/config';
 import { hasPermission } from '@/lib/auth/rbac';
 import { loadSpec, listAvailableSpecs } from '@/lib/runtime/spec-loader';
 import { buildListUIConfig } from '@/lib/runtime/ui-config';
+import { getRequiredExtension } from '@/lib/specs/extension-derive';
 import { isExtensionEnabledByName } from '@/lib/extensions/extension-enabled';
 import { DynamicListClient } from './dynamic-list-client';
 
@@ -43,19 +44,18 @@ export default async function DynamicCrudPage({ params }: PageProps) {
     notFound();
   }
 
-  // 4. Disable guard
-  if (spec.requiresExtension) {
-    const enabled = await isExtensionEnabledByName(spec.requiresExtension);
-    if (!enabled) {
-      return (
-        <div className="p-6">
-          <h1 className="text-xl font-semibold mb-2">Extension 已停用</h1>
-          <p className="text-gray-600">
-            Extension &ldquo;{spec.requiresExtension}&rdquo; 目前未啟用，無法訪問此頁面。
-          </p>
-        </div>
-      );
-    }
+  // 4. Disable guard — Sprint 15 TECH-040：從 spec.name 推導
+  const extName = getRequiredExtension(spec);
+  const enabled = await isExtensionEnabledByName(extName);
+  if (!enabled) {
+    return (
+      <div className="p-6">
+        <h1 className="text-xl font-semibold mb-2">Extension 已停用</h1>
+        <p className="text-gray-600">
+          Extension &ldquo;{extName}&rdquo; 目前未啟用，無法訪問此頁面。
+        </p>
+      </div>
+    );
   }
 
   const uiConfig = buildListUIConfig(spec);
@@ -74,10 +74,9 @@ export async function getEnabledCrudPages() {
 
   for (const specName of allSpecs) {
     const spec = await loadSpec(specName);
-    if (spec.requiresExtension) {
-      const enabled = await isExtensionEnabledByName(spec.requiresExtension);
-      if (!enabled) continue;
-    }
+    const extName = getRequiredExtension(spec);
+    const enabled = await isExtensionEnabledByName(extName);
+    if (!enabled) continue;
     enabledPages.push({
       path: `/admin/crud/${specName}`,
       label: spec.label ?? specName,
