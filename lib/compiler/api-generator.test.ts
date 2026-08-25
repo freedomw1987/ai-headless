@@ -41,7 +41,7 @@ describe('generateRouteHandlers', () => {
         (h) => h.method === 'GET' && h.path === '/api/crud/todo',
       );
 
-      expect(listHandler?.code).toContain('prisma.todo.findMany');
+      expect(listHandler?.code).toContain('db.todo.findMany');
     });
 
     it('多 model 都生成對應路由', () => {
@@ -75,7 +75,7 @@ describe('generateRouteHandlers', () => {
         (h) => h.method === 'POST' && h.path === '/api/crud/todo',
       );
 
-      expect(createHandler?.code).toContain('checkPermission');
+      expect(createHandler?.code).toContain('hasPermission');
       expect(createHandler?.code).toContain("'todo.create'");
     });
 

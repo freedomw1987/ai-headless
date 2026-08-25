@@ -53,13 +53,8 @@ function modelToRouteBase(spec: JsonSpec, modelName: string): string {
 }
 
 // ==============================================
-// Hook 引用提取
+// Hook 引用提取（使用 @/lib/specs/json-spec.validator 的 parseHookReference）
 // ==============================================
-
-function hookFn(hookRef: string | undefined): string | null {
-  if (!hookRef) return null;
-  return parseHookReference(hookRef);
-}
 
 // ==============================================
 // 通用代碼片段
@@ -69,10 +64,11 @@ const HEADER_IMPORTS = `// 此文件由 ai-headless 自動生成
 // 不要手動修改！修改請改 JsonSpec，重新編譯
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/lib/db';
+import { db } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
-import { checkPermission } from '@/lib/auth/rbac';
+import { hasPermission } from '@/lib/auth/rbac';
 import { invokeHook } from '@/lib/extensions/hooks';
+import { parseHookReference } from '@/lib/specs/json-spec.validator';
 import { guardExtensionApi } from '@/lib/extensions/api-guard';
 `;
 
@@ -83,8 +79,8 @@ function permissionCheck(action: string): string {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const hasPermission = await checkPermission(session.user, '${action}');
-  if (!hasPermission) {
+  const userHasPermission = hasPermission(session.user.role, '${action}');
+  if (!userHasPermission) {
     return NextResponse.json({ error: 'Forbidden: ${action}' }, { status: 403 });
   }
 `;
@@ -153,17 +149,17 @@ export async function ${'GET'}(request: NextRequest) {
   };
 
   const [items, total] = await Promise.all([
-    prisma.${tableName}.findMany({
+    db.${tableName}.findMany({
       where,
       ${orderByCode}
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.${tableName}.count({ where }),
+    db.${tableName}.count({ where }),
   ]);
 
   // afterList hook
-  const afterListHook = hookFn('${hooks.afterList ?? ''}');
+  const afterListHook = parseHookReference('${hooks.afterList ?? ''}');
   const transformed = afterListHook
     ? (
         await invokeHook(afterListHook, { result: items, model: '${model.name}' })
@@ -212,7 +208,7 @@ export async function ${'GET'}(request: NextRequest, { params }: { params: Promi
 
   const { id } = await params;
 
-  const item = await prisma.${tableName}.findFirst({
+  const item = await db.${tableName}.findFirst({
     where: { id, ${softDeleteFilter} },
   });
 
@@ -221,7 +217,7 @@ export async function ${'GET'}(request: NextRequest, { params }: { params: Promi
   }
 
   // afterRead hook
-  const afterReadHook = hookFn('${hooks.afterRead ?? ''}');
+  const afterReadHook = parseHookReference('${hooks.afterRead ?? ''}');
   const transformed = afterReadHook
     ? (
         await invokeHook(afterReadHook, { data: item, model: '${model.name}' })
@@ -261,8 +257,8 @@ function generateCreateHandler(
     })
     .join('\n');
 
-  const beforeCreateFn = hookFn(hooks.beforeCreate);
-  const afterCreateFn = hookFn(hooks.afterCreate);
+  const beforeCreateFn = parseHookReference(hooks.beforeCreate);
+  const afterCreateFn = parseHookReference(hooks.afterCreate);
 
   const beforeCreateCall = beforeCreateFn
     ? `({ data } = await invokeHook('${beforeCreateFn}', { data, model: '${model.name}', ctx: { user: session.user } }));`
@@ -293,7 +289,7 @@ export async function ${'POST'}(request: NextRequest) {
   // beforeCreate hook
   ${beforeCreateCall}
 
-  const created = await prisma.${tableName}.create({ data });
+  const created = await db.${tableName}.create({ data: data as Parameters<typeof db.${tableName}.create>[0]['data'] });
 
   // afterCreate hook
   ${afterCreateCall}
@@ -328,8 +324,8 @@ function generateUpdateHandler(
     .map((f) => `  ${f.name}: ${zodType(f)}.optional(),`)
     .join('\n');
 
-  const beforeUpdateFn = hookFn(hooks.beforeUpdate);
-  const afterUpdateFn = hookFn(hooks.afterUpdate);
+  const beforeUpdateFn = parseHookReference(hooks.beforeUpdate);
+  const afterUpdateFn = parseHookReference(hooks.afterUpdate);
 
   const beforeUpdateCall = beforeUpdateFn
     ? `({ data } = await invokeHook('${beforeUpdateFn}', { id, data, existing, model: '${model.name}', ctx: { user: session.user } }));`
@@ -356,7 +352,7 @@ export async function ${'PATCH'}(request: NextRequest, { params }: { params: Pro
     return NextResponse.json({ error: 'Validation failed', issues: parsed.error.issues }, { status: 400 });
   }
 
-  const existing = await prisma.${tableName}.findUnique({ where: { id } });
+  const existing = await db.${tableName}.findUnique({ where: { id } });
   if (!existing) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -366,7 +362,7 @@ export async function ${'PATCH'}(request: NextRequest, { params }: { params: Pro
   // beforeUpdate hook
   ${beforeUpdateCall}
 
-  const updated = await prisma.${tableName}.update({ where: { id }, data });
+  const updated = await db.${tableName}.update({ where: { id }, data: data as Parameters<typeof db.${tableName}.update>[0]['data'] });
 
   // afterUpdate hook
   ${afterUpdateCall}
@@ -398,8 +394,8 @@ function generateDeleteHandler(
   const hooks = model.hooks ?? {};
   const isSoftDelete = model.softDelete !== false;
 
-  const beforeDeleteFn = hookFn(hooks.beforeDelete);
-  const afterDeleteFn = hookFn(hooks.afterDelete);
+  const beforeDeleteFn = parseHookReference(hooks.beforeDelete);
+  const afterDeleteFn = parseHookReference(hooks.afterDelete);
 
   const beforeDeleteCall = beforeDeleteFn
     ? `await invokeHook('${beforeDeleteFn}', { id, existing, model: '${model.name}', ctx: { user: session.user } });`
@@ -411,8 +407,8 @@ function generateDeleteHandler(
 
   // 軟刪除 vs 硬刪除
   const deleteOperation = isSoftDelete
-    ? `await prisma.${tableName}.update({ where: { id }, data: { deletedAt: new Date() } });`
-    : `await prisma.${tableName}.delete({ where: { id } });`;
+    ? `await db.${tableName}.update({ where: { id }, data: { deletedAt: new Date() } });`
+    : `await db.${tableName}.delete({ where: { id } });`;
 
   const code = `${HEADER_IMPORTS}
 
@@ -421,7 +417,7 @@ export async function ${'DELETE'}(request: NextRequest, { params }: { params: Pr
 
   const { id } = await params;
 
-  const existing = await prisma.${tableName}.findUnique({ where: { id } });
+  const existing = await db.${tableName}.findUnique({ where: { id } });
   if (!existing) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -474,8 +470,7 @@ export async function ${'POST'}(request: NextRequest, { params }: { params: Prom
   // Action endpoint — invoke the user-defined action function via hook SDK
   const result = await invokeHook(
     '${implFn}',
-    { id, ...body },
-    { user: session.user, entity: '${model.name}' }
+    { id, body, user: session.user, entity: '${model.name}' }
   );
 
   return NextResponse.json(result);

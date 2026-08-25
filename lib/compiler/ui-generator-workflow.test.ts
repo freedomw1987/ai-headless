@@ -85,7 +85,7 @@ describe('ui-generator generateEditPage — workflow transition buttons', () => 
     const spec = makeSpec(blogPostModel);
     const page = generateEditPage(spec, blogPostModel);
 
-    expect(page.code).not.toContain('TransitionButtons');
+    expect(page.code).not.toContain('<TransitionButtons');
   });
 
   it('workflow 沒 transitions → 不生成 transition buttons', () => {
@@ -98,7 +98,7 @@ describe('ui-generator generateEditPage — workflow transition buttons', () => 
     const spec = makeSpec(blogPostModel, simpleWorkflow);
     const page = generateEditPage(spec, blogPostModel);
 
-    expect(page.code).not.toContain('TransitionButtons');
+    expect(page.code).not.toContain('<TransitionButtons');
   });
 
   it('workflow 含 transitions 標籤（state 間轉換）', () => {
@@ -131,9 +131,9 @@ describe('ui-generator generateEditPage — workflow transition buttons', () => 
     const spec = makeSpec(blogPostModel, blogWorkflow);
     const page = generateEditPage(spec, blogPostModel);
 
-    // </form> 應在 TransitionButtons 之前
+    // </form> 應在 <TransitionButtons JSX 用之前
     const formEnd = page.code.indexOf('</form>');
-    const transitionStart = page.code.indexOf('TransitionButtons');
+    const transitionStart = page.code.indexOf('<TransitionButtons');
     expect(formEnd).toBeGreaterThan(-1);
     expect(transitionStart).toBeGreaterThan(formEnd);
   });

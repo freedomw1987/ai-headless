@@ -95,7 +95,8 @@ export function validateJsonSpecFromString(json: string): ValidationResult {
  *
  * 用於解析 Extension Code 中的 hook 引用
  */
-export function parseHookReference(reference: string): string | null {
+export function parseHookReference(reference: string | undefined | null): string | null {
+  if (!reference) return null;
   const match = reference.match(/^\{\{fn:([a-zA-Z_][a-zA-Z0-9_]*)\}\}$/);
   return match?.[1] ?? null;
 }

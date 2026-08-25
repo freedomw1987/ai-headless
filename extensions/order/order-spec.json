@@ -1,0 +1,94 @@
+{
+  "name": "order",
+  "label": "Order",
+  "apiBase": "/api/order",
+  "uiBase": "/admin/orders",
+  "requiresExtension": "order",
+  "workflows": [
+    {
+      "name": "order",
+      "initialState": "draft",
+      "states": {
+        "draft": { "label": "草稿", "badge": "default" },
+        "pending_payment": { "label": "待付款", "badge": "warning" },
+        "paid": { "label": "已付款", "badge": "success" },
+        "shipped": { "label": "已出貨", "badge": "success" },
+        "completed": { "label": "已完成", "badge": "success" },
+        "cancelled": { "label": "已取消", "badge": "danger" },
+        "refunded": { "label": "已退款", "badge": "danger" }
+      },
+      "transitions": [
+        { "from": "draft", "to": "pending_payment" },
+        { "from": "draft", "to": "cancelled" },
+        { "from": "pending_payment", "to": "paid" },
+        { "from": "pending_payment", "to": "cancelled" },
+        { "from": "paid", "to": "shipped" },
+        { "from": "paid", "to": "refunded" },
+        { "from": "shipped", "to": "completed" },
+        { "from": "shipped", "to": "refunded" }
+      ]
+    }
+  ],
+  "models": [
+    {
+      "name": "Order",
+      "label": "訂單",
+      "description": "訂單系統 — 展示 StateMachine Library 真實應用（US-204）",
+      "fields": [
+        {
+          "name": "orderNumber",
+          "type": "string",
+          "label": "訂單編號",
+          "validation": { "required": true, "unique": true }
+        },
+        {
+          "name": "customer",
+          "type": "string",
+          "label": "客戶名稱",
+          "validation": { "required": true }
+        },
+        {
+          "name": "amount",
+          "type": "integer",
+          "label": "金額（分）",
+          "validation": { "required": true, "min": 0 }
+        },
+        {
+          "name": "status",
+          "type": "enum",
+          "label": "狀態",
+          "options": ["draft", "pending_payment", "paid", "shipped", "completed", "cancelled", "refunded"],
+          "validation": { "default": "draft" }
+        },
+        {
+          "name": "stateData",
+          "type": "json",
+          "label": "狀態資料（paidAt, shippedAt 等時間戳）"
+        }
+      ],
+      "actions": [
+        {
+          "name": "markAsPaid",
+          "label": "標記為已付款",
+          "input": [],
+          "implementation": "{{fn:markOrderAsPaid}}",
+          "requires": {
+            "state": ["pending_payment"],
+            "permission": "order.update"
+          }
+        },
+        {
+          "name": "cancelOrder",
+          "label": "取消訂單",
+          "input": [],
+          "implementation": "{{fn:cancelOrder}}",
+          "requires": {
+            "state": ["draft", "pending_payment", "paid"],
+            "permission": "order.delete"
+          }
+        }
+      ],
+      "softDelete": true
+    }
+  ]
+}

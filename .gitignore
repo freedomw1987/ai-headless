@@ -50,3 +50,5 @@ extension-state
 
 # Sprint 10+ compiler output (build artifact, never commit)
 _compiled/
+_compiled-test-order/
+_compiled-test/

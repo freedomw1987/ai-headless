@@ -335,6 +335,76 @@
 
 ---
 
+## Sprint 12 — Sidebar + Transition Buttons 全自動化
+
+**Goal**：讓 Sidebar 與 Workflow transition buttons 都能從 JSON 規格自動生成。
+
+#### Sprint 12 全完成（5 / 5 SP）
+| Task | SP | 狀態 |
+|---|---|---|
+| TECH-023 Sidebar 從 manifest.nav 自動生成 | 2 | ✅ |
+| TECH-024 Workflow transition buttons 自動生成 | 3 | ✅ |
+
+#### Sprint 12 揭露的事實
+- Sprint 11 Phase A 「typecheck 過綠」是 false claim
+  - 當時 blog spec 沒 workflows，所以 transition buttons 區塊未注入 → 漏洞未觸發
+  - Sprint 12 加 workflows 後揭露 UI 層有 5+ 個型別錯
+- TransitionButtons 不應 inline 到產出 page（測試難寫），改為集中元件 `app/_components/transition-buttons.tsx`
+
+---
+
+## Sprint 13 — Order Schema + Extension 教學範例
+
+**Goal**：完成 Order JSON 規格 + 為 4 個 extension 提供教學範例 + 揭露 Sprint 11 false claim 真實 bug。
+
+#### Sprint 13 全完成（2 / 2 SP）
+| Task | SP | 狀態 |
+|---|---|---|
+| TECH-025a Order schema.json 反向 | 1 | ✅ |
+| TECH-025b 4 個 extension 加 examples/ | 0.5 | ✅ |
+| TECH-025c extensions/README.md 教學 | 0.5 | ✅ |
+
+#### Sprint 13 揭露並修正的 11 個真實 bug（修正 Sprint 11 false claim）
+1. `import { prisma } from '@/lib/db'` → `db`
+2. `hookFn()` 沒在 runtime 定義 → `parseHookReference()`
+3. `checkPermission(session.user, action)` 簽名錯 → `hasPermission(session.user.role, action)`
+4. `useToast()` 解構 `toast` → 解構 `show`
+5. `ToastInput` 用 `title` → `message`
+6. `use-toast` import 路徑 → `toast`
+7. `TransitionButtons` 沒定義 → 集中元件
+8. `Form` 介面 `unknown` → `string | number | boolean | undefined`
+9. `form.date?.slice` 型別錯
+10. `db.update()` 缺 typecast
+11. `parseHookReference(undefined)` crash → null-safe
+
+#### Sprint 13 新增檔案
+- `extensions/order/order-spec.json` — 7 states workflow + 2 actions
+- `extensions/blog/examples/list-and-transition.ts`
+- `extensions/order/examples/full-lifecycle.ts`
+- `extensions/event/examples/list-and-cancel.ts`
+- `extensions/todo/examples/toggle-and-filter.ts`
+- `app/_components/transition-buttons.tsx`
+- `tests/integration/tech-025-order-spec.test.ts` (5 tests)
+- `scripts/compile-order-to-temp.ts`
+- `docs/reflection/sprint-13.md`
+
+#### Sprint 13 修改檔案
+- `extensions/README.md` — 從 29 行 placeholder 改為 239 行教學
+- `lib/compiler/api-generator.ts` — 修 4 個 bug
+- `lib/compiler/ui-generator.ts` — 修 7 個 bug
+- `lib/specs/json-spec.validator.ts` — parseHookReference null-safe
+- `lib/compiler/api-generator.test.ts` — 修 2 個測試期望
+- `lib/compiler/ui-generator-workflow.test.ts` — 修 3 個測試期望
+
+#### Sprint 13 測試基線
+| 項目 | Sprint 12 結束 | Sprint 13 結束 | 增減 |
+|---|---|---|---|
+| vitest | 804 / 59 | **809 / 61** | +5 / +2 ✅ |
+| E2E | 22 | **22** | 不變 ✅ |
+| Compiler typecheck | (false claim) | **0 errors** | 真實綠 ✅ |
+
+---
+
 ## Sprint 1 Review Fixes（7 SP）
 
 ### TD-305 Relation 二元性統一（2 SP）

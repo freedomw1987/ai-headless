@@ -62,6 +62,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { TransitionButtons } from '@/app/_components/transition-buttons';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -69,7 +70,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/toast';
 `;
 
 // ==============================================
@@ -86,50 +87,50 @@ function fieldToInputComponent(
     case 'string':
       return {
         tag: 'Input',
-        props: `id="${fieldName}" name="${fieldName}" value={form.${fieldName} ?? ''} onChange={handleChange} placeholder="${fieldName}"`,
+        props: `id="${fieldName}" name="${fieldName}" value={String(form.${fieldName} ?? '')} onChange={handleChange} placeholder="${fieldName}"`,
         imports: [],
       };
     case 'text':
       return {
         tag: 'Textarea',
-        props: `id="${fieldName}" name="${fieldName}" value={form.${fieldName} ?? ''} onChange={handleChange} placeholder="${fieldName}" rows={4}`,
+        props: `id="${fieldName}" name="${fieldName}" value={String(form.${fieldName} ?? '')} onChange={handleChange} placeholder="${fieldName}" rows={4}`,
         imports: ['Textarea'],
       };
     case 'number':
     case 'decimal':
       return {
         tag: 'Input',
-        props: `id="${fieldName}" name="${fieldName}" type="number" value={form.${fieldName} ?? ''} onChange={handleChange}`,
+        props: `id="${fieldName}" name="${fieldName}" type="number" value={String(form.${fieldName} ?? '')} onChange={handleChange}`,
         imports: [],
       };
     case 'integer':
       return {
         tag: 'Input',
-        props: `id="${fieldName}" name="${fieldName}" type="number" step="1" value={form.${fieldName} ?? ''} onChange={handleChange}`,
+        props: `id="${fieldName}" name="${fieldName}" type="number" step="1" value={String(form.${fieldName} ?? '')} onChange={handleChange}`,
         imports: [],
       };
     case 'boolean':
       return {
         tag: 'Switch',
-        props: `id="${fieldName}" checked={form.${fieldName} ?? false} onCheckedChange={(checked) => handleBooleanChange('${fieldName}', checked)}`,
+        props: `id="${fieldName}" checked={(form.${fieldName} as boolean) ?? false} onCheckedChange={(checked) => handleBooleanChange('${fieldName}', checked)}`,
         imports: ['Switch'],
       };
     case 'date':
       return {
         tag: 'Input',
-        props: `id="${fieldName}" name="${fieldName}" type="date" value={form.${fieldName}?.slice(0, 10) ?? ''} onChange={handleChange}`,
+        props: `id="${fieldName}" name="${fieldName}" type="date" value={(form.${fieldName} as string)?.slice(0, 10) ?? ''} onChange={handleChange}`,
         imports: [],
       };
     case 'datetime':
       return {
         tag: 'Input',
-        props: `id="${fieldName}" name="${fieldName}" type="datetime-local" value={form.${fieldName}?.slice(0, 16) ?? ''} onChange={handleChange}`,
+        props: `id="${fieldName}" name="${fieldName}" type="datetime-local" value={(form.${fieldName} as string)?.slice(0, 16) ?? ''} onChange={handleChange}`,
         imports: [],
       };
     case 'time':
       return {
         tag: 'Input',
-        props: `id="${fieldName}" name="${fieldName}" type="time" value={form.${fieldName} ?? ''} onChange={handleChange}`,
+        props: `id="${fieldName}" name="${fieldName}" type="time" value={String(form.${fieldName} ?? '')} onChange={handleChange}`,
         imports: [],
       };
     case 'enum': {
@@ -139,7 +140,7 @@ function fieldToInputComponent(
         .join('\n');
       return {
         tag: 'Select',
-        props: `value={form.${fieldName} ?? ''} onValueChange={(value) => handleSelectChange('${fieldName}', value)}`,
+        props: `value={String(form.${fieldName} ?? '')} onValueChange={(value) => handleSelectChange('${fieldName}', value)}`,
         imports: ['Select'],
         items, // extra content
       };
@@ -149,7 +150,7 @@ function fieldToInputComponent(
       const relatedModel = field.name.replace(/Id$/, '');
       return {
         tag: 'RelationSelect',
-        props: `model="${relatedModel}" value={form.${fieldName} ?? ''} onChange={(value) => handleSelectChange('${fieldName}', value)}`,
+        props: `model="${relatedModel}" value={String(form.${fieldName} ?? '')} onChange={(value) => handleSelectChange('${fieldName}', value)}`,
         imports: ['RelationSelect'],
         items: '',
       };
@@ -157,7 +158,7 @@ function fieldToInputComponent(
     case 'richText':
       return {
         tag: 'RichTextEditor',
-        props: `value={form.${fieldName} ?? ''} onChange={(v) => handleFieldChange('${fieldName}', v)} placeholder="請輸入 ${field.name}..."`,
+        props: `value={String(form.${fieldName} ?? '')} onChange={(v) => handleFieldChange('${fieldName}', v)} placeholder="請輸入 ${field.name}..."`,
         imports: ['RichTextEditor'],
         items: '',
       };
@@ -166,7 +167,7 @@ function fieldToInputComponent(
     default:
       return {
         tag: 'Input',
-        props: `id="${fieldName}" name="${fieldName}" value={form.${fieldName} ?? ''} onChange={handleChange}`,
+        props: `id="${fieldName}" name="${fieldName}" value={String(form.${fieldName} ?? '')} onChange={handleChange}`,
         imports: [],
       };
   }
@@ -222,7 +223,7 @@ function generateListPage(spec: JsonSpec, model: Model): GeneratedPage {
 
 interface ${model.name} {
   id: string;
-  [key: string]: unknown;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export default function ${model.name}ListPage() {
@@ -233,7 +234,7 @@ export default function ${model.name}ListPage() {
   const [pageSize] = useState(20);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const { show: toast } = useToast();
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -248,7 +249,7 @@ export default function ${model.name}ListPage() {
       setItems(json.items ?? []);
       setTotal(json.total ?? 0);
     } catch (err) {
-      toast({ title: '載入失敗', variant: 'destructive' });
+      toast({ message: '載入失敗', variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -261,7 +262,7 @@ export default function ${model.name}ListPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('確定刪除？')) return;
     await fetch(\`/api/crud/${kebabName}/\${id}\`, { method: 'DELETE' });
-    toast({ title: '已刪除' });
+    toast({ message: '已刪除' });
     loadItems();
   };
 
@@ -272,7 +273,7 @@ export default function ${model.name}ListPage() {
       body: JSON.stringify({}),
     });
     const result = await res.json();
-    toast({ title: \`Action: \${actionName}\`, description: JSON.stringify(result) });
+    toast({ message: \`Action: \${actionName}\`, variant: 'success' });
     loadItems();
   };
 
@@ -420,12 +421,12 @@ ${items}
   const code = `${COMMON_HEADER}
 
 interface ${model.name}Form {
-  [key: string]: unknown;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export default function ${model.name}CreatePage() {
   const router = useRouter();
-  const { toast } = useToast();
+  const { show: toast } = useToast();
   const [form, setForm] = useState<${model.name}Form>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -452,10 +453,10 @@ export default function ${model.name}CreatePage() {
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error('Create failed');
-      toast({ title: '已建立' });
+      toast({ message: '已建立', variant: 'success' });
       router.push('${uiBasePath(spec, model.name)}');
     } catch (err) {
-      toast({ title: '建立失敗', variant: 'destructive' });
+      toast({ message: '建立失敗', variant: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -503,7 +504,7 @@ function generateTransitionButtonsCode(
     id: workflow.name,
     initial: workflow.initialState,
     states: Object.fromEntries(
-      Object.entries(workflow.states).map(([key, sc]) => [
+      Object.entries(workflow.states).map(([key, _sc]) => [
         key,
         {
           on: Object.fromEntries(
@@ -610,13 +611,13 @@ ${items}
   const code = `${COMMON_HEADER}
 
 interface ${model.name}Form {
-  [key: string]: unknown;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export default function ${model.name}EditPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const { toast } = useToast();
+  const { show: toast } = useToast();
   const [form, setForm] = useState<${model.name}Form>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -654,10 +655,10 @@ export default function ${model.name}EditPage() {
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error('Update failed');
-      toast({ title: '已更新' });
+      toast({ message: '已更新', variant: 'success' });
       router.push('${uiBasePath(spec, model.name)}');
     } catch (err) {
-      toast({ title: '更新失敗', variant: 'destructive' });
+      toast({ message: '更新失敗', variant: 'error' });
     } finally {
       setSubmitting(false);
     }
