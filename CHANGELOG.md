@@ -576,6 +576,56 @@
 
 ---
 
+## Sprint 16 — list page Server Component + RWD 驗證（2 / 3 SP）
+
+### Sprint 16 全完成（partial：2 / 3 SP）
+
+Sprint 16 完成 **Stage 1**（TECH-038b list formatter）和 **Stage 2**（TECH-039 RWD E2E）；**Stage 3**（TECH-038a customRenderer client）留 Sprint 17（需 JSX 預編譯基礎建設）。
+
+#### Stage 1 — list page 改 Server Component + formatter 完整支援（commit `e19f370`）
+
+**重大架構改變**：list page 從 Client Component（useEffect fetch）改為 **完整 Server Component**：
+- 刪除 `app/admin/crud/[spec]/dynamic-list-client.tsx`
+- `app/admin/crud/[spec]/page.tsx` 改為 server side fetch items + 套用 formatter + 渲染表格
+- 沒有任何 client JS bundle（page 載入更快）
+
+**Sprint 16 Stage 1 揭露並修正 Sprint 15 Stage 3 的真實 bug**：
+- **UIField.formatter Sprint 15 直接傳 `'{{fn:xxx}}'` raw 字串**（應該是純 fnName）— Sprint 16 改用 `parseFnRef()` 拆出
+- **formatters[field.formatter] key 不 match** — Sprint 15 detail page 剛好走 client side `toLocaleString('zh-TW')` fallback 看起来成功，其实是 fallback
+- Sprint 16 修正後 server side **真實套用** `formatEventTime`：`2030/12/01 18:00`
+
+#### Added
+
+- **`lib/runtime/ui-config.ts`**：`parseFnRef` 把 `{{fn:xxx}}` 拆成純 fnName（之前直接傳 raw 字串是 bug）
+- **`lib/runtime/extension-loaders.ts`**：`loadCustomRenderers` 用 fnName 作 key（與 `loadFormatters` 對稱）；加 `toKebabCase(rendererName)` 檔名候選
+- **`app/admin/crud/[spec]/page.tsx`**：完整 Server Component + server side formatter 預套用
+- **`tests/integration/tech-038-list-server-component.test.ts`**：10 個 list page 結構守護測試
+
+#### Changed
+
+- **`app/admin/crud/[spec]/[id]/page.tsx`**：`formatters[field.name]` 修正 key bug（之前用 `field.formatter` 永遠找不到）
+- **`tests/integration/tech-038-formatters-renderers.test.ts`**：3 個測試預期改為純 fnName
+
+### Sprint 16 Stage 2 — RWD E2E 測試
+
+**新增 `tests/e2e/tech-039-rwd.spec.ts`**：
+- 4 spec（blog / event / todo / order）× 3 viewport（375 / 768 / 1280）= 12 個 case
+- 每個 case 驗證：h1 標題可見、新增按鈕可點、表格可見、檢視連結存在
+- 額外 2 個 case：mobile 表格水平捲動不破版、desktop sidebar + 表格同時可見
+- **14 / 14 通過**
+
+### Sprint 16 測試基線
+
+| 項目 | Sprint 15 結束 | Sprint 16 Stage 1 | Sprint 16 Stage 2 |
+|---|---|---|---|
+| vitest | 735 / 62 | **746 / 63** | **750 / 63** |
+| E2E | 29 | 29 | **43**（+14 RWD） |
+| Typecheck | ✅ 綠 | ✅ 綠 | ✅ 綠 |
+| 真實可用性 | detail formatter 套用驗證 | **list formatter 套用驗證**（list + detail 都真實套用，不再依賴 client fallback）| **+ 4 spec × 3 viewport RWD 驗證** |
+| Sprint 17 待做 | — | — | customRenderer 客戶端動態渲染（需 JSX 預編譯） |
+
+---
+
 ## Sprint 1 Review Fixes（7 SP）
 
 ### TD-305 Relation 二元性統一（2 SP）

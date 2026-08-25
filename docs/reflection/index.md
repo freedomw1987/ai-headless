@@ -22,6 +22,7 @@
 | Sprint 13 | [sprint-13.md](./sprint-13.md) | ✅ | 100% | ✅ 全綠 | Order Schema + 11 個 bug |
 | **Sprint 14** | [**sprint-14.md**](./sprint-14.md) | ✅ | **100%** | ✅ **全綠** | **方向大轉彎：Compiler → Runtime** |
 | **Sprint 15** | [**sprint-15.md**](./sprint-15.md) | ✅ | **78%** (3.5/4.5) | ✅ **全綠** | **移除 apiBase/uiBase + 統一 disable guard + formatters/customRenderers** |
+| **Sprint 16** | [**sprint-16.md**](./sprint-16.md) | ⚠️ partial | **67%** (2/3) | ✅ **全綠** | **list page 改 Server Component + formatter 真實套用 + RWD E2E（customRenderer 客戶端留 Sprint 17）** |
 
 ---
 
@@ -54,17 +55,28 @@
 
 ---
 
+## 🏆 Sprint 16 重點發現（partial）
+
+- **重大架構改變**：list page 從 Client Component 改為完整 Server Component（删除 dynamic-list-client.tsx）
+- **揭露 Sprint 15 Stage 3 假成功**：UIField.formatter 傳 raw `{{fn:xxx}}` 字串 + formatters[field.formatter] key 不 match → detail formatter 實際走 client side `toLocaleString('zh-TW')` fallback — Sprint 16 修正為真實 server-side 套用
+- **partial 決策誠實**：customRenderer 客戶端動態渲染留 Sprint 17（Next.js server side `require()` 無法解析 .tsx JSX，需 JSX 預編譯基礎建設）
+- **4 spec × 3 viewport RWD E2E**：14 個 case 全綠
+- **揭露新限制**：JSX 在 server side require 會 SyntaxError（不只是 Turbopack 靜態分析，連 runtime 也不行）
+- **Sprint 17 待做**：JSX 預編譯方案評估 + customRenderer 客戶端動態渲染（2.5 SP）
+
+---
+
 ## 📐 跨 Sprint 共同觀察
 
-| 觀察 | Sprint 5 | Sprint 6 | Sprint 11-14 | Sprint 15 |
-|------|----------|----------|--------------|
-| Reviewer P1 重要 | ✅ TD-501 | ✅ TD-601 | ✅ setExtensionEnabled race |
-| 重構揭露深層 bug | ✅ TD-501 | ✅ TD-508 | ✅ Compiler 揭露 11+ bug |
-| 預防機制投資高 | ✅ JWT augmentation | ✅ no-floating-promises | ✅ Manual dev server verification |
-| E2E 是下一個缺口 | ⚠️ TD-503 | ✅ 已補 | ✅ Sprint 14 E2E 29/29 綠 | ⚠️ RWD E2E 留 Sprint 16 |
-| Typecheck ≠ 真能用 | - | - | ✅ Sprint 13/14 兩次揭露 | ✅ Sprint 15 揭露「Server Component 函數傳遞限制」 |
-| 守衛檢查演進 | - | - | Sprint 9「每個 spec 都有 disable guard」是 false claim | ✅ Sprint 15「總是 guard」修正 |
-| SoT 擴展 | - | - | spec.json 是 manifest/API/UI 的 SoT | ✅ spec.json 是 formatter/customRenderer 的 SoT |
+| 觀察 | Sprint 5 | Sprint 6 | Sprint 11-14 | Sprint 15 | Sprint 16 |
+|------|----------|----------|--------------|----------|----------|
+| Reviewer P1 重要 | ✅ TD-501 | ✅ TD-601 | ✅ setExtensionEnabled race | - | - |
+| 重構揭露深層 bug | ✅ TD-501 | ✅ TD-508 | ✅ Compiler 揭露 11+ bug | ✅ Stage 3 formatter partial 揭露 RSC 限制 | ✅ Stage 1 揭露 Sprint 15 Stage 3 的 false claim |
+| 預防機制投資高 | ✅ JWT augmentation | ✅ no-floating-promises | ✅ Manual dev server verification | ✅ | ✅ |
+| E2E 是下一個缺口 | ⚠️ TD-503 | ✅ 已補 | ✅ Sprint 14 E2E 29/29 綠 | ⚠️ RWD E2E 留 Sprint 16 | ✅ Sprint 16 完成 4 spec × 3 viewport = 43 E2E 全綠 |
+| Typecheck ≠ 真能用 | - | - | ✅ Sprint 13/14 兩次揭露 | ✅ Sprint 15 揭露「Server Component 函數傳遞限制」 | ✅ Sprint 16 揭露「守衛測試只驗結構不等於 runtime 套用」 |
+| 守衛檢查演進 | - | - | Sprint 9「每個 spec 都有 disable guard」是 false claim | ✅ Sprint 15「總是 guard」修正 | ✅ Sprint 16 揭露「守衛測試需驗 runtime 執行」 |
+| SoT 擴展 | - | - | spec.json 是 manifest/API/UI 的 SoT | ✅ spec.json 是 formatter/customRenderer 的 SoT | ✅ spec.json 拆 fnRef 純 fnName 後是 formatter 唯一介面 |
 
 ---
 

@@ -35,6 +35,31 @@
 | **TECH-039** | E2E RWD 測試（Playwright viewport 切換 768/375）| 1 | Sprint 15 Stage 4 留 |
 | **合計** | | **3 SP** | |
 
+### Sprint 16 進度（partial：2 / 3 SP）
+
+| Task | 計劃 | 實際 | 狀態 |
+|---|---|---|---|
+| **TECH-038b** | 1 SP | 1 SP | ✅ Stage 1 commit `e19f370`（list page Server Component + formatter 完整支援）|
+| **TECH-039** | 1 SP | 1 SP | ✅ Stage 2（4 spec × 3 viewport RWD E2E，14 tests）|
+| **TECH-038a** | 1 SP | 0 SP | ⏳ Sprint 17（Next.js server side require() 無法解析 .tsx JSX，需 JSX 預編譯基礎建設）|
+
+**Sprint 16 揭露 Sprint 15 Stage 3 的真實 bug**：
+- UIField.formatter Sprint 15 直接傳 `'{{fn:xxx}}'` raw 字串（應該是純 fnName）— Sprint 16 用 `parseFnRef()` 修正
+- detail page `formatters[field.formatter]` key 不 match → 剛好走 client side `toLocaleString('zh-TW')` fallback — Sprint 16 改用 `formatters[field.name]` 修正
+
+**Sprint 16 完成後測試基線**：
+- vitest: 750 / 64 files
+- E2E: 43（含 14 新 RWD）
+- Typecheck: ✅ 綠
+
+### Sprint 17 規劃（customRenderer 客戶端 + JSX 預編譯基礎建設）
+
+| Task | 內容 | SP | 來源 |
+|---|---|---|---|
+| **Spike** | JSX 預編譯方案評估（tsx-loader / esbuild / swc）| 0.5 | Sprint 16 揭露 |
+| **TECH-038a** | customRenderer 客戶端 React component 動態渲染（搭配 JSX 預編譯）| 2 | Sprint 16 Stage 1 留 |
+| **合計** | | **2.5 SP** | |
+
 ### Sprint 6 進度
 
 | Task | 標題 | 計劃 | 實際 | 狀態 |
