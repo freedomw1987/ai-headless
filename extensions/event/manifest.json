@@ -27,5 +27,10 @@
     "event.register",
     "event.cancel"
   ],
-  "dependencies": []
+  "dependencies": [],
+  "nav": {
+    "path": "/admin/event",
+    "label": "活動",
+    "order": 50
+  }
 }

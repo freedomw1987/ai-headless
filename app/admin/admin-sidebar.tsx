@@ -1,8 +1,7 @@
-/**
- * US-102 — Admin Sidebar (Client Component)
- *
- * Sprint 9 加碼：根據 enabledExtensions 過濾顯示 Extension 連結
- */
+// US-102 — Admin Sidebar (Client Component)
+//
+// Sprint 9：根據 enabledExtensions 過濾顯示 Extension 連結
+// Sprint 12 TECH-023：Extension 連結改從 manifest.nav 自動生成（不再 hardcoded）
 
 'use client';
 
@@ -12,38 +11,47 @@ import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { AuthUser } from '@/lib/auth/auth';
+import type { ExtensionNavItem } from '@/lib/extensions/extension-nav';
 
-type NavItem = {
+type StaticNavItem = {
   href: string;
   label: string;
   exact?: boolean;
-  requiresExtension?: string; // 如果設定，則根據此 extension 是否啟用來顯示
 };
 
-const NAV_ITEMS: NavItem[] = [
+// Sprint 12：NAV_ITEMS 只剩系統內建連結（總覽/用戶/Extensions）
+// Extension 連結改從 props 注入（由父層從 manifest.nav 生成）
+const STATIC_NAV_ITEMS: StaticNavItem[] = [
   { href: '/admin', label: '總覽', exact: true },
   { href: '/admin/users', label: '用戶管理' },
   { href: '/admin/extensions', label: 'Extensions' },
-  { href: '/admin/orders', label: '訂單', requiresExtension: 'order' },
-  { href: '/admin/blog', label: '部落格', requiresExtension: 'blog' },
-  { href: '/admin/event', label: '活動', requiresExtension: 'event' },
-  { href: '/admin/todo', label: '待辦', requiresExtension: 'todo' },
 ];
+
+type ExtensionNavProp = ExtensionNavItem; // alias for clarity
 
 export function AdminSidebar({
   user,
   enabledExtensions,
+  extensionNavItems = [],
 }: {
   user: AuthUser;
   enabledExtensions: string[];
+  extensionNavItems?: ExtensionNavProp[];
 }) {
   const pathname = usePathname();
 
-  // 過濾：根據 enabledExtensions 隱藏 disabled 的 extension 連結
-  const visibleItems = NAV_ITEMS.filter((item) => {
-    if (!item.requiresExtension) return true;
-    return enabledExtensions.includes(item.requiresExtension);
-  });
+  // 過濾系統內建連結（不需 extension 啟用）
+  const visibleStaticItems = STATIC_NAV_ITEMS;
+
+  // 過濾 extension 連結（依 enabledExtensions 隱藏 disabled）
+  const visibleExtensionItems = extensionNavItems.filter((item) =>
+    enabledExtensions.includes(item.requiresExtension),
+  );
+
+  const allVisibleItems: Array<{ href: string; label: string; exact?: boolean }> = [
+    ...visibleStaticItems,
+    ...visibleExtensionItems,
+  ];
 
   return (
     <aside className="w-64 border-r bg-background flex flex-col">
@@ -52,7 +60,7 @@ export function AdminSidebar({
         <p className="text-xs text-muted-foreground">Admin</p>
       </div>
       <nav className="flex-1 p-4 space-y-1">
-        {visibleItems.map((item) => {
+        {allVisibleItems.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
             : pathname.startsWith(item.href);

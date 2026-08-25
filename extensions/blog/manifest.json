@@ -9,5 +9,10 @@
   "computed": ["blog.computeReadingTime"],
   "workflows": ["blog.lifecycle"],
   "permissions": ["blog.create", "blog.read", "blog.update", "blog.delete"],
-  "dependencies": []
+  "dependencies": [],
+  "nav": {
+    "path": "/admin/blog",
+    "label": "部落格",
+    "order": 40
+  }
 }

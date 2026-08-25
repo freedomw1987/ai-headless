@@ -8,5 +8,10 @@
   "actions": ["todo.complete"],
   "computed": ["todo.remainingDays"],
   "permissions": ["todo.create", "todo.read", "todo.update", "todo.delete"],
-  "dependencies": []
+  "dependencies": [],
+  "nav": {
+    "path": "/admin/todo",
+    "label": "待辦",
+    "order": 60
+  }
 }

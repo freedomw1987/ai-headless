@@ -9,5 +9,10 @@
   "computed": [],
   "workflows": ["order.lifecycle"],
   "permissions": ["order.create", "order.read", "order.update", "order.delete", "order.transition"],
-  "dependencies": []
+  "dependencies": [],
+  "nav": {
+    "path": "/admin/orders",
+    "label": "訂單",
+    "order": 30
+  }
 }

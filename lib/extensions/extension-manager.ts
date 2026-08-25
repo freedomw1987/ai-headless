@@ -38,6 +38,11 @@ export type ExtensionManifestView = {
   workflows?: string[];
   permissions?: string[];
   dependencies?: string[];
+  nav?: {
+    path: string;       // Sidebar 連結路徑，如 '/admin/blog'
+    label: string;      // Sidebar 顯示名，如 '部落格'
+    order?: number;     // 排序（未設則按 manifest 讀取順序）
+  };
   isEnabled: boolean;
 };
 
