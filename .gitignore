@@ -52,3 +52,4 @@ extension-state
 _compiled/
 _compiled-test-order/
 _compiled-test/
+.pi/
