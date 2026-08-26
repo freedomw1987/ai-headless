@@ -18,13 +18,16 @@ type StaticNavItem = {
   href: string;
   label: string;
   exact?: boolean;
+  adminOnly?: boolean;
 };
 
 // Sprint 12：NAV_ITEMS 只剩系統內建連結（總覽/用戶/Extensions）
 // Extension 連結改從 props 注入（由父層從 manifest.nav 生成）
+// Sprint 21 Task 10：加 Roles 入口（admin only）
 const STATIC_NAV_ITEMS: StaticNavItem[] = [
   { href: '/admin', label: '總覽', exact: true },
   { href: '/admin/users', label: '用戶管理' },
+  { href: '/admin/roles', label: 'Roles', adminOnly: true as const },
   { href: '/admin/extensions', label: 'Extensions' },
 ];
 
@@ -54,6 +57,14 @@ export function AdminSidebar({
     ...visibleExtensionItems,
   ];
 
+  // 過濾 admin only 項目（依用戶 role）
+  const isAdmin = user.role === 'admin';
+  const filteredItems = allVisibleItems.filter((item) => {
+    const staticItem = STATIC_NAV_ITEMS.find((s) => s.href === item.href);
+    if (staticItem?.adminOnly && !isAdmin) return false;
+    return true;
+  });
+
   return (
     <aside className="w-64 border-r bg-background flex flex-col">
       <div className="p-6 border-b">
@@ -61,7 +72,7 @@ export function AdminSidebar({
         <p className="text-xs text-muted-foreground">Admin</p>
       </div>
       <nav className="flex-1 p-4 space-y-1">
-        {allVisibleItems.map((item) => {
+        {filteredItems.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
             : pathname.startsWith(item.href);

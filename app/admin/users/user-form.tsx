@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { RoleSelect } from '@/components/admin/role-select';
 
 type Initial = {
   id?: string;
@@ -95,16 +96,10 @@ export function UserForm({ initial }: { initial?: Initial }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="role">角色</Label>
-            <select
-              id="role"
+            <RoleSelect
               value={role}
-              onChange={(e) => setRole(e.target.value as 'admin' | 'editor' | 'viewer')}
-              className="w-full rounded border px-3 py-2 bg-background"
-            >
-              <option value="viewer">viewer（唯讀）</option>
-              <option value="editor">editor（可寫）</option>
-              <option value="admin">admin（完整權限）</option>
-            </select>
+              onChange={(v) => setRole(v as 'admin' | 'editor' | 'viewer')}
+            />
           </div>
           {error && (
             <p className="text-sm text-destructive" role="alert">{error}</p>
