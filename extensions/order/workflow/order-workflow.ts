@@ -112,6 +112,21 @@ export async function transitionOrder(
       },
     });
 
+    // 5. TD-517: 寫 TransitionLog (transaction 內,與 status update 原子性)
+    // - 若 log 寫入失敗,transaction rollback → status 不會被 update
+    // - 記錄: who (userId), what (fromState, toState, event), when (createdAt 自動)
+    await tx.transitionLog.create({
+      data: {
+        machineName: 'orderStateMachine',
+        entityType: 'Order',
+        entityId: orderId,
+        fromState: order.status,
+        toState: newState,
+        userId: (payload?.userId as string) ?? null,
+        reason: event, // event 名稱 (submit / pay / ship / etc.)
+      },
+    });
+
     return updated;
   });
 }

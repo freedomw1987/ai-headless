@@ -12,6 +12,10 @@ vi.mock('@/lib/db', () => ({
       findUniqueOrThrow: vi.fn(),
       update: vi.fn(),
     },
+    // TD-517: transitionOrder 寫 TransitionLog
+    transitionLog: {
+      create: vi.fn(),
+    },
     $transaction: vi.fn(),
   },
 }));
@@ -64,6 +68,10 @@ describe('TD-516 — Order 並發 transition 控制', () => {
             currentStatus = data.status;
             return { id: where.id, status: data.status };
           }) as any,
+        },
+        // TD-517: 提供 transitionLog.create
+        transitionLog: {
+          create: vi.mocked(db.transitionLog.create as any),
         },
       };
       return fn(txResult);

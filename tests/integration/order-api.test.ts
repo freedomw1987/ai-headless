@@ -29,6 +29,10 @@ vi.mock('@/lib/db', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    // TD-517: transitionOrder 寫 TransitionLog
+    transitionLog: {
+      create: vi.fn(),
+    },
     // TD-516: transitionOrder 改用 db.$transaction,需 mock
     $transaction: vi.fn(),
   },
@@ -47,6 +51,10 @@ describe('order-workflow - 核心 API', () => {
           order: {
             findUniqueOrThrow: vi.mocked(db.order.findUniqueOrThrow),
             update: vi.mocked(db.order.update),
+          },
+          // TD-517: 提供 transitionLog.create
+          transitionLog: {
+            create: vi.mocked(db.transitionLog.create),
           },
         }),
     );
