@@ -46,6 +46,7 @@ let mockUsers: Array<{
   role: string;
   isActive: boolean;
   createdAt: Date;
+  passwordHash?: string | null;
 }> = [];
 
 vi.mock('@/lib/db', () => ({
@@ -305,6 +306,32 @@ describe('US-102 PATCH /api/users/[id]', () => {
     });
     const res = await PATCH(req as never, { params: Promise.resolve({ id: 'nonexistent' }) });
     expect(res.status).toBe(404);
+  });
+
+  it('Phase 1 bug fix: admin 更新密碼 (提供 password) → 200', async () => {
+    mockSession = { user: { id: 'me', role: 'admin' } };
+    const req = new Request('http://localhost/api/users/u1', {
+      method: 'PATCH',
+      body: JSON.stringify({ password: 'newSecret123' }),
+    });
+    const res = await PATCH(req as never, { params: Promise.resolve({ id: 'u1' }) });
+    expect(res.status).toBe(200);
+    // 確認 passwordHash 有被更新（不是 undefined/原值）
+    const updated = mockUsers.find((u) => u.id === 'u1');
+    expect(updated?.passwordHash).toBeDefined();
+    expect(updated?.passwordHash).not.toBeNull();
+  });
+
+  it('密碼太短 (<6 字) → 400', async () => {
+    mockSession = { user: { id: 'me', role: 'admin' } };
+    const req = new Request('http://localhost/api/users/u1', {
+      method: 'PATCH',
+      body: JSON.stringify({ password: 'abc' }),
+    });
+    const res = await PATCH(req as never, { params: Promise.resolve({ id: 'u1' }) });
+    const data = await res.json();
+    expect(res.status).toBe(400);
+    expect(data.error).toMatch(/密碼/);
   });
 });
 

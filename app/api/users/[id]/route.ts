@@ -13,6 +13,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireUser, requirePermission } from '@/lib/auth/auth';
+import { hashPassword } from '@/lib/auth/password';
 
 function sanitizeUser<T extends { passwordHash?: unknown }>(user: T) {
   const { passwordHash: _passwordHash, ...safe } = user as Record<string, unknown>;
@@ -56,7 +57,7 @@ export async function PATCH(
   await requirePermission('user.manage');
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
-  const { email, name, role, isActive } = body;
+  const { email, name, role, isActive, password } = body;
 
   if (role) {
     // Phase 2 動態 RBAC: role 改為 DB 驗證
@@ -84,6 +85,18 @@ export async function PATCH(
     roleIdUpdate = roleRecord?.id ?? null;
   }
 
+  // 處理密碼變更:Phase 1 既有 bug (PATCH 完全忽略 password 欄位)
+  // 修正:若有 password 則重新 hash 並更新
+  let passwordHash: string | undefined = undefined;
+  if (password && typeof password === 'string' && password.length >= 6) {
+    passwordHash = await hashPassword(password);
+  } else if (password && typeof password === 'string' && password.length < 6) {
+    return NextResponse.json(
+      { error: '密碼至少 6 字' },
+      { status: 400 },
+    );
+  }
+
   const user = await db.user.update({
     where: { id },
     data: {
@@ -92,6 +105,7 @@ export async function PATCH(
       role: role ?? undefined,
       roleId: roleIdUpdate,
       isActive: isActive ?? undefined,
+      ...(passwordHash ? { passwordHash } : {}),
     },
   });
 
