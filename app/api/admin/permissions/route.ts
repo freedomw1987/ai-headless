@@ -25,22 +25,26 @@ type PermissionItem = {
 };
 
 /**
- * 由 code 解析 resource (e.g. "blog:write" → "Blog")
+ * 由 code 解析 resource (e.g. "blog:write" 或 "blog.write" → "Blog")
+ * 支援兩種命名風格:
+ *   - Sprint 21 設計: "users:read" (colon 風格, 內建)
+ *   - Extension manifest: "blog.create" (dot 風格, Phase 1 既有)
  */
 function parseResource(code: string): string {
-  const [resource] = code.split(':');
+  // 優先用 colon 切 (Sprint 21 內建), fallback dot (extension)
+  const parts = code.includes(':') ? code.split(':') : code.split('.');
+  const resource = parts[0];
   if (!resource) return 'Other';
-  // 首字母大寫 (blog → Blog)
   return resource.charAt(0).toUpperCase() + resource.slice(1);
 }
 
 /**
- * 由 code 解析 label (e.g. "blog:write" → "Write")
+ * 由 code 解析 label (e.g. "blog.write" → "Write")
  */
 function parseLabel(code: string): string {
-  const [, action] = code.split(':');
+  const parts = code.includes(':') ? code.split(':') : code.split('.');
+  const action = parts[1];
   if (!action) return code;
-  // 首字母大寫 (write → Write)
   return action.charAt(0).toUpperCase() + action.slice(1);
 }
 

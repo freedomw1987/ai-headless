@@ -20,6 +20,7 @@ import { PrismaClient } from '@prisma/client';
 
 import { hashPassword } from '../lib/auth/password';
 import { seedRBAC } from './seed-rbac';
+import { seedExtensionPermissions } from './seed-extension-permissions';
 
 const db = new PrismaClient();
 
@@ -85,6 +86,7 @@ async function main(): Promise<void> {
   console.log('🌱 開始 seed...\n');
   await seedUsers();
   await seedRBAC(db);
+  await seedExtensionPermissions(db);
   await seedOrders();
   console.log('\n✅ Seed 完成');
   console.log('   admin@ai-headless.local / admin123   (role: admin)');
