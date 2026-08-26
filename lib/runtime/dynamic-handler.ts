@@ -223,13 +223,35 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
       return { status: 500, error: `找不到 model: ${tableName}` };
     }
 
-    const where = model.softDelete ? { deletedAt: null } : undefined;
+    const where: Record<string, unknown> = model.softDelete ? { deletedAt: null } : {};
+
+    // Sprint 19 Stage 3: Sort + Filter 支援
+    // - sort 欄位必須在 spec fields 白名單內（防 SQL injection）
+    // - order 方向為 asc / desc
+    // - q 對所有 string 欄位做 contains 搜尋（OR 組合）
+    const rawSort = String(ctx.query?.sort ?? '');
+    const rawOrder = String(ctx.query?.order ?? 'desc');
+    const rawQ = String(ctx.query?.q ?? '').trim();
+
+    const sortField = spec.models[0]?.fields?.some((f) => f.name === rawSort)
+      ? rawSort
+      : 'createdAt';
+    const sortOrder = rawOrder === 'asc' ? 'asc' : 'desc';
+
+    if (rawQ) {
+      const stringFields = (spec.models[0]?.fields ?? [])
+        .filter((f) => f.type === 'string' || f.type === 'text')
+        .map((f) => ({ [f.name]: { contains: rawQ } }));
+      if (stringFields.length > 0) {
+        where.OR = stringFields;
+      }
+    }
 
     // 平行查詢 items + total（效能優化）
     const [items, total] = await Promise.all([
       modelClient.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortField]: sortOrder },
         skip,
         take: pageSize,
       }),

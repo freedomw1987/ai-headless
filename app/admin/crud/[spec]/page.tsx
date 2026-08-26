@@ -22,7 +22,7 @@
 
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { Plus, ChevronRight, Inbox, Edit } from 'lucide-react';
+import { Plus, ChevronRight, Inbox, Edit, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { ListRowActions } from '@/components/admin/list-row-actions';
 import { auth } from '@/lib/auth/config';
 import { hasPermission } from '@/lib/auth/rbac';
@@ -51,6 +51,7 @@ import {
   EmptyDescription,
   EmptyContent,
 } from '@/components/ui/empty';
+import { Input } from '@/components/ui/input';
 import {
   Pagination,
   PaginationContent,
@@ -69,19 +70,25 @@ type PageProps = {
   searchParams: Promise<{
     page?: string;
     pageSize?: string;
+    sort?: string;
+    order?: string;
+    q?: string;
   }>;
 };
 
 export default async function DynamicCrudPage({ params, searchParams }: PageProps) {
   const { spec: specName } = await params;
 
-  // Sprint 19 Stage 1: Server Side 分頁
+  // Sprint 19 Stage 1: Server Side 分頁 + Sprint 19 Stage 3: Sort + Filter
   const searchData = await searchParams;
   const page = Math.max(1, parseInt(searchData.page ?? '1', 10) || 1);
   const pageSize = Math.max(
     1,
     Math.min(100, parseInt(searchData.pageSize ?? '10', 10) || 10),
   );
+  const sort = searchData.sort ?? '';
+  const order = searchData.order === 'asc' ? 'asc' : 'desc';
+  const q = searchData.q ?? '';
 
   // 1. Session check
   const session = await auth();
@@ -130,6 +137,9 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
     query: {
       page: String(page),
       pageSize: String(pageSize),
+      sort,
+      order,
+      q,
     },
   });
   const listData = listResult.data as {
@@ -152,20 +162,42 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
 
   return (
     <div className="space-y-6">
-      {/* 頁面標題 + 操作區（h1 給 SEO/a11y） */}
-      <div className="flex items-center justify-between">
+      {/* 頁面標題 + 搜尋 + 操作區（h1 給 SEO/a11y） */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{uiConfig.title}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             共 {total} 筆資料（第 {page} / {totalPages} 頁）
           </p>
         </div>
-        <Button asChild>
-          <Link href={`/admin/crud/${specName}/new`}>
-            <Plus />
-            新增
-          </Link>
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          {/* Sprint 19 Stage 3: 搜尋 form（GET，保留 sort/order）*/}
+          <form method="GET" action={`/admin/crud/${specName}`} className="flex items-center gap-2">
+            {sort && <input type="hidden" name="sort" value={sort} />}
+            {order === 'asc' && <input type="hidden" name="order" value="asc" />}
+            <Input
+              type="search"
+              name="q"
+              placeholder="搜尋全部欄位..."
+              defaultValue={q}
+              className="w-full sm:w-[200px]"
+            />
+            <Button type="submit" variant="outline" size="sm">
+              搜尋
+            </Button>
+            {q && (
+              <Button asChild variant="ghost" size="sm">
+                <Link href={`/admin/crud/${specName}`}>清除</Link>
+              </Button>
+            )}
+          </form>
+          <Button asChild>
+            <Link href={`/admin/crud/${specName}/new`}>
+              <Plus />
+              新增
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* 表格 / 空狀態 */}
@@ -176,18 +208,26 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
             <EmptyMedia variant="icon">
               <Inbox />
             </EmptyMedia>
-            <EmptyTitle>尚無資料</EmptyTitle>
+            <EmptyTitle>{q ? `找不到符合「${q}」的資料` : '尚無資料'}</EmptyTitle>
             <EmptyDescription>
-              目前沒有任何{uiConfig.title}資料，點擊右上角「新增」建立第一筆
+              {q
+                ? `試試其他關鍵字或清除搜尋條件`
+                : `目前沒有任何${uiConfig.title}資料，點擊右上角「新增」建立第一筆`}
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button asChild>
-              <Link href={`/admin/crud/${specName}/new`}>
-                <Plus />
-                新增{uiConfig.title}
-              </Link>
-            </Button>
+            {q ? (
+              <Button asChild variant="outline">
+                <Link href={`/admin/crud/${specName}`}>清除搜尋</Link>
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link href={`/admin/crud/${specName}/new`}>
+                  <Plus />
+                  新增{uiConfig.title}
+                </Link>
+              </Button>
+            )}
           </EmptyContent>
         </Empty>
       ) : (
@@ -195,9 +235,26 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
           <Table>
             <TableHeader>
               <TableRow>
-                {uiConfig.fields.map((f) => (
-                  <TableHead key={f.name}>{f.label}</TableHead>
-                ))}
+                {uiConfig.fields.map((f) => {
+                  const isSorted = sort === f.name;
+                  const nextOrder = isSorted && order === 'desc' ? 'asc' : 'desc';
+                  const Icon = !isSorted
+                    ? ArrowUpDown
+                    : order === 'asc'
+                      ? ChevronUp
+                      : ChevronDown;
+                  return (
+                    <TableHead key={f.name}>
+                      <Link
+                        href={buildSortHref(f.name, nextOrder, q, pageSize, specName)}
+                        className="inline-flex items-center gap-1 hover:text-foreground"
+                      >
+                        {f.label}
+                        <Icon className={isSorted ? 'h-3 w-3' : 'h-3 w-3 opacity-40'} />
+                      </Link>
+                    </TableHead>
+                  );
+                })}
                 <TableHead className="w-[100px] text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
@@ -291,6 +348,21 @@ function buildPageHref(targetPage: number, pageSize: number, specName: string): 
   }
   const params = new URLSearchParams();
   if (targetPage !== 1) params.set('page', String(targetPage));
+  if (pageSize !== 10) params.set('pageSize', String(pageSize));
+  return `/admin/crud/${specName}?${params.toString()}`;
+}
+
+function buildSortHref(
+  sortField: string,
+  sortOrder: string,
+  q: string,
+  pageSize: number,
+  specName: string,
+): string {
+  const params = new URLSearchParams();
+  params.set('sort', sortField);
+  params.set('order', sortOrder);
+  if (q) params.set('q', q);
   if (pageSize !== 10) params.set('pageSize', String(pageSize));
   return `/admin/crud/${specName}?${params.toString()}`;
 }

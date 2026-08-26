@@ -74,12 +74,15 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
     return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
   }
 
-  // List（Sprint 19 Stage 1: server side 分頁）
+  // List（Sprint 19 Stage 1: server side 分頁 + Sprint 19 Stage 3: sort + filter）
   const page = searchParams.get('page') ?? undefined;
   const pageSize = searchParams.get('pageSize') ?? undefined;
+  const sort = searchParams.get('sort') ?? undefined;
+  const order = searchParams.get('order') ?? undefined;
+  const q = searchParams.get('q') ?? undefined;
   const result = await r.handlers.list({
     user: r.user,
-    query: { page, pageSize },
+    query: { page, pageSize, sort, order, q },
   });
   return NextResponse.json(result.data ?? { error: result.error }, { status: result.status });
 }
