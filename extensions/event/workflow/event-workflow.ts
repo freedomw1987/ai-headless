@@ -88,3 +88,50 @@ export async function deleteEvent(id: string) {
 export async function cancelEvent(id: string) {
   return db.event.update({ where: { id }, data: { status: 'cancelled' } });
 }
+
+// Sprint 29 commit 4: 新增 transitionEvent 函式 (與 Order/Blog 一致)
+export async function transitionEvent(
+  id: string,
+  event: string,
+  payload?: Record<string, unknown>,
+) {
+  return db.$transaction(async (tx) => {
+    const evt = await tx.event.findUniqueOrThrow({ where: { id } });
+    const fromState = evt.status;
+
+    // Event lifecycle workflow: upcoming → ongoing, ongoing → past, etc.
+    // (在 spec 定義的 transitions)
+    const transitions: Record<string, Record<string, string>> = {
+      upcoming: { start: 'ongoing', cancel: 'cancelled' },
+      ongoing: { end: 'past', cancel: 'cancelled' },
+      past: {},
+      cancelled: {},
+    };
+    const toState = transitions[fromState]?.[event];
+    if (!toState) {
+      throw new Error(
+        `Event transition 不存在: ${fromState} --(${event})--> ?`,
+      );
+    }
+
+    const updated = await tx.event.update({
+      where: { id },
+      data: { status: toState },
+    });
+
+    // 寫 TransitionLog
+    await tx.transitionLog.create({
+      data: {
+        machineName: 'event-lifecycle',
+        entityType: 'Event',
+        entityId: id,
+        fromState,
+        toState,
+        userId: (payload?.userId as string) ?? null,
+        reason: event,
+      },
+    });
+
+    return updated;
+  });
+}
