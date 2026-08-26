@@ -20,6 +20,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { extractSpecHookReferences } from '@/lib/specs/spec-hooks-parser';
 
 const ROOT = process.cwd();
 const HANDLER_PATH = resolve(ROOT, 'lib/runtime/dynamic-handler.ts');
@@ -126,18 +127,12 @@ describe('Sprint 20 P3.5 — Hook 註冊 + Prisma/Hook Error 處理', () => {
         .filter((p: string) => fs.existsSync(p));
 
       const referencedHookFns = new Set<string>();
+      // TD-404: 用 brace-balanced parser 取代舊 regex (支援嵌套 JSON)
       for (const file of specFiles) {
         const content = readFileSync(file, 'utf-8');
-        // 只找 `"hooks": { ... }` 區塊內的 {{fn:...}}
-        // 簡化策略：scan `"hooks":\s*{[^{}]*}` 區塊
-        const hooksBlocks = content.matchAll(/"hooks"\s*:\s*\{([^{}]*)\}/g);
-        for (const block of hooksBlocks) {
-          const inner = block[1] ?? '';
-          const fnMatches = inner.matchAll(/\{\{\s*fn\s*:\s*([^}]+?)\s*\}\}/g);
-          for (const m of fnMatches) {
-            const fnName = m[1]?.trim();
-            if (fnName) referencedHookFns.add(fnName);
-          }
+        const refs = extractSpecHookReferences(content);
+        for (const fn of refs) {
+          referencedHookFns.add(fn);
         }
       }
 
