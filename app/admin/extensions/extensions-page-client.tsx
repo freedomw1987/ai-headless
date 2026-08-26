@@ -6,14 +6,9 @@
 
 import { useEffect, useState } from 'react';
 import { ExtensionCard, type ExtensionCardData } from '@/components/admin/extension-card';
-import { ToastProvider } from '@/components/ui/toast';
 
 export function ExtensionsPageClient() {
-  return (
-    <ToastProvider>
-      <ExtensionsContent />
-    </ToastProvider>
-  );
+  return <ExtensionsContent />;
 }
 
 function ExtensionsContent() {

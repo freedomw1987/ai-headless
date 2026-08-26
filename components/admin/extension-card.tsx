@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export type ExtensionCardData = {
@@ -30,7 +30,6 @@ type Props = {
 export function ExtensionCard({ extension, onToggle }: Props) {
   const [enabled, setEnabled] = useState(extension.isEnabled);
   const [loading, setLoading] = useState(false);
-  const { show } = useToast();
 
   const handleToggle = async () => {
     setLoading(true);
@@ -43,19 +42,13 @@ export function ExtensionCard({ extension, onToggle }: Props) {
       if (res.ok && json.data) {
         setEnabled(json.data.enabled);
         onToggle?.(extension.name, json.data.enabled);
-        show({
-          message: `${extension.label ?? extension.name} 已${json.data.enabled ? '啟用' : '停用'}`,
-          variant: 'success',
-        });
+        toast.success(`${extension.label ?? extension.name} 已${json.data.enabled ? '啟用' : '停用'}`);
       } else {
         throw new Error(json.error ?? `HTTP ${res.status}`);
       }
     } catch (err) {
       console.error('Toggle failed:', err);
-      show({
-        message: `操作失敗：${err instanceof Error ? err.message : String(err)}`,
-        variant: 'error',
-      });
+      toast.error(`操作失敗：${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
