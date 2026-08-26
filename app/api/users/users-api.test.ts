@@ -82,14 +82,15 @@ vi.mock('@/lib/db', () => ({
     role: {
       findUnique: vi.fn(({ where }: { where: { name: string } }) => {
         // 內建 role 對應固定 ID (與 prisma/seed-rbac 一致)
-        const builtins: Record<string, string> = {
+        const allRoles: Record<string, string> = {
           admin: 'sys_role_admin',
           editor: 'sys_role_editor',
           viewer: 'sys_role_viewer',
+          test: 'sys_role_test', // 測試用自定義 role
         };
         return Promise.resolve(
-          builtins[where.name]
-            ? { id: builtins[where.name], name: where.name }
+          allRoles[where.name]
+            ? { id: allRoles[where.name], name: where.name }
             : null,
         );
       }),
@@ -226,6 +227,39 @@ describe('US-102 POST /api/users', () => {
     });
     const res = await POST(req as never);
     expect(res.status).toBe(400);
+  });
+
+  it('Phase 2: admin 可指派自定義 role', async () => {
+    mockSession = { user: { id: 'me', role: 'admin' } };
+    const req = new Request('http://localhost/api/users', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'custom-role@b.com',
+        password: 'pw1234',
+        role: 'test', // 自定義 role（需在 db.role mock 中定義）
+        name: 'Custom Role User',
+      }),
+    });
+    const res = await POST(req as never);
+    const data = await res.json();
+    expect(res.status).toBe(201);
+    expect(data.user.role).toBe('test');
+  });
+
+  it('Phase 2: 不存在的 role → 400', async () => {
+    mockSession = { user: { id: 'me', role: 'admin' } };
+    const req = new Request('http://localhost/api/users', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'bad-role@b.com',
+        password: 'pw1234',
+        role: 'nonexistent_role',
+      }),
+    });
+    const res = await POST(req as never);
+    const data = await res.json();
+    expect(res.status).toBe(400);
+    expect(data.error).toMatch(/Role.*不存在/);
   });
 });
 

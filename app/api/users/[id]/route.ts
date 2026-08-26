@@ -13,9 +13,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireUser, requirePermission } from '@/lib/auth/auth';
-import type { Role } from '@/lib/auth/auth';
-
-const VALID_ROLES: Role[] = ['admin', 'editor', 'viewer'];
 
 function sanitizeUser<T extends { passwordHash?: unknown }>(user: T) {
   const { passwordHash: _passwordHash, ...safe } = user as Record<string, unknown>;
@@ -61,11 +58,15 @@ export async function PATCH(
   const body = await req.json().catch(() => ({}));
   const { email, name, role, isActive } = body;
 
-  if (role && !VALID_ROLES.includes(role)) {
-    return NextResponse.json(
-      { error: `Role 必須是 ${VALID_ROLES.join(' / ')}` },
-      { status: 400 },
-    );
+  if (role) {
+    // Phase 2 動態 RBAC: role 改為 DB 驗證
+    const roleRecord = await db.role.findUnique({ where: { name: role } });
+    if (!roleRecord) {
+      return NextResponse.json(
+        { error: `Role '${role}' 不存在` },
+        { status: 400 },
+      );
+    }
   }
 
   const existing = await db.user.findUnique({ where: { id } });

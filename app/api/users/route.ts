@@ -6,20 +6,18 @@
  * GET    /api/users         - 列出用戶（任何已登入）
  * POST   /api/users         - 新增用戶（僅 admin）
  *
- * 對應 PRD §2.2 FR-2.1 / FR-2.2
+ * 對應 PRD §2.2 FR-2.1 / FR-2.2 + US-102-P2 動態 RBAC
+ *
+ * Phase 2 變更（Sprint 21）:
+ * - role 改為動態查詢 DB（不再寫死 admin/editor/viewer）
+ * - 自定義 role 可指派（admin only）
+ * - 保留向下相容：role 字串保留作為 Phase 1 hasPermission 後備
  */
 
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireUser, requirePermission, hasPermission } from '@/lib/auth/auth';
+import { requireUser, requirePermission } from '@/lib/auth/auth';
 import { hashPassword } from '@/lib/auth/password';
-import type { Role } from '@/lib/auth/auth';
-
-// ==============================================
-// Helpers
-// ==============================================
-
-const VALID_ROLES: Role[] = ['admin', 'editor', 'viewer'];
 
 function sanitizeUser<T extends { passwordHash?: unknown }>(user: T) {
   const { passwordHash: _passwordHash, ...safe } = user as Record<string, unknown>;
@@ -66,12 +64,13 @@ export async function POST(req: Request) {
   if (!password || typeof password !== 'string' || password.length < 6) {
     return NextResponse.json({ error: '密碼至少 6 字' }, { status: 400 });
   }
-  if (!password || typeof password !== 'string' || password.length < 6) {
-    return NextResponse.json({ error: '密碼至少 6 字' }, { status: 400 });
-  }
-  if (role && !VALID_ROLES.includes(role)) {
+
+  // Phase 2 動態 RBAC: role 改為 DB 驗證（不再寫死）
+  const targetRoleName = role ?? 'viewer';
+  const roleRecord = await db.role.findUnique({ where: { name: targetRoleName } });
+  if (!roleRecord) {
     return NextResponse.json(
-      { error: `Role 必須是 ${VALID_ROLES.join(' / ')}` },
+      { error: `Role '${targetRoleName}' 不存在` },
       { status: 400 },
     );
   }
@@ -83,22 +82,16 @@ export async function POST(req: Request) {
   }
 
   const passwordHash = await hashPassword(password);
-  // Phase 2 動態 RBAC: 同時設定 roleId (lookup by name)
-  const targetRoleName = role ?? 'viewer';
-  const roleRecord = await db.role.findUnique({ where: { name: targetRoleName } });
   const user = await db.user.create({
     data: {
       email,
       name: name ?? null,
       passwordHash,
       role: targetRoleName,
-      roleId: roleRecord?.id,
+      roleId: roleRecord.id, // Phase 2 FK
       isActive: true,
     },
   });
 
   return NextResponse.json({ user: sanitizeUser(user) }, { status: 201 });
 }
-
-// 觸碰 export 以免 lint 報 unused
-void hasPermission;
