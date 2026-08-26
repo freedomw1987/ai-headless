@@ -107,6 +107,42 @@ export type HookContext<T extends HookName> = T extends 'beforeCreate'
 // 3. HookFunction（同步或異步，返回修改後的 context）
 // ==============================================
 
+/**
+ * TD-403: Hook 回傳型別 (參考用,非強制)
+ * - beforeCreate/afterCreate/etc. 通常返回修改後的 data 或 void
+ * - 不是返回完整 context (避免 silent type drift)
+ * - 本 type 為 type contract,不強制 hook return 符合
+ *   (向後相容現有 production hook)
+ */
+export type HookResult<T extends HookName> = T extends 'beforeCreate'
+  ? Record<string, unknown>  // 修改後的 data
+  : T extends 'afterCreate'
+    ? Record<string, unknown>  // 建立後的 result
+    : T extends 'beforeUpdate'
+      ? Record<string, unknown>  // 修改後的 data
+      : T extends 'afterUpdate'
+        ? Record<string, unknown>  // 更新後的 result
+        : T extends 'beforeDelete'
+          ? void
+          : T extends 'afterDelete'
+            ? void
+            : T extends 'beforeList'
+              ? { items: unknown[]; total: number; page: number; pageSize: number; totalPages: number }
+              : T extends 'afterList'
+                ? { items: unknown[]; total: number; page: number; pageSize: number; totalPages: number }
+                : T extends 'beforeRead'
+                  ? Record<string, unknown>
+                  : T extends 'afterRead'
+                    ? Record<string, unknown>
+                    : T extends 'onTransition'
+                      ? { fromState: string; toState: string; event: string }
+                      : unknown;
+
+/**
+ * Hook function type (向後相容)
+ * - TD-403: 仍接受 generic T = unknown (舊 hook signature)
+ * - 但可選擇性用 HookResult<T> 標註 return type (新 hook signature)
+ */
 export type HookFunction<T = unknown> = (ctx: T) => Promise<T> | T;
 
 // ==============================================
