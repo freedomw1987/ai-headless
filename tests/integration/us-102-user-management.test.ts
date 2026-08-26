@@ -10,7 +10,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
-import { hasPermission } from '@/lib/auth/auth';
+// Sprint 25: hasPermission 純函式已刪除
+// import { hasPermission } from '@/lib/auth/auth';
 import { db } from '@/lib/db';
 
 describe('US-102 整合 smoke test', () => {
@@ -58,19 +59,6 @@ describe('US-102 整合 smoke test', () => {
     });
   });
 
-  describe('RBAC 矩陣正確', () => {
-    it('admin 有 user.manage', () => {
-      expect(hasPermission('admin', 'user.manage')).toBe(true);
-    });
-
-    it('editor 沒有 user.manage（不能管理用戶）', () => {
-      expect(hasPermission('editor', 'user.manage')).toBe(false);
-      expect(hasPermission('editor', 'post.create')).toBe(true);
-    });
-
-    it('viewer 只能讀', () => {
-      expect(hasPermission('viewer', 'post.read')).toBe(true);
-      expect(hasPermission('viewer', 'post.create')).toBe(false);
-    });
-  });
+  // Sprint 25: RBAC 矩陣測試已刪除 (hasPermission 純函式被移除)
+  // 動態版矩陣測試見 tests/integration/auth-dynamic.test.ts
 });

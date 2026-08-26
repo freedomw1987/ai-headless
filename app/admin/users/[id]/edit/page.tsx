@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
-import { requirePermission } from '@/lib/auth/auth';
+import { requireDynamicPermission } from '@/lib/auth/dynamic-permission';
+import { PermissionCode } from '@/lib/auth/permissions';
 import { UserForm } from '../../user-form';
 
 export default async function EditUserPage({
@@ -7,7 +8,8 @@ export default async function EditUserPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requirePermission('user.manage');
+  // Server Component: throw 讓 Next.js error boundary 處理 (會重導 /admin)
+  await requireDynamicPermission(PermissionCode.USERS_ASSIGN);
   const { id } = await params;
   const user = await db.user.findUnique({
     where: { id },

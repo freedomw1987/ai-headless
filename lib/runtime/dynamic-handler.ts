@@ -14,7 +14,7 @@
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getRequiredExtension } from '@/lib/specs/extension-derive';
-import { hasPermission } from '@/lib/auth/rbac';
+import { hasDynamicPermission } from '@/lib/auth/dynamic-permission';
 import { guardExtensionApi } from '@/lib/extensions/api-guard';
 import { parseHookReference } from '@/lib/specs/json-spec.validator';
 import { invokeHook, hasHook } from '@/lib/extensions/hooks';
@@ -144,15 +144,17 @@ function checkAuth(ctx: HandlerContext): HandlerResult | null {
   return null;
 }
 
-function checkPermission(
+async function checkPermission(
   ctx: HandlerContext,
   action: string,
   specName: string,
-): HandlerResult | null {
+): Promise<HandlerResult | null> {
   if (!ctx.user) return { status: 401, error: 'Unauthorized' };
-  const permission = getPermission(action, specName) as Parameters<typeof hasPermission>[1];
-  if (!hasPermission(ctx.user.role as 'admin' | 'editor' | 'viewer', permission)) {
-    return { status: 403, error: `Forbidden: ${getPermission(action, specName)}` };
+  // Sprint 25: 改用 hasDynamicPermission (async, 從 session.user.permissions 判斷)
+  const permission = getPermission(action, specName);
+  const allowed = await hasDynamicPermission(permission);
+  if (!allowed) {
+    return { status: 403, error: `Forbidden: ${permission}` };
   }
   return null;
 }
@@ -306,7 +308,7 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
     // 寫入需要登入 + 權限
     const authErr = checkAuth(ctx);
     if (authErr) return authErr;
-    const permErr = checkPermission(ctx, 'create', spec.name);
+    const permErr = await checkPermission(ctx, 'create', spec.name);
     if (permErr) return permErr;
 
     const parsed = zodCreate.safeParse(ctx.body ?? {});
@@ -369,7 +371,7 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
 
     const authErr = checkAuth(ctx);
     if (authErr) return authErr;
-    const permErr = checkPermission(ctx, 'update', spec.name);
+    const permErr = await checkPermission(ctx, 'update', spec.name);
     if (permErr) return permErr;
 
     const parsed = zodUpdate.safeParse(ctx.body ?? {});
@@ -408,7 +410,7 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
 
     const authErr = checkAuth(ctx);
     if (authErr) return authErr;
-    const permErr = checkPermission(ctx, 'delete', spec.name);
+    const permErr = await checkPermission(ctx, 'delete', spec.name);
     if (permErr) return permErr;
 
     if (model.softDelete) {

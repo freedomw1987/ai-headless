@@ -12,8 +12,9 @@
  * - 失效策略:既有 session-cache + POST /api/admin/cache/invalidate
  *
  * 向下相容:
- * - Phase 1 純函式 hasPermission 仍可用 session.user.role
+ * - session.user.role 仍存在 (Phase 1 識別用)
  * - Phase 2 hasDynamicPermission 仍透過 DB 查詢（session-cache 是輔助）
+ * - Sprint 25: 純函式 hasPermission 已刪除,全部走動態版
  */
 
 import NextAuth, { type DefaultSession } from 'next-auth';

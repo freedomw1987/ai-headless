@@ -24,17 +24,29 @@ vi.mock('@/lib/auth/auth', () => ({
     if (!mockSession) throw new Error('Unauthorized');
     return Promise.resolve(mockSession.user);
   }),
-  requirePermission: vi.fn((perm: string) => {
+}));
+
+vi.mock('@/lib/auth/dynamic-permission', () => ({
+  requireDynamicPermission: vi.fn(async (code: string) => {
     if (!mockSession) throw new Error('Unauthorized');
-    if (perm === 'user.manage' && mockSession.user.role !== 'admin') {
+    if (code === 'users:assign' && mockSession.user.role !== 'admin') {
       throw new Error('Forbidden');
     }
-    return Promise.resolve(mockSession);
   }),
-  hasPermission: vi.fn((role: string, perm: string) => {
-    if (role === 'admin') return true;
-    if (perm === 'user.manage') return false;
-    return true;
+  requirePermissionApiResponse: vi.fn(async (code: string) => {
+    if (!mockSession) {
+      return Response.json(
+        { status: 401, error: 'Unauthorized' },
+        { status: 401 },
+      );
+    }
+    if (code === 'users:assign' && mockSession.user.role !== 'admin') {
+      return Response.json(
+        { status: 403, error: `Forbidden: requires permission '${code}'` },
+        { status: 403 },
+      );
+    }
+    return null; // 通過
   }),
 }));
 
@@ -115,7 +127,8 @@ describe('US-102 /api/users > 認證守衛', () => {
 
   it('未登入 GET → 401', async () => {
     const req = new Request('http://localhost/api/users');
-    await expect(GET(req as never)).rejects.toThrow(/Unauthorized/);
+    const res = await GET(req as never);
+    expect(res.status).toBe(401);
   });
 
   it('未登入 POST → 401', async () => {
@@ -123,7 +136,8 @@ describe('US-102 /api/users > 認證守衛', () => {
       method: 'POST',
       body: JSON.stringify({ email: 'a@b.com', password: 'pw' }),
     });
-    await expect(POST(req as never)).rejects.toThrow(/Unauthorized/);
+    const res = await POST(req as never);
+    expect(res.status).toBe(401);
   });
 });
 
@@ -190,7 +204,8 @@ describe('US-102 POST /api/users', () => {
       method: 'POST',
       body: JSON.stringify({ email: 'new@b.com', password: 'pw' }),
     });
-    await expect(POST(req as never)).rejects.toThrow(/Forbidden/);
+    const res = await POST(req as never);
+    expect(res.status).toBe(403);
   });
 
   it('viewer 新增用戶 → 403', async () => {
@@ -199,7 +214,8 @@ describe('US-102 POST /api/users', () => {
       method: 'POST',
       body: JSON.stringify({ email: 'new@b.com', password: 'pw' }),
     });
-    await expect(POST(req as never)).rejects.toThrow(/Forbidden/);
+    const res = await POST(req as never);
+    expect(res.status).toBe(403);
   });
 
   it('缺少密碼 → 400', async () => {
@@ -293,9 +309,8 @@ describe('US-102 PATCH /api/users/[id]', () => {
       method: 'PATCH',
       body: JSON.stringify({ role: 'viewer' }),
     });
-    await expect(
-      PATCH(req as never, { params: Promise.resolve({ id: 'u1' }) }),
-    ).rejects.toThrow(/Forbidden/);
+    const res = await PATCH(req as never, { params: Promise.resolve({ id: 'u1' }) });
+    expect(res.status).toBe(403);
   });
 
   it('不存在 id → 404', async () => {
@@ -373,9 +388,8 @@ describe('US-102 DELETE /api/users/[id]', () => {
   it('editor 刪除 → 403', async () => {
     mockSession = { user: { id: 'me', role: 'editor' } };
     const req = new Request('http://localhost/api/users/u2', { method: 'DELETE' });
-    await expect(
-      DELETE(req as never, { params: Promise.resolve({ id: 'u2' }) }),
-    ).rejects.toThrow(/Forbidden/);
+    const res = await DELETE(req as never, { params: Promise.resolve({ id: 'u2' }) });
+    expect(res.status).toBe(403);
   });
 });
 

@@ -11,12 +11,14 @@
  * Phase 2 變更（Sprint 21）:
  * - role 改為動態查詢 DB（不再寫死 admin/editor/viewer）
  * - 自定義 role 可指派（admin only）
- * - 保留向下相容：role 字串保留作為 Phase 1 hasPermission 後備
+ * - Sprint 25 強制清: 改用 requireDynamicPermission (純函式 hasPermission 已刪除)
  */
 
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireUser, requirePermission } from '@/lib/auth/auth';
+import { requireUser } from '@/lib/auth/auth';
+import { requirePermissionApiResponse } from '@/lib/auth/dynamic-permission';
+import { PermissionCode } from '@/lib/auth/permissions';
 import { hashPassword } from '@/lib/auth/password';
 
 function sanitizeUser<T extends { passwordHash?: unknown }>(user: T) {
@@ -29,7 +31,14 @@ function sanitizeUser<T extends { passwordHash?: unknown }>(user: T) {
 // ==============================================
 
 export async function GET(_req: Request) {
-  await requireUser();
+  try {
+    await requireUser();
+  } catch {
+    return Response.json(
+      { status: 401, error: 'Unauthorized' },
+      { status: 401 },
+    );
+  }
   const users = await db.user.findMany({
     where: { isActive: true },
     orderBy: { createdAt: 'desc' },
@@ -52,7 +61,8 @@ export async function GET(_req: Request) {
 // ==============================================
 
 export async function POST(req: Request) {
-  await requirePermission('user.manage');
+  const guard = await requirePermissionApiResponse(PermissionCode.USERS_ASSIGN);
+  if (guard) return guard;
   const body = await req.json().catch(() => ({}));
 
   const { email, name, password, role } = body;

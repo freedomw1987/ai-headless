@@ -1,16 +1,16 @@
 /**
  * ==============================================
- *  Dynamic Permission Check (Sprint 21)
+ *  Dynamic Permission Check (Sprint 21+25)
  * ==============================================
  *
- * 對應 PRD：docs/prd/09-rbac.md §5.3 / FR-4 / Q6 雙函式策略
+ * 對應 PRD：docs/prd/09-rbac.md §5.3 / FR-4 / Q6
  *
- * hasDynamicPermission(userId, code) — 查 DB + cache
- * 與 Phase 1 純函式 hasPermission 並存,漸進式遷移。
+ * hasDynamicPermission(code) — 查 DB + cache
+ * Sprint 25 強制清: 純函式 hasPermission 已刪除,本函式為唯一 RBAC 入口
  *
  * 用法:
  *   import { hasDynamicPermission } from '@/lib/auth/dynamic-permission';
- *   if (await hasDynamicPermission(userId, PermissionCode.ROLES_WRITE)) { ... }
+ *   if (await hasDynamicPermission(PermissionCode.ROLES_WRITE)) { ... }
  *
  * 流程:
  *   1. 查快取 (session-cache, 60s TTL)
@@ -121,6 +121,40 @@ export async function requireDynamicPermission(
   if (!allowed) {
     throw new Error(`Forbidden: requires permission '${code}'`);
   }
+}
+
+/**
+ * API route helper: 檢查權限並返回 Response 或 null
+ * 用法:
+ *   const guard = await requirePermissionApiResponse(PermissionCode.USERS_ASSIGN);
+ *   if (guard) return guard;  // 401 或 403 Response
+ *   // 繼續 handler 業務邏輯
+ *
+ * Sprint 25 新增: 取代 try/catch pattern,讓 API route 更乾淨
+ */
+export async function requirePermissionApiResponse(
+  code: DynamicPermissionCode,
+): Promise<Response | null> {
+  // 1. Auth check
+  const auth = await import('@/lib/auth/config');
+  const session = await auth.auth();
+  if (!session?.user?.id) {
+    return Response.json(
+      { status: 401, error: 'Unauthorized' },
+      { status: 401 },
+    );
+  }
+
+  // 2. Permission check (動態查 DB + 快取)
+  const allowed = await hasDynamicPermission(code);
+  if (!allowed) {
+    return Response.json(
+      { status: 403, error: `Forbidden: requires permission '${code}'` },
+      { status: 403 },
+    );
+  }
+
+  return null; // 通過
 }
 
 /**

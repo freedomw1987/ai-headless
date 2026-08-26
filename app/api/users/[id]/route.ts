@@ -12,7 +12,9 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireUser, requirePermission } from '@/lib/auth/auth';
+import { requireUser } from '@/lib/auth/auth';
+import { requirePermissionApiResponse } from '@/lib/auth/dynamic-permission';
+import { PermissionCode } from '@/lib/auth/permissions';
 import { hashPassword } from '@/lib/auth/password';
 
 function sanitizeUser<T extends { passwordHash?: unknown }>(user: T) {
@@ -54,7 +56,8 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  await requirePermission('user.manage');
+  const guard = await requirePermissionApiResponse(PermissionCode.USERS_ASSIGN);
+  if (guard) return guard;
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
   const { email, name, role, isActive, password } = body;
@@ -120,7 +123,8 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  await requirePermission('user.manage');
+  const guard = await requirePermissionApiResponse(PermissionCode.USERS_ASSIGN);
+  if (guard) return guard;
   const { id } = await params;
 
   // 不能刪自己

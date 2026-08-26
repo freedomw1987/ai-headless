@@ -20,6 +20,12 @@ vi.mock('@/lib/auth/config', () => ({
   }),
 }));
 
+// Sprint 25: mock dynamic-permission 避免 chain 加載 next-auth
+vi.mock('@/lib/auth/dynamic-permission', () => ({
+  hasDynamicPermission: vi.fn(async () => true),
+  requireDynamicPermission: vi.fn(async () => undefined),
+}));
+
 function makeRequest(url: string, options: { method?: string; body?: unknown } = {}): NextRequest {
   return {
     url,

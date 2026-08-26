@@ -9,7 +9,14 @@
  * 5. Disabled extension 自動擋掉
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// Sprint 25: mock dynamic-permission 避免 chain 加載 next-auth (測試環境無 next/server)
+vi.mock('@/lib/auth/dynamic-permission', () => ({
+  hasDynamicPermission: vi.fn(async () => true), // 預設 admin wildcard 模擬
+  requireDynamicPermission: vi.fn(async () => undefined),
+}));
+
 import {
   createDynamicHandlers,
   type DynamicHandlers,
