@@ -38,6 +38,7 @@ export type AuthUser = {
   email: string;
   name?: string | null;
   role: Role;
+  permissions?: string[]; // Sprint 23+: 動態 permissions array (含 admin wildcard '*')
 };
 
 // ==============================================

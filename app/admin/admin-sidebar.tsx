@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { AuthUser } from '@/lib/auth/auth';
 import type { ExtensionNavItem } from '@/lib/extensions/extension-nav';
+import { hasUIPermission } from '@/lib/auth/ui-permissions';
 
 type StaticNavItem = {
   href: string;
@@ -57,8 +58,9 @@ export function AdminSidebar({
     ...visibleExtensionItems,
   ];
 
-  // 過濾 admin only 項目（依用戶 role）
-  const isAdmin = user.role === 'admin';
+  // 過濾 admin only 項目 (Sprint 24: 改用動態版)
+  // roles:write = roles 矩陣權限 (= admin 預設)
+  const isAdmin = hasUIPermission(user.permissions, 'roles:write');
   const filteredItems = allVisibleItems.filter((item) => {
     const staticItem = STATIC_NAV_ITEMS.find((s) => s.href === item.href);
     if (staticItem?.adminOnly && !isAdmin) return false;

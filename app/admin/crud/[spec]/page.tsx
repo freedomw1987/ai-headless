@@ -25,7 +25,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Plus, Inbox } from 'lucide-react';
 import { ListRowActions } from '@/components/admin/list-row-actions';
 import { auth } from '@/lib/auth/config';
-import { hasPermission } from '@/lib/auth/rbac';
+import { hasUIPermission } from '@/lib/auth/ui-permissions';
 import { loadSpec, listAvailableSpecs } from '@/lib/runtime/spec-loader';
 import { buildListUIConfig } from '@/lib/runtime/ui-config';
 import { createDynamicHandlers } from '@/lib/runtime/dynamic-handler';
@@ -97,8 +97,8 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
     redirect(`/admin/login?callbackUrl=/admin/crud/${specName}`);
   }
 
-  // 2. Permission check
-  if (!hasPermission(session.user.role, 'user.manage')) {
+  // 2. Permission check (Sprint 24: 改用動態版)
+  if (!hasUIPermission(session.user?.permissions, 'users:assign')) {
     return <div className="p-6">權限不足</div>;
   }
 
