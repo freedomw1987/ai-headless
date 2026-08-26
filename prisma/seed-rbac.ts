@@ -19,20 +19,14 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
+import { PermissionCode } from '../lib/auth/permissions';
 
 // ==============================================
 // 1. Permission Code 常數（集中所有 resource:action 字串）
 // ==============================================
-
-export const PermissionCode = {
-  USERS_READ: 'users:read',
-  USERS_WRITE: 'users:write',
-  USERS_ASSIGN: 'users:assign',
-  ROLES_READ: 'roles:read',
-  ROLES_WRITE: 'roles:write',
-} as const;
-
-export type PermissionCode = typeof PermissionCode[keyof typeof PermissionCode];
+// 本檔從 lib/auth/permissions.ts 引入（單一 source of truth）後使用
+// 外部使用方請 import 自 lib/auth/permissions.ts
+// 這裡不重複 export，避免 TypeScript duplicate identifier 問題
 
 // ==============================================
 // 2. 內建 3 個 Role
@@ -74,7 +68,7 @@ export const BUILTIN_PERMISSIONS_BY_ROLE: Record<
     PermissionCode.ROLES_READ,
     PermissionCode.ROLES_WRITE,
     // Phase 2 MVP：admin 仍靠萬能 wildcard 相容（避免 Phase 3+ 新增 permission 時需 seed）
-    '*',
+    PermissionCode.ADMIN_WILDCARD,
   ],
   editor: [PermissionCode.USERS_READ],
   viewer: [PermissionCode.USERS_READ],

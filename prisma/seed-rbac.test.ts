@@ -15,8 +15,8 @@ import { describe, it, expect } from 'vitest';
 import {
   BUILTIN_ROLES,
   BUILTIN_PERMISSIONS_BY_ROLE,
-  PermissionCode,
 } from './seed-rbac';
+import { PermissionCode } from '../lib/auth/permissions';
 
 describe('BUILTIN_ROLES', () => {
   it('應包含 admin / editor / viewer 三個內建 role', () => {
@@ -52,10 +52,16 @@ describe('BUILTIN_ROLES', () => {
 });
 
 describe('PermissionCode', () => {
-  it('應為 resource:action 格式', () => {
+  it('應為 resource:action 格式（ADMIN_WILDCARD 除外）', () => {
     Object.values(PermissionCode).forEach((code) => {
+      // ADMIN_WILDCARD '*' 不符合 resource:action 格式,單獨跳過
+      if (code === PermissionCode.ADMIN_WILDCARD) return;
       expect(code).toMatch(/^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$/);
     });
+  });
+
+  it('ADMIN_WILDCARD 應為 "*" 字串', () => {
+    expect(PermissionCode.ADMIN_WILDCARD).toBe('*');
   });
 
   it('應包含核心 permissions：users:assign / roles:write', () => {
