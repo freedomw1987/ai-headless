@@ -1,17 +1,19 @@
 /**
  * ==============================================
- *  Auth.js v5 Configuration
+ *  Auth.js v5 Configuration (Sprint 23 升級)
  * ==============================================
  *
- * 對應：docs/prd/03-auth.md
+ * 對應：docs/prd/09-rbac.md §12.4 Q6 Sprint 23
  *
- * Auth.js v5 (NextAuth.js v5 beta) 配置：
- * - 使用 Prisma Adapter（已有 User/Account/Session/VerificationToken model）
- * - Credentials Provider（email + password，未來可加 OAuth）
- * - JWT Session（無 DB 連線時 fallback）
+ * Sprint 23 變更:
+ * - jwt() callback 從 session-cache 讀 permissions (60s TTL)
+ * - cache miss → 查 DB → 寫回 cache
+ * - session() callback 注入 token.permissions 到 session.user.permissions
+ * - 失效策略:既有 session-cache + POST /api/admin/cache/invalidate
  *
- * 注意：實際部署需要 NEXTAUTH_SECRET 環境變數 + 連線到 DB
- * 測試環境用 mock
+ * 向下相容:
+ * - Phase 1 純函式 hasPermission 仍可用 session.user.role
+ * - Phase 2 hasDynamicPermission 仍透過 DB 查詢（session-cache 是輔助）
  */
 
 import NextAuth, { type DefaultSession } from 'next-auth';
@@ -22,9 +24,6 @@ import NextAuth, { type DefaultSession } from 'next-auth';
  * 下方 `declare module 'next-auth/jwt'` 引用 JWT type，但卻沒有真的
  * 引入該模組，TypeScript 不會套用 augmentation，導致 `token.role`
  * 仍是 unknown。
- *
- * 變數名為 _JWT 是為讓 ESLint 的 no-unused-vars 認可（_ 前缀 = 故意不用）。
- * 保留為 type-only import，不參與 runtime（會被 TypeScript 自動消除）。
  */
 import type { JWT as _JWT } from 'next-auth/jwt';
 import Credentials from 'next-auth/providers/credentials';
@@ -32,9 +31,13 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import { db } from '@/lib/db';
 import type { Role } from './auth';
 import { verifyPassword } from './password';
+import {
+  getCachedPermissions,
+  setCachedPermissions,
+} from './session-cache';
 
 // ==============================================
-// 模組類型增強：把 role 加到 Session.user
+// 模組類型增強：把 role + permissions 加到 Session.user
 // ==============================================
 
 declare module 'next-auth' {
@@ -42,6 +45,7 @@ declare module 'next-auth' {
     user: {
       id: string;
       role: Role;
+      permissions?: string[];
     } & DefaultSession['user'];
   }
 
@@ -50,14 +54,10 @@ declare module 'next-auth' {
   }
 }
 
-/**
- * TD-509 補充：上方的 `import type { JWT as _JWT } from 'next-auth/jwt'` 不只是導入
- * 型別,更是讓 TypeScript 認得 next-auth/jwt 模組，從而套用下方這個 augmentation。
- * 如果刪了 import，下方 JWT.role 將不被識別。
- */
 declare module 'next-auth/jwt' {
   interface JWT {
     role?: Role;
+    permissions?: string[];
   }
 }
 
@@ -100,23 +100,57 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
+      // 第一次登入: user object 存在,設定 token.role
       if (user) {
         token.role = (user as { role?: Role }).role ?? 'viewer';
       }
-      // US-102：每次請求都重新讀取最新的 role（讓 admin 升級 editor 立即生效）
+
+      // Sprint 23: 從 session-cache 讀 permissions (避免每次重查 DB)
       if (token.sub) {
-        const fresh = await db.user.findUnique({
-          where: { id: token.sub },
-          select: { role: true },
-        });
-        if (fresh?.role) token.role = fresh.role as Role;
+        // 1. 查快取
+        const cached = getCachedPermissions(token.sub);
+
+        // 2. cache miss → 查 DB → 寫回 cache
+        if (!cached) {
+          const fresh = await db.user.findUnique({
+            where: { id: token.sub },
+            select: {
+              role: true,
+              roleRef: {
+                select: {
+                  id: true,
+                  permissions: { select: { code: true } },
+                },
+              },
+            },
+          });
+          if (fresh) {
+            // Sprint 21 向後相容:即使 roleRef 為 null (TD-2 未 backfill) 也不崩潰
+            const codes = new Set(
+              fresh.roleRef?.permissions.map((p) => p.code) ?? [],
+            );
+            const roleId = fresh.roleRef?.id ?? '';
+            setCachedPermissions(token.sub, codes, roleId);
+            token.role = (fresh.role as Role) ?? token.role;
+            token.permissions = Array.from(codes);
+          }
+        } else {
+          // cache hit:直接序列化
+          token.role = token.role ?? 'viewer';
+          token.permissions = Array.from(cached.permissions);
+        }
       }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub ?? '';
         session.user.role = (token.role as Role) ?? 'viewer';
+        // Sprint 23: 注入 permissions 到 session.user
+        session.user.permissions = Array.isArray(token.permissions)
+          ? token.permissions
+          : [];
       }
       return session;
     },
