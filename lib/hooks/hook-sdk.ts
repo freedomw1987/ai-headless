@@ -139,11 +139,40 @@ export type HookResult<T extends HookName> = T extends 'beforeCreate'
                       : unknown;
 
 /**
- * Hook function type (向後相容)
+ * Hook function type (向後相容, Phase 1 legacy)
  * - TD-403: 仍接受 generic T = unknown (舊 hook signature)
- * - 但可選擇性用 HookResult<T> 標註 return type (新 hook signature)
+ * - TD-523: 改為 deprecated 推薦用 StrictHookFunction<T extends HookName>
+ * - 不會移除 (保留向後相容, 未來 Sprint 28+ 可考慮完全刪除)
+ *
+ * @deprecated Use StrictHookFunction<T extends HookName> instead (Sprint 27 TD-523)
  */
-export type HookFunction<T = unknown> = (ctx: T) => Promise<T> | T;
+/**
+ * TD-523: HookFunction 改用 contravariant ctx
+ * - Function param 是 contravariant: 較寬鬆的 param 可接受較具體的
+ * - 用 (ctx: any) => any 讓 HookFunction 接受任何 ctx 型別
+ * - 保留向後相容
+ */
+export type HookFunction<T = unknown> = (ctx: any) => Promise<unknown> | unknown;
+
+/**
+ * StrictHookFunction (Sprint 27 TD-523 新增)
+ * - 強制 hook return 符合 HookResult<T> type contract
+ * - 防止 silent type drift (以往 production hook return data 而非 context)
+ * - 雙軌制: 舊 HookFunction 仍可運作,新 hook 鼓勵用 StrictHookFunction
+ *
+ * 設計:
+ * - T extends HookName 限制只能接 11 種 hook 名稱
+ * - ctx 必須是 HookContext<T> (對應的 context 結構)
+ * - return 必須是 Promise<HookResult<T>> | HookResult<T>
+ *
+ * 用法:
+ *   const myHook: StrictHookFunction<'beforeCreate'> = async (ctx) => {
+ *     return { ...ctx.data, slug: generateSlug(ctx.data.title) };
+ *   };
+ */
+export type StrictHookFunction<T extends HookName = HookName> = (
+  ctx: HookContext<T>,
+) => Promise<HookResult<T>> | HookResult<T>;
 
 // ==============================================
 // 4. HookRegistry（實例級）
