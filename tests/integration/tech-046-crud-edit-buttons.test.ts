@@ -50,21 +50,19 @@ describe('Sprint 18 Stage 1 — CRUD 編輯按鈕', () => {
   });
 
   describe('detail page 編輯按鈕', () => {
-    it('detail page 有「編輯」連結到 /edit', () => {
-      const content = readFileSync(DETAIL_PAGE_PATH, 'utf-8');
-      // 用 .includes() 簡單確認
-      expect(content).toMatch(/\/edit['"`]/);
-    });
-
     it('detail page 有 Edit icon import（lucide-react）', () => {
       const content = readFileSync(DETAIL_PAGE_PATH, 'utf-8');
       expect(content).toMatch(/import.*\{[^}]*\bEdit\b[^}]*\}.*from\s+['"]lucide-react['"]/);
     });
 
-    it('detail page 編輯按鈕是 Button asChild + Link', () => {
+    // Sprint 20 Stage 1 — 編輯按鈕改為 SheetTrigger（不再是 Button asChild + Link → /edit）
+    // 詳細 Sheet 行為見 tech-053-sheet-edit-drawer.test.ts
+    it('detail page 編輯按鈕改為 SheetTrigger + Button（不再是 Link → /edit）', () => {
       const content = readFileSync(DETAIL_PAGE_PATH, 'utf-8');
-      expect(content).toMatch(/<Button[^>]*asChild/);
-      expect(content).toMatch(/<Link[^>]*\/edit/);
+      // SheetTrigger 包 Button
+      expect(content).toMatch(/<SheetTrigger\s+asChild>[\s\S]*?<Button[^>]*variant=["']outline["']/);
+      // 沒有 Link 到 /edit 了
+      expect(content).not.toMatch(/<Link[^>]*href=\{`\/admin\/crud\/\$\{specName\}\/\$\{id\}\/edit`\}>/);
     });
   });
 });

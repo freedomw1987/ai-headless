@@ -22,6 +22,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+// Sprint 20 Stage 1 — Sheet 抽屜式編輯
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { DynamicFormClient } from '@/app/admin/crud/[spec]/dynamic-form-client';
 
 type Props = {
   config: DetailUIConfig;
@@ -44,6 +53,8 @@ export function DynamicDetailClient({
   const [item, setItem] = useState<Record<string, unknown> | null>(initialItem);
   const [loading, setLoading] = useState(initialItem === null);
   const [error, setError] = useState<string | null>(null);
+  // Sprint 20 Stage 1 — Sheet open state（抽屜式編輯）
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     if (initialItem !== null) return;
@@ -151,13 +162,29 @@ export function DynamicDetailClient({
                   返回列表
                 </Link>
               </Button>
-              {/* Sprint 18 Stage 1 — 編輯按鈕（Sprint 14-17 一直缺少）*/}
-              <Button asChild variant="outline">
-                <Link href={`/admin/crud/${specName}/${id}/edit`}>
-                  <Edit />
-                  編輯
-                </Link>
-              </Button>
+              {/* Sprint 20 Stage 1 — 編輯按鈕改為 Sheet 抽屜式（Sprint 18 是 Link → /edit）*/}
+              <Sheet open={editOpen} onOpenChange={setEditOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline">
+                    <Edit />
+                    編輯
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>編輯資料</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <DynamicFormClient
+                      config={config.formConfig}
+                      specName={specName}
+                      mode="edit"
+                      initialData={item ?? undefined}
+                      onSuccess={() => setEditOpen(false)}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
               <Button variant="destructive" onClick={handleDelete}>
                 <Trash2 />
                 刪除

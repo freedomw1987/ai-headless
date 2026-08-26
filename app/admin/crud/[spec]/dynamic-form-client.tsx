@@ -28,9 +28,11 @@ type Props = {
   specName: string;
   mode: 'create' | 'edit';
   initialData?: Record<string, unknown>;
+  /** Sprint 20 Stage 1 — 成功後 callback（Sheet 場景用：關閉 Sheet + refresh 而非跳頁）*/
+  onSuccess?: () => void;
 };
 
-export function DynamicFormClient({ config, specName, mode, initialData }: Props) {
+export function DynamicFormClient({ config, specName, mode, initialData, onSuccess }: Props) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, unknown>>(initialData ?? {});
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +63,13 @@ export function DynamicFormClient({ config, specName, mode, initialData }: Props
       if (!res.ok) {
         setError(json.error ?? '提交失敗');
       } else {
-        router.push(`/admin/crud/${specName}`);
+        // Sprint 20 Stage 1：若提供 onSuccess callback 則呼叫（Sheet 場景），
+        // 否則保留原有跳頁 + refresh 行為（獨立 /edit page 場景）
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push(`/admin/crud/${specName}`);
+        }
         router.refresh();
       }
     } catch (e) {

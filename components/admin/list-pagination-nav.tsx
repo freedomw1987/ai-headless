@@ -10,7 +10,6 @@
 // 顯示「顯示 X 到 Y，共 Z 筆」+ Pagination UI
 
 import { useState } from 'react';
-import Link from 'next/link';
 import {
   Pagination,
   PaginationContent,

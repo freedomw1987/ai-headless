@@ -56,6 +56,8 @@ export type DetailUIConfig = {
   title: string;
   fields: UIField[];
   transitions: TransitionUI[];
+  // Sprint 20 Stage 1 — 抽屜式編輯需要 form config（Sheet 內嵌 DynamicFormClient）
+  formConfig: FormUIConfig;
 };
 
 export function buildListUIConfig(spec: JsonSpec): ListUIConfig {
@@ -93,7 +95,10 @@ export function buildListUIConfig(spec: JsonSpec): ListUIConfig {
   };
 }
 
-export function buildFormUIConfig(spec: JsonSpec): FormUIConfig {
+export function buildFormUIConfig(
+  spec: JsonSpec,
+  mode: 'create' | 'edit' = 'create',
+): FormUIConfig {
   const model = spec.models[0];
   if (!model) throw new Error(`Spec "${spec.name}" has no models`);
 
@@ -104,8 +109,11 @@ export function buildFormUIConfig(spec: JsonSpec): FormUIConfig {
     .filter((f) => f.ui?.form !== false)
     .map<UIField>((f) => toUIField(f, false, formatters, {}));
 
+  // Sprint 20 Stage 1：依 mode 動態決定 title 後綴（Sheet 編輯模式不應顯示「- 新增」）
+  const titleSuffix = mode === 'create' ? ' - 新增' : ' - 編輯';
+
   return {
-    title: `${model.label ?? spec.name} - 新增`,
+    title: `${model.label ?? spec.name}${titleSuffix}`,
     fields,
     submitUrl: `/api/crud/${spec.name}`,
   };
@@ -137,6 +145,8 @@ export function buildDetailUIConfig(spec: JsonSpec): DetailUIConfig {
     title: model.label ?? spec.name,
     fields,
     transitions,
+    // Sprint 20 Stage 1：detail page 內嵌 Sheet 編輯時用（mode='edit' 表「- 編輯」後缀）
+    formConfig: buildFormUIConfig(spec, 'edit'),
   };
 }
 

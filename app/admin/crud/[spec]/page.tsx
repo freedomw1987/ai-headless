@@ -22,7 +22,7 @@
 
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { Plus, ChevronRight, Inbox, Edit, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Inbox } from 'lucide-react';
 import { ListRowActions } from '@/components/admin/list-row-actions';
 import { auth } from '@/lib/auth/config';
 import { hasPermission } from '@/lib/auth/rbac';
@@ -62,6 +62,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { DynamicRendererCell } from '@/components/admin/dynamic-renderer-cell';
+import { SortableHeaderCell } from '@/components/admin/sortable-header-cell';
 import type { ListUIConfig } from '@/lib/runtime/ui-config';
 import type { FormatterFn } from '@/lib/runtime/extension-loaders';
 
@@ -235,26 +236,19 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
           <Table>
             <TableHeader>
               <TableRow>
-                {uiConfig.fields.map((f) => {
-                  const isSorted = sort === f.name;
-                  const nextOrder = isSorted && order === 'desc' ? 'asc' : 'desc';
-                  const Icon = !isSorted
-                    ? ArrowUpDown
-                    : order === 'asc'
-                      ? ChevronUp
-                      : ChevronDown;
-                  return (
-                    <TableHead key={f.name}>
-                      <Link
-                        href={buildSortHref(f.name, nextOrder, q, pageSize, specName)}
-                        className="inline-flex items-center gap-1 hover:text-foreground"
-                      >
-                        {f.label}
-                        <Icon className={isSorted ? 'h-3 w-3' : 'h-3 w-3 opacity-40'} />
-                      </Link>
-                    </TableHead>
-                  );
-                })}
+                {uiConfig.fields.map((f) => (
+                  <TableHead key={f.name}>
+                    <SortableHeaderCell
+                      label={f.label}
+                      fieldName={f.name}
+                      currentSort={sort}
+                      currentOrder={order}
+                      q={q}
+                      pageSize={pageSize}
+                      specName={specName}
+                    />
+                  </TableHead>
+                ))}
                 <TableHead className="w-[100px] text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
@@ -348,21 +342,6 @@ function buildPageHref(targetPage: number, pageSize: number, specName: string): 
   }
   const params = new URLSearchParams();
   if (targetPage !== 1) params.set('page', String(targetPage));
-  if (pageSize !== 10) params.set('pageSize', String(pageSize));
-  return `/admin/crud/${specName}?${params.toString()}`;
-}
-
-function buildSortHref(
-  sortField: string,
-  sortOrder: string,
-  q: string,
-  pageSize: number,
-  specName: string,
-): string {
-  const params = new URLSearchParams();
-  params.set('sort', sortField);
-  params.set('order', sortOrder);
-  if (q) params.set('q', q);
   if (pageSize !== 10) params.set('pageSize', String(pageSize));
   return `/admin/crud/${specName}?${params.toString()}`;
 }

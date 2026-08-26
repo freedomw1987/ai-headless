@@ -44,7 +44,7 @@ export default async function DynamicCrudDetailPage({ params }: PageProps) {
 
   // Sprint 15 TECH-038：server side fetch item + 套用 formatter（避免把函數傳給 Client Component）
   let initialItem: Record<string, unknown> | null = null;
-  let formattedValues: Record<string, string> = {};
+  const formattedValues: Record<string, string> = {};
   try {
     const model = spec.models[0];
     if (!model) throw new Error('No model in spec');
