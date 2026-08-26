@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 25 收尾）
+> **最後更新**：2026-08-26（Sprint 26 收尾）
 
 ---
 
@@ -45,6 +45,7 @@
 | **Sprint 23** | [**sprint-23.md**](./sprint-23.md) | ✅ | **100%** (2/2) | ✅ **全綠** | **Middleware 動態化（jwt/session permissions 注入 + 60s session-cache + Plan Gate Q3 決定 middleware 只做登入檢查 + 12 個 middleware 整合測試）+ TD-7 extension permissions backfill（18 個 permissions 從 manifest 同步到 DB）** |
 | **Sprint 24** | [**sprint-24.md**](./sprint-24.md) | ✅ | **100%** (2/2) | ✅ **全綠** | **UI 條件渲染動態版：`lib/auth/ui-permissions.ts` 新 helper（hasUIPermission 純函數 + useHasUIPermission client hook，自動處理 admin wildcard）+ 2 個 UI 點遷移（crud page + sidebar）+ 11 個純函數測試** |
 | **Sprint 25** | [**sprint-25.md**](./sprint-25.md) | ✅ | **100%** (1/1) | ✅ **全綠** | **強制清 hasPermission 純函式（PRD §12.4.1）：刪除純函式本體 + 4 個內部使用 + rbac.ts 整檔 + 14 個純函式測試 + 5 個 requirePermission 呼叫端改用 requirePermissionApiResponse（新增 helper）+ 2 個 server component + 1 個 dynamic-handler（async checkPermission）+ 12 個檔案 1 commit。Phase 2 RBAC 路線圖 11/11 完成** |
+| **Sprint 26** | [**sprint-26.md**](./sprint-26.md) | ✅ | **100%** (2.5/2.5) | ✅ **全綠** | **Sprint 20 P2 技術債批量修復：4 commits (TD-401 handler try/catch + TD-402 sanitizer SAFE_PATTERNS + TD-403 Hook type contract + TD-404 brace-balanced spec parser)，22 個新測試，1054/1054 全綠。TD-405 被 TD-402 自動涵蓋（/StateMachine/i 加入 SAFE_PATTERNS）** |
 
 ---
 
