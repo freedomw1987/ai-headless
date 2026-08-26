@@ -94,7 +94,6 @@ export async function loadCustomRenderers(
     if (!fnName) continue;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const candidates = [
         // Sprint 16 TECH-038：檔名慣例是 rendererName kebab-case（如 capacity-bar.tsx）
         // 不是 fnName（renderCapacityBar）。先試 rendererName，再退回 fnName。
@@ -106,6 +105,7 @@ export async function loadCustomRenderers(
         `extensions/${spec.name}/custom-renderers/${toKebabCase(fnName)}.tsx`,
       ];
       const extPath = resolveExistingPath(candidates);
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const mod = require(/* webpackIgnore: true */ extPath) as { default?: CustomRendererComponent; [k: string]: unknown };
       const Component: CustomRendererComponent | undefined = mod.default ?? mod[fnName] as CustomRendererComponent | undefined;
       if (typeof Component === 'function') {

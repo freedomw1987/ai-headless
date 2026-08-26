@@ -34,7 +34,7 @@ const todoSpec: JsonSpec = {
 function makeAIStage(returnSpec: JsonSpec): PipelineStage<string, { spec: JsonSpec }> {
   return {
     name: 'ai-spec',
-    run: async (input) => ({ spec: returnSpec }),
+    run: async (_input) => ({ spec: returnSpec }),
   };
 }
 

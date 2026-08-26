@@ -19,10 +19,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 import { loadSpec } from '@/lib/runtime/spec-loader';
 import { createDynamicHandlers } from '@/lib/runtime/dynamic-handler';
+import { registerAllExtensions } from '@/lib/extensions/hooks-registry';
 
 type RouteContext = { params: Promise<{ spec: string }> };
 
 async function setup(request: NextRequest, ctx: RouteContext) {
+  // Sprint 20 P3.5：注冊所有 Extension hooks（idempotent）
+  // 保證 spec 內 {{fn:hookName}} 能在 runtime 找到對應函數
+  registerAllExtensions();
+
   const { spec: specName } = await ctx.params;
   if (!specName) {
     return { error: NextResponse.json({ error: 'spec name 必填' }, { status: 400 }) };

@@ -18,6 +18,7 @@ import { hasPermission } from '@/lib/auth/rbac';
 import { guardExtensionApi } from '@/lib/extensions/api-guard';
 import { parseHookReference } from '@/lib/specs/json-spec.validator';
 import { invokeHook, hasHook } from '@/lib/extensions/hooks';
+import { sanitizeErrorMessage } from '@/lib/runtime/error-sanitizer';
 import { createStateMachine } from '@/lib/state-machine/state-machine';
 import type { JsonSpec, Model, Field } from '@/lib/specs/json-spec.types';
 
@@ -103,9 +104,12 @@ function fieldToZod(field: Field): z.ZodTypeAny {
       break;
     case 'date':
     case 'datetime':
-      s = z.string().refine((val) => !isNaN(Date.parse(val)), {
-        message: 'Invalid date',
-      });
+      s = z.union([
+        z.string().refine((val) => !isNaN(Date.parse(val)), {
+          message: 'Invalid date',
+        }),
+        z.null(),
+      ]);
       break;
     case 'json':
       s = z.unknown();
@@ -181,7 +185,6 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
     | ((id: string, event: string, payload?: Record<string, unknown>) => Promise<unknown>)
     | null = null;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const extPath = require.resolve(
       `@/extensions/${spec.name}/workflow/${spec.name}-workflow`,
       { paths: [process.cwd()] },
@@ -290,7 +293,6 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
       where: model.softDelete ? { id, deletedAt: null } : { id },
     });
     if (!item) return { status: 404, error: 'Not found' };
-    if (!item) return { status: 404, error: 'Not found' };
 
     return { status: 200, data: item };
   };
@@ -318,31 +320,42 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
     }
 
     let data = parsed.data as Record<string, unknown>;
-    const beforeCreate = parseHookReference(spec.models[0]?.hooks?.beforeCreate);
-    if (beforeCreate && hasHook(beforeCreate)) {
-      const r = await invokeHook(beforeCreate, {
+
+    try {
+      const beforeCreate = parseHookReference(spec.models[0]?.hooks?.beforeCreate);
+      if (beforeCreate && hasHook(beforeCreate)) {
+        const r = await invokeHook(beforeCreate, {
+          data,
+          model: model.name,
+          ctx: { user: ctx.user },
+        });
+        // hook 直接 return data（不是 { data: ... }）
+        data = r as Record<string, unknown>;
+      }
+
+      // @ts-expect-error dynamic Prisma access
+      const created = await (db as unknown as Record<string, { create: (args: { data: unknown }) => Promise<unknown> }>)[tableName].create({
         data,
-        model: model.name,
-        ctx: { user: ctx.user },
       });
-      data = (r as { data: Record<string, unknown> }).data;
+
+      const afterCreate = parseHookReference(spec.models[0]?.hooks?.afterCreate);
+      if (afterCreate && hasHook(afterCreate)) {
+        await invokeHook(afterCreate, {
+          result: created,
+          model: model.name,
+          ctx: { user: ctx.user },
+        });
+      }
+
+      return { status: 201, data: created };
+    } catch (e) {
+      // Sprint 20 P3.5：Hook 業務驗證錯誤 或 Prisma 寫入錯誤 → 400 + 訊息
+      // （原本未 catch 導致 500，使用者看不到錯誤訊息）
+      return {
+        status: 400,
+        error: sanitizeErrorMessage(e),
+      };
     }
-
-    // @ts-expect-error dynamic Prisma access
-    const created = await (db as unknown as Record<string, { create: (args: { data: unknown }) => Promise<unknown> }>)[tableName].create({
-      data,
-    });
-
-    const afterCreate = parseHookReference(spec.models[0]?.hooks?.afterCreate);
-    if (afterCreate && hasHook(afterCreate)) {
-      await invokeHook(afterCreate, {
-        result: created,
-        model: model.name,
-        ctx: { user: ctx.user },
-      });
-    }
-
-    return { status: 201, data: created };
   };
 
   // ==============================================
@@ -369,13 +382,19 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
       };
     }
 
-    // @ts-expect-error dynamic Prisma access
-    const updated = await (db as unknown as Record<string, { update: (args: { where: { id: string }; data: unknown }) => Promise<unknown> }>)[tableName].update({
-      where: { id },
-      data: parsed.data,
-    });
-
-    return { status: 200, data: updated };
+    try {
+      // @ts-expect-error dynamic Prisma access
+      const updated = await (db as unknown as Record<string, { update: (args: { where: { id: string }; data: unknown }) => Promise<unknown> }>)[tableName].update({
+        where: { id },
+        data: parsed.data,
+      });
+      return { status: 200, data: updated };
+    } catch (e) {
+      return {
+        status: 400,
+        error: sanitizeErrorMessage(e),
+      };
+    }
   };
 
   // ==============================================
@@ -393,11 +412,25 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
     if (permErr) return permErr;
 
     if (model.softDelete) {
-      // @ts-expect-error dynamic Prisma access
-      await (db as unknown as Record<string, { update: (args: unknown) => Promise<unknown> }>)[tableName].update({ where: { id }, data: { deletedAt: new Date() } });
+      try {
+        // @ts-expect-error dynamic Prisma access
+        await (db as unknown as Record<string, { update: (args: unknown) => Promise<unknown> }>)[tableName].update({ where: { id }, data: { deletedAt: new Date() } });
+      } catch (e) {
+        return {
+          status: 400,
+          error: sanitizeErrorMessage(e),
+        };
+      }
     } else {
-      // @ts-expect-error dynamic Prisma access
-      await (db as unknown as Record<string, { delete: (args: unknown) => Promise<unknown> }>)[tableName].delete({ where: { id } });
+      try {
+        // @ts-expect-error dynamic Prisma access
+        await (db as unknown as Record<string, { delete: (args: unknown) => Promise<unknown> }>)[tableName].delete({ where: { id } });
+      } catch (e) {
+        return {
+          status: 400,
+          error: sanitizeErrorMessage(e),
+        };
+      }
     }
 
     return { status: 204 };
@@ -418,53 +451,60 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
       const authErr = checkAuth(ctx);
       if (authErr) return authErr;
 
-      // 優先 extension code
-      if (extTransition) {
-        const updated = await extTransition(
-          id,
-          event,
-          ctx.body as Record<string, unknown>,
-        );
+      try {
+        // 優先 extension code
+        if (extTransition) {
+          const updated = await extTransition(
+            id,
+            event,
+            ctx.body as Record<string, unknown>,
+          );
+          return { status: 200, data: updated };
+        }
+
+        if (!workflow) return { status: 400, error: 'no workflow' };
+
+        // @ts-expect-error dynamic Prisma access
+        const item = await (db as unknown as Record<string, { findUnique: (args: unknown) => Promise<unknown> }>)[tableName].findUnique({ where: { id } });
+        if (!item) return { status: 404, error: 'Not found' };
+        const itemWithStatus = item as { status: string };
+
+        const stateSchema = {
+          id: workflow.name,
+          initial: workflow.initialState,
+          states: Object.fromEntries(
+            Object.entries(workflow.states).map(([key]) => [
+              key,
+              {
+                on: Object.fromEntries(
+                  workflow.transitions
+                    .filter((t) =>
+                      Array.isArray(t.from) ? t.from.includes(key) : t.from === key,
+                    )
+                    .map((t) => [t.to, t.to]),
+                ),
+              },
+            ]),
+          ),
+        };
+
+        const sm = createStateMachine(stateSchema);
+        sm.setState(itemWithStatus.status);
+        const newState = sm.transition({ event });
+
+        // @ts-expect-error dynamic Prisma access
+        const updated = await (db as unknown as Record<string, { update: (args: unknown) => Promise<unknown> }>)[tableName].update({
+          where: { id },
+          data: { status: newState },
+        });
+
         return { status: 200, data: updated };
+      } catch (e) {
+        return {
+          status: 400,
+          error: sanitizeErrorMessage(e),
+        };
       }
-
-      if (!workflow) return { status: 400, error: 'no workflow' };
-
-      // @ts-expect-error dynamic Prisma access
-      const item = await (db as unknown as Record<string, { findUnique: (args: unknown) => Promise<unknown> }>)[tableName].findUnique({ where: { id } });
-      if (!item) return { status: 404, error: 'Not found' };
-      const itemWithStatus = item as { status: string };
-
-      const stateSchema = {
-        id: workflow.name,
-        initial: workflow.initialState,
-        states: Object.fromEntries(
-          Object.entries(workflow.states).map(([key]) => [
-            key,
-            {
-              on: Object.fromEntries(
-                workflow.transitions
-                  .filter((t) =>
-                    Array.isArray(t.from) ? t.from.includes(key) : t.from === key,
-                  )
-                  .map((t) => [t.to, t.to]),
-              ),
-            },
-          ]),
-        ),
-      };
-
-      const sm = createStateMachine(stateSchema);
-      sm.setState(itemWithStatus.status);
-      const newState = sm.transition({ event });
-
-      // @ts-expect-error dynamic Prisma access
-      const updated = await (db as unknown as Record<string, { update: (args: unknown) => Promise<unknown> }>)[tableName].update({
-        where: { id },
-        data: { status: newState },
-      });
-
-      return { status: 200, data: updated };
     };
   }
 

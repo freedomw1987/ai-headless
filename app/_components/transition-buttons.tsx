@@ -38,7 +38,7 @@ export function TransitionButtons({
     );
   }
 
-  const availableStates = Object.keys(sm.getAvailableEvents() ?? {});
+  const _availableStates = Object.keys(sm.getAvailableEvents() ?? {});
 
   // 從 schema.states[currentState].on 拿目標 states
   const currentStateConfig = schema.states[currentStatus];

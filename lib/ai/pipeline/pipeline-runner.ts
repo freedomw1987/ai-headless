@@ -75,6 +75,7 @@ export class PipelineStageError extends Error {
 // Pipeline 引擎
 // ==============================================
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createPipeline(...stages: Array<PipelineStage<any, any>>): PipelineStage[] {
   return stages as PipelineStage[];
 }
@@ -236,7 +237,7 @@ export function rbacStage(): PipelineStage<UiStageOutput, RbacStageOutput> {
 
 function derivePermissions(spec: JsonSpec): string[] {
   const permissions: string[] = [];
-  for (const model of spec.models) {
+  for (const _model of spec.models) {
     permissions.push(`${spec.name}.create`);
     permissions.push(`${spec.name}.read`);
     permissions.push(`${spec.name}.update`);
