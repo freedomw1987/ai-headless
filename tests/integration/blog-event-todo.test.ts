@@ -7,22 +7,42 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // ===== Mock Prisma =====
-vi.mock('@/lib/db', () => ({
-  db: {
-    blogPost: {
-      findMany: vi.fn(), findUniqueOrThrow: vi.fn(),
-      create: vi.fn(), update: vi.fn(), delete: vi.fn(),
+vi.mock('@/lib/db', () => {
+  const blogPostMock: any = {
+    findMany: vi.fn(),
+    findUniqueOrThrow: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  };
+  const eventMock: any = {
+    findMany: vi.fn(), findUniqueOrThrow: vi.fn(),
+    create: vi.fn(), update: vi.fn(), delete: vi.fn(),
+  };
+  const todoMock: any = {
+    findMany: vi.fn(), findUniqueOrThrow: vi.fn(),
+    create: vi.fn(), update: vi.fn(), delete: vi.fn(),
+  };
+  const transitionLogMock: any = { create: vi.fn() };
+  return {
+    db: {
+      blogPost: blogPostMock,
+      event: eventMock,
+      todo: todoMock,
+      // Sprint 29 commit 3: transitionBlogPost 改用 $transaction + 寫 TransitionLog
+      transitionLog: transitionLogMock,
+      // $transaction 傳入 tx,讓 tx 內的 method 共用 mock
+      $transaction: vi.fn(async (fn: any) =>
+        fn({
+          blogPost: blogPostMock,
+          event: eventMock,
+          todo: todoMock,
+          transitionLog: transitionLogMock,
+        }),
+      ),
     },
-    event: {
-      findMany: vi.fn(), findUniqueOrThrow: vi.fn(),
-      create: vi.fn(), update: vi.fn(), delete: vi.fn(),
-    },
-    todo: {
-      findMany: vi.fn(), findUniqueOrThrow: vi.fn(),
-      create: vi.fn(), update: vi.fn(), delete: vi.fn(),
-    },
-  },
-}));
+  };
+});
 
 import { db } from '@/lib/db';
 import * as blog from '@/extensions/blog/workflow/blog-workflow';

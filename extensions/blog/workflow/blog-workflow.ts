@@ -140,21 +140,43 @@ export async function transitionBlogPost(
   event: BlogEvent,
   payload?: Record<string, unknown>,
 ) {
-  const post = await db.blogPost.findUniqueOrThrow({ where: { id } });
-  const sm = createStateMachine(blogStateMachineSchema);
-  sm.setState(post.status);
+  // Sprint 29 commit 3: 改用 $transaction 確保 update + TransitionLog 原子性
+  return db.$transaction(async (tx) => {
+    const post = await tx.blogPost.findUniqueOrThrow({ where: { id } });
+    const sm = createStateMachine(blogStateMachineSchema);
+    sm.setState(post.status);
 
-  if (!sm.canTransition(event)) {
-    throw new InvalidTransitionError('blog-post', post.status, event);
-  }
+    if (!sm.canTransition(event)) {
+      throw new InvalidTransitionError('blog-post', post.status, event);
+    }
 
-  sm.transition({ event, payload });
+    sm.transition({ event, payload });
 
-  const updateData: Record<string, unknown> = { status: sm.getState() };
-  // published 時自動寫 publishedAt
-  if (event === 'approve' || event === 'publish') {
-    updateData.publishedAt = new Date();
-  }
+    const newState = sm.getState();
+    const updateData: Record<string, unknown> = { status: newState };
+    // published 時自動寫 publishedAt
+    if (event === 'approve' || event === 'publish') {
+      updateData.publishedAt = new Date();
+    }
 
-  return db.blogPost.update({ where: { id }, data: updateData });
+    const updated = await tx.blogPost.update({
+      where: { id },
+      data: updateData,
+    });
+
+    // Sprint 29 commit 3: 寫 TransitionLog (audit trail)
+    await tx.transitionLog.create({
+      data: {
+        machineName: 'blog-post',
+        entityType: 'BlogPost',
+        entityId: id,
+        fromState: post.status,
+        toState: newState,
+        userId: (payload?.userId as string) ?? null,
+        reason: event,
+      },
+    });
+
+    return updated;
+  });
 }
