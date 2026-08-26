@@ -31,21 +31,26 @@ import { PermissionCode } from '../lib/auth/permissions';
 // ==============================================
 // 2. 內建 3 個 Role
 // ==============================================
+// 使用 fixed IDs (sys_* 前缀) 以與 baseline migration 對齊
+// 這確保 baseline migrate-deploy 與 runtime seedRBAC() 產生一致狀態
 
 export const BUILTIN_ROLES = [
   {
+    id: 'sys_role_admin',
     name: 'admin',
     displayName: '管理員',
     description: '擁有所有權限，可管理 roles 與 users',
     isSystem: true,
   },
   {
+    id: 'sys_role_editor',
     name: 'editor',
     displayName: '編輯者',
     description: '可讀 users，不可改 roles',
     isSystem: true,
   },
   {
+    id: 'sys_role_viewer',
     name: 'viewer',
     displayName: '訪客',
     description: '唯讀',
@@ -86,8 +91,9 @@ export async function seedRBAC(db: PrismaClient): Promise<void> {
 async function seedRoles(db: PrismaClient): Promise<void> {
   for (const role of BUILTIN_ROLES) {
     await db.role.upsert({
-      where: { name: role.name },
+      where: { id: role.id },
       update: {
+        name: role.name,
         displayName: role.displayName,
         description: role.description,
         isSystem: role.isSystem,
