@@ -22,9 +22,15 @@ const SAFE_PATTERNS = [
   /^Event /,
   /^Todo /,
   /^Blog /,
+  // TD-402: 業務邏輯訊息應保留
+  /Cannot register/i,           // event registration 業務錯誤
+  /StateMachine/i,              // state machine 拒絕訊息
+  /Extension .* (is disabled|not enabled)/i, // extension guard 訊息
   // 中文業務訊息
   /必填/,
   /格式/,
+  /無法/,                         // TD-402: 中文業務錯誤
+  /不能/,                         // TD-402: 中文業務錯誤
 ];
 
 /**
