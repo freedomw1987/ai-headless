@@ -763,6 +763,23 @@ Sprint 16 完成 **Stage 1**（TECH-038b list formatter）和 **Stage 2**（TECH
   - 接受 `basePath` 而非 `onPageChange`（Server Component 不能傳函數給 Client Component）
   - PaginationLink 用 `<a href>` 組合成 URL
 
+### Sprint 19 Stage 3 — list 排序 + 篩選（commit `811fe24`）
+
+**突破 list page 純顯示，提供完整資料探索能力**。
+
+- `lib/runtime/dynamic-handler.ts`：`list()` 從 `ctx.query` 讀 `sort` / `order` / `q`
+  - **sort 欄位白名單檢查**（防 SQL injection）
+  - order 預設 desc（向後相容）
+  - `q` 對所有 string 欄位做 OR contains 搜尋
+  - 動態 `orderBy: { [sortField]: sortOrder }`
+- `app/api/crud/[spec]/route.ts`：GET 讀 searchParams `sort` / `order` / `q`
+- `app/admin/crud/[spec]/page.tsx`：list page UI
+  - 新增 `Input`（搜尋）+ `ArrowUpDown` / `ChevronUp` / `ChevronDown` icons
+  - TableHead 改 sortable link（click 切換 asc/desc，保留 q）
+  - Header 加搜尋 form（GET，含 sort/order hidden input）
+  - Empty 狀態處理 q 無結果（顯示「找不到符合『q』的資料」+ 清除搜尋按鈕）
+  - 抽 `buildSortHref(sortField, sortOrder, q, pageSize, specName)` helper
+
 ### Sprint 19 Stage 2 — list page 嵌入 pagination UI + URL 同步（commit `462478b`）
 
 **解決 list page 沒有真實分頁 UI**（Stage 1 只有文字資訊）。
@@ -780,13 +797,15 @@ Sprint 16 完成 **Stage 1**（TECH-038b list formatter）和 **Stage 2**（TECH
 
 ### Sprint 19 測試基線
 
-| 項目 | Sprint 18 完成 | Sprint 19 Stage 1 | Sprint 19 Stage 2 |
-|---|---|---|---|
-| vitest | 828 / 72 | 839 / 73 | **850 / 74**（+22）|
-| E2E | 43 | 43 | **47**（+4）|
-| Typecheck | ✅ 綠 | ✅ 綠 | ✅ 綠 |
-| list 筆數上限 | 寫死 100 | 無上限（分頁）| 無上限（分頁）|
-| list 分頁 UI | 無 | 純文字 | **完整 Pagination 元件** |
+| 項目 | Sprint 18 完成 | Sprint 19 Stage 1 | Sprint 19 Stage 2 | Sprint 19 Stage 3 |
+|---|---|---|---|---|
+| vitest | 828 / 72 | 839 / 73 | 850 / 74 | **866 / 75**（+38）|
+| E2E | 43 | 43 | 47 | **54**（+11）|
+| Typecheck | ✅ 綠 | ✅ 綠 | ✅ 綠 | ✅ 綠 |
+| list 筆數上限 | 寫死 100 | 無上限 | 無上限 | 無上限 |
+| list 分頁 UI | 無 | 純文字 | Pagination 元件 | Pagination 元件 |
+| list 排序 | 無 | 無 | 無 | **sortable header + URL 同步** |
+| list 篩選 | 無 | 無 | 無 | **搜尋 input + OR contains** |
 
 ---
 

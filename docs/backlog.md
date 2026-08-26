@@ -10,11 +10,11 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 19 Stage 2 — list page 嵌入 pagination UI** ✅ 完成 1.5 / 1.5 SP |
-| **Sprint 19 Stage 1 狀態** | ✅ 100% 收尾（3/3 SP）|
-| **測試基線** | **897 tests / 74 files** / 4 Gate 全綠（850 vitest + 47 E2E）|
-| **下一個 P0** | Sprint 19 Stage 3（list 排序 + 篩選）|
-| **路線圖關鍵** | ✅ 完整 Pagination 元件 + URL 同步 |
+| **當前 Sprint** | **Sprint 19 Stage 3 — list 排序 + 篩選** ✅ 完成 4 / 4 SP |
+| **Sprint 19 Stage 2 狀態** | ✅ 100% 收尾（1.5/1.5 SP）|
+| **測試基線** | **920 tests / 75 files** / 4 Gate 全綠（866 vitest + 54 E2E）|
+| **下一個 P0** | Sprint 20+（Sheet / Toast / Tooltip / dark mode / i18n）|
+| **路線圖關鍵** | ✅ 完整資料探索（sort + filter + paginate）|
 
 ### Sprint 15 進度（Runtime Spec 精簡化）
 
@@ -62,6 +62,17 @@
 | **Stage 2** | customRenderer 客戶端 React component 動態渲染 | 2 | Sprint 16 Stage 1 留 |
 | **Spike** | JSX 預編譯方案評估（tsx-loader / esbuild / swc）| 0.5 | Sprint 16 揭露 |
 | **合計** | | **5.5 SP** | |
+
+### Sprint 19 進度（Stage 1 + 2 + 3 完成 8.5 / 8.5 SP）
+
+#### Stage 3 — list 排序 + 篩選（4 SP）
+
+| Task | 計劃 | 實際 | 狀態 |
+|---|---|---|---|
+| **Stage 3.1 handler sort + filter** | 1 SP | 1 SP | ✅ commit `811fe24`（sort 白名單 + order + q OR contains）|
+| **Stage 3.2 API** | 0.5 SP | 0.5 SP | ✅ commit `811fe24`（GET 讀 sort/order/q）|
+| **Stage 3.3 list page UI** | 1.5 SP | 1.5 SP | ✅ commit `811fe24`（sortable header + 搜尋 form + Empty 篩選狀態）|
+| **Stage 3.4 守衛測試 + E2E** | 1 SP | 1 SP | ✅ commit `811fe24`（tech-052 integration 16 + E2E 7）|
 
 ### Sprint 19 進度（Stage 1 + 2 完成 4.5 / 4.5 SP）
 

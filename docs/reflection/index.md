@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 19 Stage 2 完成）
+> **最後更新**：2026-08-26（Sprint 19 Stage 3 完成）
 
 ---
 
@@ -27,6 +27,7 @@
 | **Sprint 18** | [**sprint-18.md**](./sprint-18.md) | ✅ | **100%** (6.5/6.5) | ✅ **全綠** | **CRUD 編輯功能（缺 update 解決） + dropdown-menu/pagination/skeleton 三個 shadcn 元件** |
 | **Sprint 19 Stage 1** | [**sprint-19.md**](./sprint-19.md) | ✅ | **100%** (3/3) | ✅ **全綠** | **100 筆上限打破：server side 分頁（Promise.all 平行查詢 + searchParams + 分頁資訊顯示）** |
 | **Sprint 19 Stage 2** | [**sprint-19.md**](./sprint-19.md#stage-2-重點list-page-嵌入-pagination-ui--url-同步) | ✅ | **100%** (1.5/1.5) | ✅ **全綠** | **list page 嵌入完整 shadcn Pagination UI + URL 同步 + 修正 Sprint 18 Button→buttonVariants bug** |
+| **Sprint 19 Stage 3** | [**sprint-19.md**](./sprint-19.md#stage-3-重點list-排序--篩選) | ✅ | **100%** (4/4) | ✅ **全綠** | **list 排序（sortable header）+ 篩選（search form）+ SQL injection 白名單防護** |
 
 ---
 
@@ -91,6 +92,19 @@
 - **設計權衡**：Stage 1 簡化為文字分頁資訊（Stage 2 嵌入 ListPaginationNav + URL 同步）
 - **教訓**：「Server Component 不能傳函數給 Client Component」限制 → ListPaginationNav `mode='server'` 改用 `basePath` 而非函數 prop
 - **Sprint 19 Stage 2 待做**：list page 嵌入 ListPaginationNav + URL `?page=` 同步（1.5 SP）✅ 完成
+
+## 🏆 Sprint 19 Stage 3 重點發現
+
+- **完整資料探索三件齊**：sort（sortable header）+ filter（搜尋 input）+ paginate（Pagination UI）
+- **SQL injection 防護**：sort 欄位必須在 spec.fields 白名單內（Prisma 不會自動擋）
+- **orderBy 動態構造**：`{ [sortField]: sortOrder }` computed key
+- **OR contains 搜尋**：q 對所有 string 欄位做 contains，OR 組合
+- **search form 保留 sort/order**：hidden input 機制（不是 reset 重來）
+- **Empty 狀態兩種**：無資料（顯示「新增」）vs 篩選無結果（顯示「清除搜尋」）
+- **守護測試 +38**：16 integration（handler 7 + route 4 + list page 5）+ 7 E2E
+- **教訓**：Python 多步驟 replace 中途 assert 失敗，後續步驟不再執行但前面已寫入 — 必須 reset 後重做
+- **教訓**：vitest 結構測試 + Playwright 行為測試互補（結構測試抓「寫了什麼」，行為測試抓「做對沒」）
+- **Sprint 20+ 待做**：Sheet / Toast / Tooltip 元件 + dark mode + i18n + Storybook
 
 ## 🏆 Sprint 19 Stage 2 重點發現
 

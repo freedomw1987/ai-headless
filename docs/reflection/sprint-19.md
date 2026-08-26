@@ -1,8 +1,8 @@
-# Sprint 19 Reflection — Server Side 分頁 + UI 整合
+# Sprint 19 Reflection — Server Side 分頁 + UI 整合 + 排序篩選
 
-> **Sprint**: Sprint 19 (Stage 1 + Stage 2)
-> **SP**: 4.5 / 4.5 ✅
-> **Commits**: `eef3ca4` (Stage 1) + `462478b` (Stage 2)
+> **Sprint**: Sprint 19 (Stage 1 + Stage 2 + Stage 3)
+> **SP**: 8.5 / 8.5 ✅
+> **Commits**: `eef3ca4` (Stage 1) + `462478b` (Stage 2) + `811fe24` (Stage 3)
 > **日期**: 2026-08-26
 
 ---
@@ -33,6 +33,54 @@
 ### 守護測試 + E2E 全綠
 - 850 vitest / 74 files (+22 from Sprint 18)
 - 47 E2E (+4)
+- typecheck ✅
+
+---
+
+## Stage 3 重點（list 排序 + 篩選）
+
+### 目標
+- list page 加上 sortable header + 搜尋 input
+- 提供完整資料探索能力（sort + filter + paginate 三件齊全）
+
+### 交付
+1. `lib/runtime/dynamic-handler.ts`：`list()` 從 `ctx.query` 讀 `sort` / `order` / `q`
+   - sort 欄位必須在 spec.fields 白名單內（**SQL injection 防護**）
+   - order 預設 desc（向後相容）
+   - q 對所有 string 欄位做 **OR contains** 搜尋
+   - 動態 `orderBy: { [sortField]: sortOrder }`
+2. `app/api/crud/[spec]/route.ts`：GET 讀 searchParams `sort` / `order` / `q`
+3. `app/admin/crud/[spec]/page.tsx`：list page UI
+   - 新增 `Input`（搜尋）+ `ArrowUpDown` / `ChevronUp` / `ChevronDown` icons
+   - TableHead 改 sortable link（click 切換 asc/desc，保留 q）
+   - Header 加搜尋 form（GET，含 sort/order hidden input）
+   - Empty 狀態處理 q 無結果（顯示「找不到符合『q』的資料」+ 清除搜尋按鈕）
+   - 抽 `buildSortHref(sortField, sortOrder, q, pageSize, specName)` helper
+
+### 守護測試 (16 個)
+- handler 7 個（sort/order/q 讀取 + orderBy + 白名單 + OR contains + 預設值）
+- route 4 個（searchParams.get + query 傳遞）
+- list page 5 個（searchParams + form + sortable link + arrow icon）
+
+### E2E (7 個)
+- sort=title&order=desc → 第一筆 title 最大
+- sort=title&order=asc → 第一筆 title 最小
+- q=台北 → 過濾台北活動
+- q=NotExist → 顯示「找不到符合」+ 清除搜尋按鈕
+- 點 sortable header → URL 切換 sort/order
+- 提交搜尋 form → URL 帶 q
+- ?sort=__proto__ → fallback createdAt desc（**SQL injection 防護驗證**）
+
+### 手動驗證（Playwright 截圖）
+- 14 events / 12 seed：sort=title desc → 高雄活動 9 第一筆 ✅
+- sort=title asc → Sprint 9 Demo Event 第一筆 ✅
+- q=台北 → 7 筆資料（第 1 / 1 頁）✅
+- q=NotExist → 「找不到符合『NotExist』的資料」+ 清除搜尋按鈕 ✅
+- ?sort=__proto__ → fallback 預設排序（防 SQL injection）✅
+
+### 守護測試 + E2E 全綠
+- 866 vitest / 75 files (+38 from Sprint 18)
+- 54 E2E (+11)
 - typecheck ✅
 
 ---
