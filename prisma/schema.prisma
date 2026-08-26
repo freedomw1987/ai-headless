@@ -16,7 +16,7 @@ datasource db {
 }
 
 // ==============================================
-// M2 — Auth & RBAC
+// M2 — Auth & RBAC (Sprint 21 Phase 2：動態 RBAC)
 // ==============================================
 
 model User {
@@ -28,8 +28,15 @@ model User {
   emailVerified DateTime?
   isActive      Boolean   @default(true)
 
-  // 角色（admin / editor / viewer / 自定義）
+  // === Phase 1 既有 (保留)===
+  // Q6 雙軌制：純函式 hasPermission 仍依賴此欄位
   role String @default("viewer")
+
+  // === Phase 2 新增：FK 到 Role table ===
+  // 注意：此欄位 Sprint 21 commit 1 先加為 optional（不破壞既有資料）
+  // Phase 2 RBAC 漸進遷移：未來 sprint 補上既有 user 的 roleId 對應
+  roleId        String?
+  roleRef       Role?     @relation(fields: [roleId], references: [id])
 
   // 關聯
   accounts      Account[]
@@ -40,7 +47,35 @@ model User {
 
   @@index([email])
   @@index([role])
+  @@index([roleId])
   @@map("users")
+}
+
+// === Phase 2 新增：Role table ===
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique  // ^[a-z][a-z0-9_]{0,31}$ (Zod schema 在 lib/auth/role-schema.ts)
+  displayName String       // "管理員", "編輯者", "訪客"
+  description String?
+  isSystem    Boolean      @default(false)  // 內建 3 個 = true
+  permissions Permission[]
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("roles")
+}
+
+// === Phase 2 新增：Permission table ===
+model Permission {
+  id        String   @id @default(cuid())
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  code      String   // "users:assign", "roles:write" (resource:action 格式)
+
+  @@unique([roleId, code])  // 同一 role 不能有重複 permission
+  @@index([code])           // 反查：哪些 role 有這個 permission
+  @@map("permissions")
 }
 
 model Account {
