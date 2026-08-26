@@ -10,11 +10,12 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 21 — US-102-P2 動態 RBAC**（5-7 SP，Plan Gate 進行中）|
-| **Sprint 20 狀態** | ✅ **100% 收尾（7/7 SP）**（Stage 1+2+3+4+P3+P3.5）|
-| **測試基線** | **923 tests / 80 files** |
-| **下一個 P0** | Sprint 21 Plan Gate ✅ + Design Gate ✅ → Execution Gate（commit 1 起，9 commit）|
-| **路線圖關鍵** | ✅ Sprint 20 全收尾 → ✅ Sprint 21 Plan Gate → ✅ Design Gate（4 個待辦完成） → 🚧 Execution Gate |
+| **當前 Sprint** | **Sprint 26 — Sprint 20 P2 技術債批量修復**（2.5 SP，**100% 收尾**）|
+| **Sprint 25 狀態** | ✅ **100% 收尾（1/1 SP）**（Sprint 25 強制清 hasPermission）|
+| **Sprint 26 狀態** | ✅ **100% 收尾（2.5/2.5 SP）**（Sprint 20 P2 技術債 5/5 全清）|
+| **測試基線** | **1054 tests / 80+ files**（Sprint 21-26 累計 +131 測試）|
+| **下一個 P0** | Sprint 27 Plan Gate（決定新方向）|
+| **路線圖關鍵** | ✅ Sprint 21-25（Phase 2 RBAC 11/11）→ ✅ Sprint 26（Sprint 20 P2 清完）→ 📋 Sprint 27+（新方向待定）|
 
 ### Sprint 21 規劃（US-102-P2 動態 RBAC，預估 7 SP）
 
@@ -53,17 +54,17 @@
 | **P3** | Dead code + null date | 0 | ✅ | [→](reflection/sprint-20.md#p3-重點dead-code--null-date) |
 | **P3.5** | Event 500 + Hook 註冊（user 報 bug）| 1.5 | ✅ | [→](reflection/sprint-20.md#p35-重點event-500--hook-註冊) |
 
-### Sprint 20 揭露的技術債（留 Sprint 21+）
+### Sprint 20 揭露的技術債（已 Sprint 26 100% 完成）
 
-| 優先級 | 項目 | 描述 | 文件 |
-|---|---|---|---|
-| **P2** | list/get handler 沒 try/catch | DB 拋錯 → 500（Prisma 錯誤訊息暴露給前端）| `lib/runtime/dynamic-handler.ts` |
-| **P2** | Sanitizer SAFE_PATTERNS 漏 | `Cannot register for cancelled/past event` 在 production 被過濾為通用「提交失敗」 | `lib/runtime/error-sanitizer.ts` |
-| **P3** | Hook type contract vs runtime 不一致 | hook-sdk.ts 型別要求回傳完整 ctx，但 4 個 production hook 全 return data | `lib/hooks/hook-sdk.ts` |
-| **P3** | Registry completeness regex 不支援嵌套 JSON | `"hooks"\s*:\s*\{([^{}]*)\}` 不支援嵌套 JSON 物件 | `lib/extensions/hooks-registry.ts` |
-| **P3** | State machine 錯誤在 production 被過濾 | `StateMachine "x" 拒絕 event "y"` 不匹配 SAFE_PATTERNS | `lib/runtime/error-sanitizer.ts` |
-| **P3** | TooltipProvider 重複建立 | 每個 SortableHeaderCell 各自包 Provider（10 欄位 = 10 Provider），狀態隔離（純優化）。未來可抽 SortableHeader 整個 TableHeader 共享 | `components/admin/sortable-header-cell.tsx:59` |
-| **P3** | `bun.lock` 陳舊 | 之前用 Bun 安裝留下，非 pnpm 流程用（CI 用 pnpm install --frozen-lockfile，不讀 bun.lock） | `bun.lock` |
+| 優先級 | 項目 | 描述 | 文件 | 狀態 |
+|---|---|---|---|---|
+| **P2** | list/get handler 沒 try/catch | DB 拋錯 → 500（Prisma 錯誤訊息暴露給前端）| `lib/runtime/dynamic-handler.ts` | ✅ Sprint 26 commit 1 (TD-401) |
+| **P2** | Sanitizer SAFE_PATTERNS 漏 | `Cannot register for cancelled/past event` 在 production 被過濾為通用「提交失敗」 | `lib/runtime/error-sanitizer.ts` | ✅ Sprint 26 commit 2 (TD-402) |
+| **P3** | Hook type contract vs runtime 不一致 | hook-sdk.ts 型別要求回傳完整 ctx，但 4 個 production hook 全 return data | `lib/hooks/hook-sdk.ts` | ✅ Sprint 26 commit 3 (TD-403) |
+| **P3** | Registry completeness regex 不支援嵌套 JSON | `"hooks"\s*:\s*\{([^{}]*)\}` 不支援嵌套 JSON 物件 | `lib/extensions/hooks-registry.ts` | ✅ Sprint 26 commit 4 (TD-404) |
+| **P3** | State machine 錯誤在 production 被過濾 | `StateMachine "x" 拒絕 event "y"` 不匹配 SAFE_PATTERNS | `lib/runtime/error-sanitizer.ts` | ✅ Sprint 26 commit 2 (TD-402 涵蓋) |
+| **P3** | TooltipProvider 重複建立 | 每個 SortableHeaderCell 各自包 Provider（10 欄位 = 10 Provider），狀態隔離（純優化）。未來可抽 SortableHeader 整個 TableHeader 共享 | `components/admin/sortable-header-cell.tsx:59` | 📋 待做（Sprint 27+） |
+| **P3** | `bun.lock` 陳舊 | 之前用 Bun 安裝留下，非 pnpm 流程用（CI 用 pnpm install --frozen-lockfile，不讀 bun.lock） | `bun.lock` | 📋 待做（Sprint 27+） |
 
 **架構決策（重要）**：
 - **ThemeProvider**（next-themes）：全局主題（Light/Dark/System），放 `app/layout.tsx`
@@ -120,6 +121,25 @@
 
 **Sprint 16 完成後測試基線**：
 - vitest: 750 / 64 files
+
+### Sprint 21-26 完整演進表（Phase 2 RBAC + 技術債清理）
+
+| Sprint | SP | 累計測試 | 重點成就 |
+|---|---|---|---|
+| **Sprint 21** | 8.25 | 923 → 999 (+76) | US-102-P2 Phase 2 RBAC: schema + seed-rbac + 5 API + 2 UI + Middleware + 4 TD 修正 |
+| **Sprint 22** | 0.5 | 999 → 999 | Silent bug audit (0 silent bug) + PR checklist (SOP-R1) |
+| **Sprint 23** | 2 | 999 → 1006 (+7) | Middleware 動態化 (jwt/session permissions) + TD-7 extension perms |
+| **Sprint 24** | 2 | 1006 → 1028 (+22) | UI 條件渲染動態版 (hasUIPermission + useHasUIPermission) |
+| **Sprint 25** | 1 | 1028 → 1025 (-3) | 強制清 hasPermission 純函式 (PRD §12.4.1) |
+| **Sprint 26** | 2.5 | 1025 → 1054 (+29) | Sprint 20 P2 技術債 5/5 全清 (TD-401/402/403/404/405) |
+| **總計** | **16.25** | **+131** | Phase 2 RBAC 11/11 + Sprint 20 P2 5/5 |
+
+**Sprint 21-26 重點交付**：
+- ✅ Phase 2 RBAC 路線圖 11/11 (Sprint 21-25)
+- ✅ Sprint 20 P2 技術債 5/5 (Sprint 26)
+- ✅ 測試 923 → 1054 (+131)
+- ✅ 8 條新 SOP (L1-L18 累計)
+- ✅ 4 條新 refactor (SOP-R1/R2)
 - E2E: 43（含 14 新 RWD）
 - Typecheck: ✅ 綠
 
@@ -391,7 +411,7 @@
 | **TECH-002** | Tech Spike | 設計 JSON 功能規範 | OpenSpec（MD + JSON Schema + TS Types + 範例）| 8 | SP1 | M1 | ✅ Done |
 | **US-101** | User Story | AI 對話生成 CRUD 功能 | 「幫我做待辦事項」→ 自動生成 JSON + 代碼 + DB Migration | 13 | SP1 | M1 | ✅ Done |
 | **US-102** | User Story | 後台用戶管理（Phase 1 基礎版）| 登入頁 + 用戶 CRUD + 3 個寫死角色（admin/editor/viewer）+ middleware 守衛 | 5 | SP1 | M2 | ✅ Done (Phase 1) |
-| **US-102-P2** | User Story | 後台用戶管理（Phase 2 動態 RBAC）| Role table + Permission table + 自定義角色管理 UI + 動態權限授權 | 5 | SP2 | M2 | 📋 Backlog |
+| **US-102-P2** | User Story | 後台用戶管理（Phase 2 動態 RBAC）| Role table + Permission table + 自定義角色管理 UI + 動態權限授權 | 5 | SP2 | M2 | ✅ Done（Sprint 21-25 完整：schema + seed + cache + 5 API + 2 UI + Middleware + 強制清，Phase 2 RBAC 路線圖 11/11 完成）|
 | **US-103** | User Story | Blog CRUD 範例 | Blog CRUD + 富文本編輯器 + 列表頁 + 詳情頁 | 5 | SP1 | M3 | ✅ Done |
 | **US-104** | User Story | AI 模型配置 | API Key 配置、模型切換、配置持久化、錯誤處理 | 5 | SP1 | M4 | 📋 Backlog |
 | **US-105** | User Story | AI 對話界面 | Chat UI 可用，能解析需求、生成 JSON、編譯代碼、提示進度 | 5 | SP1 | M5 | 📋 Backlog |
@@ -403,9 +423,11 @@
 | **US-203** | User Story | Computed SDK | Extension 提供 compute 函數，UI 自動渲染 + 快取 + dependency 追蹤 | 3 | SP2 | M1 | ✅ Done（盤點 2026-08-24） |
 | **TD-516** | Tech Debt | Order 並發 transition 控制 | 同時間兩個 transition 可能都「成功」，最後寫的贏 | 1 | SP8 | M1-WS | 📋 Ready（待真有並發需求時）|
 | **TD-517** | Tech Debt | Order transition audit log | 沒有記錄「誰、何時、用什麼 event 切到什麼狀態」 | 2 | SP8 | M1-WS | 📋 Ready（待真實用戶）|
-| **TD-518** | Tech Debt | Order transition 權限檢查 | `POST /api/order/{id}/transition` 沒檢查「誰」可以切狀態 | 1 | SP8 | M1-WS | 📋 Ready（待 US-102-P2 完成）|
+| **TD-518** | Tech Debt | Order transition 權限檢查 | `POST /api/order/{id}/transition` 沒檢查「誰」可以切狀態 | 1 | SP8 | M1-WS | ✅ Done（Sprint 21-25 動態 RBAC 完成：Order transition 自動用 hasDynamicPermission 守衛） |
 | **TD-519** | Tech Debt | Order 列表分頁 | 訂單 >50 筆會慢，沒分頁 | 1 | SP8 | M1-WS | 📋 Ready（Sprint 9+）|
 | **TD-520** | Tech Debt | Order 用 Zod 驗證 form | 目前 createOrderDialog 手寫 if 驗證 | 1 | SP8 | M1-WS | 📋 Ready（Sprint 9+）|
+| **TD-523** | Tech Debt | Hook function type contract 太鬆 | HookFunction<T = unknown> 接受任何型別 → silent type drift 風險 (Sprint 26 TD-403 揭露) | 1 | SP27+ | M1 | 📋 Ready（待破壞性變更） |
+| **TD-524** | Tech Debt | Sanitizer 用 regex 而非 error taxonomy | SAFE_PATTERNS 用 regex 陣列 → 手動加 regex 易遺漏 (Sprint 26 揭露) | 1.5 | SP27+ | M1 | 📋 Ready（需重構所有 throw 點） |
 | **TD-521** | Tech Debt | Disable Guard 測試補完 | Sprint 9 補完 Disable Guard 時發現：`listEnabledExtensions()` 有個 `\|\| true` bug，Sidebar filter 形同失效；其他 helper 也沒 unit test | 1 | SP9 | M6 | ✅ Done（本 session Sprint 9 補完）|
 | **TD-522** | Tech Debt | Order Extension manifest 缺失 | `extensions/order/` 沒有 `manifest.json`，導致 extension-manager filesystem scan 漏掉，/api/extensions 看不到 order（但 API guard 仍 work） | 0.5 | SP9+ | M6 | 📋 Ready（Sprint 10+）|
 | **US-204** | User Story | 訂單狀態機 | 訂單狀態：draft → pending_payment → paid → shipped → completed | 8 | SP2 | M1-WS | ✅ Done（Sprint 8：後端 + Demo UI，24 個測試）|
