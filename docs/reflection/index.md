@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 27 收尾）
+> **最後更新**：2026-08-26（Sprint 28 收尾）
 
 ---
 
@@ -47,6 +47,7 @@
 | **Sprint 25** | [**sprint-25.md**](./sprint-25.md) | ✅ | **100%** (1/1) | ✅ **全綠** | **強制清 hasPermission 純函式（PRD §12.4.1）：刪除純函式本體 + 4 個內部使用 + rbac.ts 整檔 + 14 個純函式測試 + 5 個 requirePermission 呼叫端改用 requirePermissionApiResponse（新增 helper）+ 2 個 server component + 1 個 dynamic-handler（async checkPermission）+ 12 個檔案 1 commit。Phase 2 RBAC 路線圖 11/11 完成** |
 | **Sprint 26** | [**sprint-26.md**](./sprint-26.md) | ✅ | **100%** (2.5/2.5) | ✅ **全綠** | **Sprint 20 P2 技術債批量修復：4 commits (TD-401 handler try/catch + TD-402 sanitizer SAFE_PATTERNS + TD-403 Hook type contract + TD-404 brace-balanced spec parser)，22 個新測試，1054/1054 全綠。TD-405 被 TD-402 自動涵蓋（/StateMachine/i 加入 SAFE_PATTERNS）** |
 | **Sprint 27** | [**sprint-27.md**](./sprint-27.md) | ✅ | **100%** (2.5/2.5) | ✅ **全綠** | **Clean code 改進：2 commits (TD-523 StrictHookFunction 雙軌制 + TD-524 AppError class + ErrorCategory enum 取代 regex)，21 個新測試，1075/1075 全綠。3 條新學習 (L19-L21)：class-based error vs regex 維護性、雙軌制演進模式、TypeScript Function Contravariance** |
+| **Sprint 28** | [**sprint-28.md**](./sprint-28.md) | ✅ | **100%** (5/5) | ✅ **全綠** | **Order Workflow 改進：4 commits (TD-519 Order 列表分頁 [已由 Sprint 19 涵蓋] + TD-520 Order Zod 驗證 [已由 Sprint 19 涵蓋] + TD-516 transaction 避免 race condition + TD-517 TransitionLog audit log)，17 個新測試 + 既有 3 個 order 測試加 mock，1094/1094 全綠。4 條新學習 (L22-L25)：backlog Ready audit、Prisma transaction 雙層防護、Extension code vs Dynamic handler 一致性、利用既有 schema** |
 
 ---
 
