@@ -469,10 +469,25 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
       try {
         // 優先 extension code
         if (extTransition) {
+          // Sprint 29 commit 1: 統一注入 userId (從 ctx.user)
+          // 若 caller 已設 userId (非 undefined), 尊重 caller
+          // 若 ctx.user 缺, 拋 401 Unauthorized (auth 守衛)
+          const authErr = checkAuth(ctx);
+          if (authErr) return authErr;
+
+          const payload = ctx.body as Record<string, unknown> | undefined;
+          const payloadWithUserId: Record<string, unknown> = {
+            ...(payload ?? {}),
+            userId:
+              payload?.userId !== undefined
+                ? payload.userId
+                : ctx.user?.id ?? null,
+          };
+
           const updated = await extTransition(
             id,
             event,
-            ctx.body as Record<string, unknown>,
+            payloadWithUserId,
           );
           return { status: 200, data: updated };
         }
