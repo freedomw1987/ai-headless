@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 23 收尾）
+> **最後更新**：2026-08-26（Sprint 24 收尾）
 
 ---
 
@@ -43,6 +43,7 @@
 | **Sprint 21** | [**sprint-21.md**](./sprint-21.md) | ✅ | **100%** (8.25/8.25) | ✅ **全綠** | **US-102-P2 動態 RBAC：Prisma migration + seed-rbac + session-cache + hasDynamicPermission + 5 個 API + 2 個 UI 頁面 + Role Zod schema + 77 個新測試**（揭露 TD-1：commit 1 migration 未實際跑 DB，已修正並驗證 admin 可登入）|
 | **Sprint 22** | [**sprint-22.md**](./sprint-22.md) | ✅ | **100%** (0.5/0.5) | ✅ **全綠** | **Silent bug audit：10 個 PATCH/POST/DELETE/PUT handler + 4 個相關基礎設施全面檢查（destructure / enum / FK 三項）→ 0 silent bug + SOP-R1 (PR checklist) + SOP-R2 (grep 自動檢測) 兩條新規則輸出** |
 | **Sprint 23** | [**sprint-23.md**](./sprint-23.md) | ✅ | **100%** (2/2) | ✅ **全綠** | **Middleware 動態化（jwt/session permissions 注入 + 60s session-cache + Plan Gate Q3 決定 middleware 只做登入檢查 + 12 個 middleware 整合測試）+ TD-7 extension permissions backfill（18 個 permissions 從 manifest 同步到 DB）** |
+| **Sprint 24** | [**sprint-24.md**](./sprint-24.md) | ✅ | **100%** (2/2) | ✅ **全綠** | **UI 條件渲染動態版：`lib/auth/ui-permissions.ts` 新 helper（hasUIPermission 純函數 + useHasUIPermission client hook，自動處理 admin wildcard）+ 2 個 UI 點遷移（crud page + sidebar）+ 11 個純函數測試** |
 
 ---
 
