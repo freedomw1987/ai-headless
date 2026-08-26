@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 21 收尾）
+> **最後更新**：2026-08-26（Sprint 22 收尾）
 
 ---
 
@@ -41,6 +41,7 @@
 | **Sprint 19 Stage 3** | [**sprint-19.md**](./sprint-19.md#stage-3-重點list-排序--篩選) | ✅ | **100%** (4/4) | ✅ **全綠** | **list 排序（sortable header + URL sync）+ 篩選（search form + OR contains）+ SQL injection 白名單防護** |
 | **Sprint 20** | [**sprint-20.md**](./sprint-20.md) | ✅ | **100%** (7/7) | ✅ **全綠** | **UI 元件擴充（Sheet / Tooltip / Dark mode / Sonner toast 升級）+ P3 dead code + P3.5 user 報 bug（hook 註冊 + error sanitizer）** |
 | **Sprint 21** | [**sprint-21.md**](./sprint-21.md) | ✅ | **100%** (8.25/8.25) | ✅ **全綠** | **US-102-P2 動態 RBAC：Prisma migration + seed-rbac + session-cache + hasDynamicPermission + 5 個 API + 2 個 UI 頁面 + Role Zod schema + 77 個新測試**（揭露 TD-1：commit 1 migration 未實際跑 DB，已修正並驗證 admin 可登入）|
+| **Sprint 22** | [**sprint-22.md**](./sprint-22.md) | ✅ | **100%** (0.5/0.5) | ✅ **全綠** | **Silent bug audit：10 個 PATCH/POST/DELETE/PUT handler + 4 個相關基礎設施全面檢查（destructure / enum / FK 三項）→ 0 silent bug + SOP-R1 (PR checklist) + SOP-R2 (grep 自動檢測) 兩條新規則輸出** |
 
 ---
 
