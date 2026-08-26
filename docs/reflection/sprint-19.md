@@ -1,11 +1,43 @@
-# Sprint 19 Stage 1 Reflection — Server Side 分頁
+# Sprint 19 Reflection — Server Side 分頁 + UI 整合
 
-> **Sprint**: Sprint 19 Stage 1
-> **SP**: 3 / 3 ✅
-> **Commit**: `eef3ca4`
-> **日期**: 2026-08-25
+> **Sprint**: Sprint 19 (Stage 1 + Stage 2)
+> **SP**: 4.5 / 4.5 ✅
+> **Commits**: `eef3ca4` (Stage 1) + `462478b` (Stage 2)
+> **日期**: 2026-08-26
 
 ---
+
+## Stage 2 重點（list page 嵌入 pagination UI + URL 同步）
+
+### 目標
+- list page 真正嵌入完整 shadcn Pagination 元件（Stage 1 只有文字資訊）
+- 從「純文字分頁資訊」升級為「可 click 切頁的 pagination UI」
+- 修正 Sprint 18 Stage 2.2 留下的 `Button({...})` bug（runtime TypeError）
+
+### 交付
+1. `app/admin/crud/[spec]/page.tsx`：內嵌 Pagination + PaginationContent + PaginationItem + PaginationLink + PaginationPrevious + PaginationNext + PaginationEllipsis
+2. `buildPageHref(targetPage, pageSize, specName)` helper：構造 `?page=X&pageSize=Y` URL
+3. PaginationLink `isActive` 高亮當前頁
+4. Pagination 只在 `totalPages > 1` 時渲染
+5. **Bug 修正**：`components/ui/pagination.tsx` `Button({...})` → `buttonVariants({...})`
+
+### 守護測試
+- tech-051-list-pagination-ui.test.ts 12 個（檔案結構 + URL 構造 + 分頁資訊）
+- tech-051-pagination.spec.ts 4 個 E2E（event × 2 page + click + blog no-pagination）
+
+### 手動驗證（Playwright 截圖）
+- 14 events / pageSize=10：第 1 頁 10 rows + 第 2 頁 4 rows
+- Click page=2 link → URL 變 `?page=2` ✅
+- blog（2 筆）：無 pagination UI，「共 2 筆資料（第 1 / 1 頁）」✅
+
+### 守護測試 + E2E 全綠
+- 850 vitest / 74 files (+22 from Sprint 18)
+- 47 E2E (+4)
+- typecheck ✅
+
+---
+
+## Stage 1 Reflection（原內容）
 
 ## 1. 目標（為什麼做這個 Sprint）
 

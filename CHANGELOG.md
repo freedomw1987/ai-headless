@@ -763,14 +763,30 @@ Sprint 16 完成 **Stage 1**（TECH-038b list formatter）和 **Stage 2**（TECH
   - 接受 `basePath` 而非 `onPageChange`（Server Component 不能傳函數給 Client Component）
   - PaginationLink 用 `<a href>` 組合成 URL
 
+### Sprint 19 Stage 2 — list page 嵌入 pagination UI + URL 同步（commit `462478b`）
+
+**解決 list page 沒有真實分頁 UI**（Stage 1 只有文字資訊）。
+
+- `app/admin/crud/[spec]/page.tsx`：內嵌完整 shadcn Pagination 元件
+  - PaginationPrevious + 頁碼 + Ellipsis + PaginationNext
+  - 抽 `buildPageHref(targetPage, pageSize, specName)` helper
+  - 顯示「顯示第 X 到 Y 筆」分頁資訊
+  - PaginationLink `isActive` 高亮當前頁
+  - Pagination 只在 `totalPages > 1` 時渲染
+- `components/ui/pagination.tsx`：修正 Sprint 18 Stage 2.2 留下的 `Button({...})` 錯誤呼叫 → `buttonVariants({...})`
+  - 原因：shadcn `components/ui/pagination.tsx` 標準 pattern 是 `buttonVariants({...})`（cva 函數）
+  - 原 `Button({...})` 是 component 呼叫 → runtime `TypeError: Button is not a function`
+  - typecheck 抓不到 → 必須 E2E runtime 驗證
+
 ### Sprint 19 測試基線
 
-| 項目 | Sprint 18 完成 | Sprint 19 完成 |
-|---|---|---|
-| vitest | 828 / 72 | **839 / 73**（+11）|
-| E2E | 43 | 43 |
-| Typecheck | ✅ 綠 | ✅ 綠 |
-| list 筆數上限 | 寫死 100 | **無上限（分頁）** |
+| 項目 | Sprint 18 完成 | Sprint 19 Stage 1 | Sprint 19 Stage 2 |
+|---|---|---|---|
+| vitest | 828 / 72 | 839 / 73 | **850 / 74**（+22）|
+| E2E | 43 | 43 | **47**（+4）|
+| Typecheck | ✅ 綠 | ✅ 綠 | ✅ 綠 |
+| list 筆數上限 | 寫死 100 | 無上限（分頁）| 無上限（分頁）|
+| list 分頁 UI | 無 | 純文字 | **完整 Pagination 元件** |
 
 ---
 

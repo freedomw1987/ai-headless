@@ -10,11 +10,11 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 19 Stage 1 — Server Side 分頁** ✅ 完成 3 / 3 SP |
-| **Sprint 18 狀態** | ✅ 100% 收尾（6.5/6.5 SP）|
-| **測試基線** | **882 tests / 73 files** / 4 Gate 全綠（839 vitest + 43 E2E）|
-| **下一個 P0** | Sprint 19 Stage 2（list page 嵌入 ListPaginationNav + URL 同步）|
-| **路線圖關鍵** | ✅ Server Side 分頁（100 筆上限打破） |
+| **當前 Sprint** | **Sprint 19 Stage 2 — list page 嵌入 pagination UI** ✅ 完成 1.5 / 1.5 SP |
+| **Sprint 19 Stage 1 狀態** | ✅ 100% 收尾（3/3 SP）|
+| **測試基線** | **897 tests / 74 files** / 4 Gate 全綠（850 vitest + 47 E2E）|
+| **下一個 P0** | Sprint 19 Stage 3（list 排序 + 篩選）|
+| **路線圖關鍵** | ✅ 完整 Pagination 元件 + URL 同步 |
 
 ### Sprint 15 進度（Runtime Spec 精簡化）
 
@@ -63,7 +63,17 @@
 | **Spike** | JSX 預編譯方案評估（tsx-loader / esbuild / swc）| 0.5 | Sprint 16 揭露 |
 | **合計** | | **5.5 SP** | |
 
-### Sprint 19 進度（Stage 1 完成 3 / 3 SP）
+### Sprint 19 進度（Stage 1 + 2 完成 4.5 / 4.5 SP）
+
+#### Stage 2 — list page 嵌入 pagination UI + URL 同步（1.5 SP）
+
+| Task | 計劃 | 實際 | 狀態 |
+|---|---|---|---|
+| **Stage 2.1 list page 內嵌 Pagination** | 0.5 SP | 0.5 SP | ✅ commit `462478b`（Pagination 元件 + buildPageHref）|
+| **Stage 2.2 PaginationLink 整合** | 0.5 SP | 0.5 SP | ✅ commit `462478b`（isActive + 頁碼 + Ellipsis + 上一頁/下一頁）|
+| **Stage 2.3 E2E** | 0.5 SP | 0.5 SP | ✅ commit `462478b`（tech-051 E2E 4 spec × 2 page + blog no-pagination）|
+
+#### Stage 1 — Server Side 分頁（3 SP）
 
 | Task | 計劃 | 實際 | 狀態 |
 |---|---|---|---|
