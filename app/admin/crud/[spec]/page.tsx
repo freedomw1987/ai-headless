@@ -51,6 +51,15 @@ import {
   EmptyDescription,
   EmptyContent,
 } from '@/components/ui/empty';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { DynamicRendererCell } from '@/components/admin/dynamic-renderer-cell';
 import type { ListUIConfig } from '@/lib/runtime/ui-config';
 import type { FormatterFn } from '@/lib/runtime/extension-loaders';
@@ -209,13 +218,81 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
         </Card>
       )}
 
-      {/* Sprint 19 Stage 1: 分頁資訊（純顯示，UI 在 ListPaginationNav）*/}
+      {/* Sprint 19 Stage 2: 嵌入 pagination UI（直接 server side render，不透過 client wrapper）*/}
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              {page > 1 ? (
+                <PaginationPrevious href={buildPageHref(1, pageSize, specName)}>上一頁</PaginationPrevious>
+              ) : (
+                <PaginationPrevious href="#" aria-disabled>上一頁</PaginationPrevious>
+              )}
+            </PaginationItem>
+            {page > 2 && (
+              <PaginationItem>
+                <PaginationLink href={buildPageHref(1, pageSize, specName)}>1</PaginationLink>
+              </PaginationItem>
+            )}
+            {page > 3 && (
+              <PaginationItem>
+                <PaginationEllipsis />
+              </PaginationItem>
+            )}
+            {page > 1 && (
+              <PaginationItem>
+                <PaginationLink href={buildPageHref(page - 1, pageSize, specName)}>{page - 1}</PaginationLink>
+              </PaginationItem>
+            )}
+            <PaginationItem>
+              <PaginationLink href="#" isActive>{page}</PaginationLink>
+            </PaginationItem>
+            {page < totalPages && (
+              <PaginationItem>
+                <PaginationLink href={buildPageHref(page + 1, pageSize, specName)}>{page + 1}</PaginationLink>
+              </PaginationItem>
+            )}
+            {page < totalPages - 2 && (
+              <PaginationItem>
+                <PaginationEllipsis />
+              </PaginationItem>
+            )}
+            {page < totalPages - 1 && (
+              <PaginationItem>
+                <PaginationLink href={buildPageHref(totalPages, pageSize, specName)}>{totalPages}</PaginationLink>
+              </PaginationItem>
+            )}
+            <PaginationItem>
+              {page < totalPages ? (
+                <PaginationNext href={buildPageHref(page + 1, pageSize, specName)}>下一頁</PaginationNext>
+              ) : (
+                <PaginationNext href="#" aria-disabled>下一頁</PaginationNext>
+              )}
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
+
+      {/* 分頁資訊文字（顯示 X 到 Y）*/}
       <div className="text-sm text-muted-foreground">
-        第 {page} / {totalPages} 頁（顯示第 {(page - 1) * pageSize + 1} 到 {Math.min(page * pageSize, total)} 筆，共 {total} 筆）
+        顯示第 {(page - 1) * pageSize + 1} 到 {Math.min(page * pageSize, total)} 筆，共 {total} 筆
       </div>
       </div>
     </div>
   );
+}
+
+// ==============================================
+// URL 構造 helper（Sprint 19 Stage 2 — pagination UI 整合）
+// ==============================================
+function buildPageHref(targetPage: number, pageSize: number, specName: string): string {
+  if (targetPage === 1 && pageSize === 10) {
+    return `/admin/crud/${specName}`;
+  }
+  const params = new URLSearchParams();
+  if (targetPage !== 1) params.set('page', String(targetPage));
+  if (pageSize !== 10) params.set('pageSize', String(pageSize));
+  return `/admin/crud/${specName}?${params.toString()}`;
 }
 
 // ==============================================
