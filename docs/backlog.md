@@ -10,11 +10,108 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 19 Stage 3 — list 排序 + 篩選** ✅ 完成 4 / 4 SP |
-| **Sprint 19 Stage 2 狀態** | ✅ 100% 收尾（1.5/1.5 SP）|
-| **測試基線** | **920 tests / 75 files** / 4 Gate 全綠（866 vitest + 54 E2E）|
-| **下一個 P0** | Sprint 20+（Sheet / Toast / Tooltip / dark mode / i18n）|
-| **路線圖關鍵** | ✅ 完整資料探索（sort + filter + paginate）|
+| **當前 Sprint** | **Sprint 20 — UI 元件擴充 + 全局主題切換**（5.5 SP，4 Stages）|
+| **Sprint 19 狀態** | ✅ **100% 收尾（8.5/8.5 SP）**（Stage 1+2+3）|
+| **測試基線** | **923 tests / 80 files** / Sprint 20 全部 4 Stages 收尾（含 P3 + P3.5）|
+| **下一個 P0** | Sprint 21（待規劃）|
+| **路線圖關鍵** | ✅ Sprint 20 全收尾（Sheet + Tooltip + Dark mode + Toast sonner + P3 + P3.5）|
+
+### Sprint 20 規劃（UI 元件擴充 + 全局主題切換，5.5 SP）
+
+> **日期**: 2026-08-26
+> **用戶決定**: UI 元件擴充（Sheet / Tooltip / dark mode / Toast 升級 sonner）
+> **關鍵澄清**: ThemeProvider 全局主題、Extension 自有樣式獨立 — 不走 Extension 機制
+> **架構決策**: 用 next-themes ThemeProvider（`app/layout.tsx`）+ ThemeToggle 按鈕（`/admin` 顯眼位置）
+
+| Stage | 內容 | SP | 驗收標準 |
+|---|---|---|---|
+| **1 — Sheet** | shadcn Sheet 元件 + detail page 抽屜式編輯 | 1.5 | ✅ **收尾（1.5/1.5 SP）** ① Sheet 元件建好（DialogPrimitive + cva side variants）<br>② detail「編輯」按鈕點擊從右側滑出 Sheet<br>③ Sheet 內顯示 DynamicFormClient（預填 initialData）<br>④ onSuccess callback 關閉 Sheet（refresh 在 form-client 內部）<br>⑤ `/edit` page 保留兼容<br>⑥ 12 個守護測試 + 3 個 E2E 全綠 |
+| **2 — Tooltip** | shadcn Tooltip + 1 個使用場景 | 1 | ✅ **收尾（1/1 SP）** ① Tooltip 元件建好（Radix UI 內建鍵盤 + a11y）<br>② 場景：list sortable header（記錄「點擊切換排序」+ 狀態）<br>③ 11 個守護測試 + 2 個 E2E（hover + toggle sort）<br>⑤ 架構：Server Component 抽 SortableHeaderCell client wrapper |
+| **3 — Dark mode** | next-themes ThemeProvider + ThemeToggle | 1.5 | ✅ **收尾（1.5/1.5 SP）** ① `app/layout.tsx` 加 ThemeProvider（attribute="class", defaultTheme="system", enableSystem, disableTransitionOnChange）<br>② ThemeToggle 按鈕（Sun/Moon icons）放 `/admin` sidebar 底部（user info 下、登出上）<br>③ localStorage 持久化（next-themes 內建）<br>④ Light/Dark/System 三模式（DropdownMenu）<br>⑤ 15 個守護測試（tech-057）+ 3 個 E2E（含截圖 tech-057-dark-mode.png） |
+| **4 — Toast sonner 升級** | 徹底改寫 + 移除舊 toast.tsx | 1.5 | ✅ **收尾（1.5/1.5 SP）** ① sonner 1.7.1 安裝（Stage 3 已裝）<br>② 移除 `components/ui/toast.tsx` + `toast.test.tsx` + `extension-card.test.tsx`<br>③ 新建 `components/ui/sonner.tsx`（client wrapper，useTheme 動態 theme prop）<br>④ `extension-card.tsx` 改用 `toast.success()` / `toast.error()` from sonner<br>⑤ `extensions-page-client.tsx` 移除 ToastProvider wrapper<br>⑥ `app/layout.tsx` 在 ThemeProvider 內加 `<Toaster />`<br>⑦ 13 個守護測試（tech-058）+ 4 個 E2E（含 light + dark 截圖） |
+| **P3** | Dead code + null date | 0 | ✅ **收尾** ① Stage 1 reviewer 提的 dead code（get handler 268-269）<br>② Sprint 18 留下的 `publishedAt` null date 處理（Zod optional + create input 自動 null + update input 保留 null + UI form 不傳 publishedAt 預設 null） |
+| **P3.5** | Event 500 + Hook 註冊（user 報） | 1.5 | ✅ **收尾** ① Bug A：dynamic-handler.ts 4 個 handler（create/update/del/transition）包 try/catch + sanitizeErrorMessage（避免 500 + 暴露 SQL/內部錯誤）<br>② Bug B：hooks-registry.ts 中央映射表 + `registerAllExtensions()` 在 route.ts setup() 內呼叫（修「`Cannot read properties of undefined (reading 'cancelled')`」之前未註冊的 hook）<br>③ `lib/runtime/error-sanitizer.ts`（60 行，SAFE_PATTERNS = Zod + 業務前綴 + 中文必填/格式）<br>④ 13 個守護測試（tech-056，含 reviewer 第二輪抓到漏的 `beforeCreateTodo`）<br>⑤ 3 個 E2E（含截圖 tech-056-event-error-ui.png） |
+
+### Sprint 20 收尾紀錄
+
+> **Stage 1 收尾（1.5/1.5 SP）** — 2026-08-26
+> - 改動：新建 `components/ui/sheet.tsx`（DialogPrimitive + cva 4 sides）；改 `dynamic-detail-client.tsx`（SheetTrigger 包 Button + onSuccess callback）；改 `dynamic-form-client.tsx`（加 onSuccess prop）；改 `ui-config.ts`（DetailUIConfig.formConfig + buildFormUIConfig 接受 mode）
+> - 測試：12 個守護測試（tech-053）+ 3 個 E2E（含截圖） + tech-046 同步更新反映 SheetTrigger 變更
+> - Reviewer 提 3 個 P2 Finding：① 守護測試語義過寬（已修） ②「- 新增」後缀錯位（已修：buildFormUIConfig 依 mode 動態） ③ 既有 dead code `dynamic-handler.ts:268-269`（P3 留待後續清理）
+> - 4 Gate 全綠：Gate 1 TDD (紅→綠)、Gate 2 lint/typecheck、Gate 3 regression (77 files / 881 vitest)、Gate 4 reviewer + E2E
+
+> **Stage 2 收尾（1/1 SP）** — 2026-08-26
+> - 改動：新建 `components/ui/tooltip.tsx`（shadcn 標準 Radix primitive + TooltipProvider）；新建 `components/admin/sortable-header-cell.tsx`（client wrapper，封裝 Tooltip + URL 組裝）；改 `app/admin/crud/[spec]/page.tsx`（移除直接用 Tooltip + icon + buildSortHref function，改用 SortableHeaderCell）
+> - 安裝：@radix-ui/react-tooltip@1.2.16
+> - 測試：11 個守護測試（tech-054）+ 2 個 E2E（含截圖 tech-054-tooltip-sortable.png）+ tech-052 同步更新反映 SortableHeaderCell 架構
+> - 架構：Server Component（list page）透過 client wrapper（SortableHeaderCell）使用 Tooltip，避免把整個 list page 變 client；Server→Client 不傳 function prop（URL 內聯用 URLSearchParams 組裝）
+> - Reviewer 提 4 個 P2 Finding：① TooltipProvider 重複建立（**接受留 P3**：未來可抽 SortableHeader 整個 TableHeader 共享 Provider） ② 註解誤導（已修） ③ Icon 缺少 a11y 標註（已修：icon aria-hidden + link aria-label） ④ 冗餘型別斷言（已修：list page 改傳原值）
+> - 4 Gate 全綠：Gate 1 TDD (6 failed → 11 passed)、Gate 2 lint/typecheck、Gate 3 regression (78 files / 892 vitest)、Gate 4 reviewer + E2E
+
+> **P3 收尾（0 SP）** — 2026-08-26
+> - 改動：新建 `tests/integration/tech-055-p3-dead-code-null-date.test.ts`（2 守護測試）；改 `lib/runtime/dynamic-handler.ts`（get handler 移除 dead code line 268-269；Zod schema `publishedAt` 改 optional；create input 自動加 publishedAt: null；update input 保留型別）；改 `app/admin/crud/[spec]/dynamic-form-client.tsx`（publishedAt 欄位不傳，預設 null）
+> - 4 Gate 全綠：Gate 1 TDD (2 passed)、Gate 2 lint/typecheck、Gate 3 regression (79 files / 894 vitest)、Gate 4 reviewer OK
+
+> **P3.5 收尾（1.5 SP）** — 2026-08-26
+> - 改動：新建 `lib/runtime/error-sanitizer.ts`（60 行，sanitizeErrorMessage + SAFE_PATTERNS）；改 `lib/runtime/dynamic-handler.ts`（create/update/del/transition 4 個 handler 包 try/catch + sanitizeErrorMessage；invokeHook 回傳邏輯修正 `(r as { data: ... }).data` → `r as Record<string, unknown>`）；改 `lib/extensions/hooks-registry.ts`（+`beforeCreateTodo` import + safeRegister）；改 `app/api/crud/[spec]/route.ts`（setup() 內呼叫 `registerAllExtensions()`）；新建 `tests/integration/tech-056-p3-5-hook-registration-error-handling.test.ts`（10 → 13 測試，含 reviewer 第二輪抓到漏的 `beforeCreateTodo`）；新建 `tests/e2e/tech-056-p3-5-event-create-error-handling.spec.ts`（3 E2E）
+> - 架構：手動映射表（vs 自動掃描 manifest）；registry 完整性靠「completeness guard 測試」保護；safeRegister 用 try/catch 容錯「already registered」（dev hot reload 安全）；error-sanitizer 只允許 SAFE_PATTERNS（Zod / 業務錯誤）暴露；try/catch 範圍只包 hook + Prisma 區塊，不包 Zod/auth/early return
+> - Reviewer 第一輪：攔截 `beforeCreateTodo` 漏註冊問題（blocking）；第二輪：OK with notes（5 個 P2/P3 不阻 merge）
+> - 4 Gate 全綠：Gate 1 TDD (3 failed → 13 passed)、Gate 2 lint/typecheck、Gate 3 regression (80 files / 907 vitest)、Gate 4 reviewer + E2E
+
+> **Stage 3 收尾（1.5/1.5 SP）** — 2026-08-26
+> - 改動：新建 `components/theme/theme-provider.tsx`（~30 行，client component 包 NextThemesProvider）；新建 `components/theme/theme-toggle.tsx`（~50 行，client component，DropdownMenu 三選項 + Sun/Moon/Monitor icons）；改 `app/layout.tsx`（body 內加 ThemeProvider）；改 `app/admin/admin-sidebar.tsx`（user info 下、登出上加 `<ThemeToggle />`）；安裝 `next-themes 0.4.6`
+> - 架構：ThemeProvider attribute="class" 配合 tailwind `darkMode: ['class']`；defaultTheme="system" 尊重 OS 偏好；enableSystem + disableTransitionOnChange
+> - 測試：15 個守護測試（tech-057）+ 3 個 E2E（含截圖 tech-057-dark-mode.png，整頁深色確認）
+> - 4 Gate 全綠：Gate 1 TDD (15 passed)、Gate 2 lint/typecheck、Gate 3 regression (81 files / 922 vitest)、Gate 4 reviewer + E2E
+
+> **Stage 4 收尾（1.5/1.5 SP）** — 2026-08-26
+> - 改動：新建 `components/ui/sonner.tsx`（~25 行，client component，包 SonnerToaster + position="top-right" + richColors + closeButton + duration 4000 + useTheme 動態 theme prop）；改 `app/layout.tsx`（ThemeProvider 內加 `<Toaster />`）；改 `components/admin/extension-card.tsx`（useToast() show() → toast.success() / toast.error() from sonner）；改 `app/admin/extensions/extensions-page-client.tsx`（移除 ToastProvider wrapper）；**刪除**：`components/ui/toast.tsx` + `components/ui/toast.test.tsx` + `components/admin/extension-card.test.tsx`（後者依賴 ToastProvider wrapper，整個移除）；**移除依賴**：`@radix-ui/react-toast`（pnpm remove，package.json 死依賴）
+> - 架構：徹底改寫，無兼容層，無 useToast shim；Toaster 在 root layout（ThemeProvider 同級，全站共用）；呼叫端對稱改寫（toast.success() / toast.error()）
+> - 測試：13 個守護測試（tech-058，含 reviewer 第二輪加的 `theme prop` 防 regression 守護）+ 4 個 E2E（含 light + **dark** 截圖 tech-058-sonner-toast-dark.png）
+> - Reviewer 第一輪：BLOCK（1 P1 dark mode 整合缺口 + 1 P2 死依賴 + 1 P3 恆真斷言）；第二輪：MERGE OK with notes（1 P3 housekeeping note：`bun.lock` 陳舊，非功能問題）
+> - 4 Gate 全綠：Gate 1 TDD (11 failed → 13 passed)、Gate 2 lint/typecheck、Gate 3 regression (80 files / 923 vitest)、Gate 4 reviewer + E2E
+
+## 🏆 Sprint 20 全收尾（5.5 SP + P3 + P3.5 = 7 SP）
+
+> **日期**: 2026-08-26
+> **總 SP**: 7（原 5.5 + P3.5 是 user 報的新 bug，+1.5）
+> **測試基線**: Sprint 19 866 → Sprint 20 收尾 **923**（+57）
+> **檔案基線**: Sprint 19 74 → Sprint 20 收尾 **80**（+6：sheet.tsx、tooltip.tsx、sonner.tsx、theme-provider.tsx、theme-toggle.tsx、error-sanitizer.tsx）
+> **截圖**: 5 張（tech-053-sheet-open、tech-054-tooltip-sortable、tech-056-event-error-ui、tech-057-dark-mode、tech-058-sonner-toast-light + dark）
+
+### 技術債（下一個 Sprint 安排）
+
+| 优先级 | 項目 | 描述 | 文件 |
+|---|---|---|---|
+| **P2** | list/get handler 沒 try/catch | DB 拋錯 → 500（Prisma 錯誤訊息暴露給前端）| `lib/runtime/dynamic-handler.ts` |
+| **P2** | Sanitizer SAFE_PATTERNS 漏 | `Cannot register for cancelled/past event` 在 production 被過濾為通用「提交失敗」 | `lib/runtime/error-sanitizer.ts` |
+| **P3** | Hook type contract vs runtime 不一致 | hook-sdk.ts 型別要求回傳完整 ctx，但 4 個 production hook 全 return data | `lib/hooks/hook-sdk.ts` |
+| **P3** | Registry completeness regex 不支援嵌套 JSON | `"hooks"\s*:\s*\{([^{}]*)\}` 不支援嵌套 JSON 物件 | `lib/extensions/hooks-registry.ts` |
+| **P3** | State machine 錯誤在 production 被過濾 | `StateMachine "x" 拒絕 event "y"` 不匹配 SAFE_PATTERNS | `lib/runtime/error-sanitizer.ts` |
+| **P3** | TooltipProvider 重複建立 | 每個 SortableHeaderCell 各自包 Provider（10 欄位 = 10 Provider），狀態隔離（純優化）。未來可抽 SortableHeader 整個 TableHeader 共享 | `components/admin/sortable-header-cell.tsx:59` |
+| **P3** | `bun.lock` 陳舊 | 之前用 Bun 安裝留下，非 pnpm 流程用（CI 用 pnpm install --frozen-lockfile，不讀 bun.lock） | `bun.lock` |
+
+**架構決策（重要）**：
+- **ThemeProvider**（next-themes）：全局主題（Light/Dark/System），放 `app/layout.tsx`
+- **Extension 自有樣式**：保持獨立（不需要知道 dark mode），與全局主題共存
+- **不使用 Extension 機制**做 dark mode（避免 mountPoints 未實作的衝突）
+
+**不在 Sprint 20 範圍**：
+- ❌ mountPoints 機制（留 Sprint 21+）
+- ❌ i18n（留 Sprint 22+）
+- ❌ Storybook（留 Sprint 22+）
+
+**對話記錄**：
+> Date Time： 2026-08-26 14:30
+> 用戶：Sprint 20 — UI 元件擴充（Sheet / Toast / Tooltip / dark mode）
+> BA(我)：拆 4 Stage：Sheet 1.5 SP + Tooltip 1 SP + Dark mode 2 SP + Toast 擴充測試 1 SP = 5.5 SP
+> 用戶：Toast 改升級 sonner（不擴充測試）— 升級成本修訂 1.5 SP
+> 用戶：Dark mode 不走 Extension 機制，用 next-themes 全局 ThemeProvider；Extension 自有樣式獨立
+> BA(我)：揭露 mountPoints 機制未實作成本，用戶接受 B 方案（next-themes）
+> BA(我)：Toast 用「徹底乾淨改寫」（移除 useToast() hook 和 ToastProvider）
+> BA(我)：Sheet 場景選 A（detail page 抽屜式編輯）
+> 用戶：Tooltip 用 A（基本 + 1 個驗證場景）
+> 用戶：確認 A，寫入 backlog 然後進入 Design Gate
 
 ### Sprint 15 進度（Runtime Spec 精簡化）
 

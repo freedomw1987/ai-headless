@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 20 — UI 元件擴充 + 全局主題切換</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg: #f9fafb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 24px;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    header {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
+      color: white;
+      padding: 32px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(79, 70, 229, 0.2);
+    }
+    header h1 { font-size: 28px; margin-bottom: 12px; }
+    header p { opacity: 0.9; font-size: 15px; margin-top: 8px; }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .meta-item {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .meta-item strong { display: block; opacity: 0.8; font-size: 12px; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+    }
+    .card h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-icon {
+      width: 32px; height: 32px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+    }
+    .status-pill {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .status-done { background: #d1fae5; color: #065f46; }
+    .status-partial { background: #fef3c7; color: #92400e; }
+    .status-fail { background: #fee2e2; color: #991b1b; }
+    .key-results { list-style: none; }
+    .key-results li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .key-results li:last-child { border-bottom: none; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    th { background: #f3f4f6; font-weight: 600; }
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "SF Mono", Monaco, monospace;
+      font-size: 13px;
+    }
+    .stage-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .stage-card {
+      background: linear-gradient(135deg, #eef2ff 0%, #fae8ff 100%);
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #e0e7ff;
+    }
+    .stage-card.complete {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      border-color: #6ee7b7;
+    }
+    .stage-card h4 { font-size: 16px; margin-bottom: 8px; }
+    .stage-card .sp { font-size: 13px; color: var(--muted); }
+    .stage-card .sp-val { font-size: 24px; font-weight: 700; color: var(--success); }
+    .next-steps { display: grid; gap: 12px; }
+    .step-card {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary);
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .progress-bar {
+      display: flex;
+      gap: 4px;
+      margin: 12px 0;
+    }
+    .progress-segment {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      background: var(--border);
+      position: relative;
+    }
+    .progress-segment.done { background: var(--success); }
+    .progress-segment.partial { background: var(--warning); }
+    .progress-segment.fail { background: var(--danger); }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .stat {
+      text-align: center;
+      padding: 16px;
+      background: linear-gradient(135deg, #eef2ff 0%, #fae8ff 100%);
+      border-radius: 12px;
+    }
+    .stat-val {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 32px;
+      padding: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <h1>🚀 Sprint 20 — UI 元件擴充 + 全局主題切換</h1>
+      <p>從 shadcn/ui 元件、next-themes dark mode，到 sonner Toast 升級，並修復緊急 Event 500 bug</p>
+      <div style="font-size: 14px; opacity: 0.9; margin-top: 12px;">
+        <span class="status-pill status-done">✅ 100% 完成</span>
+        <span style="margin-left: 8px;">交付日期：2026-08-26</span>
+      </div>
+      <div class="meta-grid">
+        <div class="meta-item"><strong>Sprint</strong>Sprint 20</div>
+        <div class="meta-item"><strong>總 SP</strong>7（原 5.5 + P3.5 緊急 bug）</div>
+        <div class="meta-item"><strong>Stages</strong>4 + P3 + P3.5</div>
+        <div class="meta-item"><strong>交付者</strong>Agent</div>
+      </div>
+    </header>
+
+    <!-- 統計數據 -->
+    <section class="card">
+      <h2><span class="card-icon">📊</span>交付數據一覽</h2>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-val">923</div>
+          <div class="stat-label">vitest 通過 / 總數</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">80</div>
+          <div class="stat-label">測試檔案數</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">17</div>
+          <div class="stat-label">E2E 測試（Sprint 20）</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">+57</div>
+          <div class="stat-label">新增 vitest（Sprint 19 → 20）</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. Sprint 20 Stages 總覽 -->
+    <section class="card">
+      <h2><span class="card-icon">🎯</span>Sprint 20 Stages 全部完成</h2>
+      <div class="stage-grid">
+        <div class="stage-card complete">
+          <h4>🎨 Stage 1 — Sheet</h4>
+          <div class="sp-val">1.5/1.5 SP</div>
+          <div class="sp">shadcn Sheet + detail 抽屜編輯</div>
+        </div>
+        <div class="stage-card complete">
+          <h4>💬 Stage 2 — Tooltip</h4>
+          <div class="sp-val">1/1 SP</div>
+          <div class="sp">Radix Tooltip + sortable header</div>
+        </div>
+        <div class="stage-card complete">
+          <h4>🌙 Stage 3 — Dark mode</h4>
+          <div class="sp-val">1.5/1.5 SP</div>
+          <div class="sp">next-themes + ThemeToggle</div>
+        </div>
+        <div class="stage-card complete">
+          <h4>🔔 Stage 4 — Toast sonner</h4>
+          <div class="sp-val">1.5/1.5 SP</div>
+          <div class="sp">徹底改寫 + 移除舊 toast</div>
+        </div>
+        <div class="stage-card complete">
+          <h4>🧹 P3 — Tech debt</h4>
+          <div class="sp-val">0 SP</div>
+          <div class="sp">Dead code + null date</div>
+        </div>
+        <div class="stage-card complete">
+          <h4>🚨 P3.5 — Event 500 緊急 bug</h4>
+          <div class="sp-val">1.5 SP</div>
+          <div class="sp">Hook 註冊 + 4 handler try/catch + sanitizer</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 關鍵成果 -->
+    <section class="card">
+      <h2><span class="card-icon">✨</span>關鍵成果</h2>
+      <ul class="key-results">
+        <li>✅ <strong>Sheet 抽屜式編輯上線</strong>（detail page 右側滑出 + 表單預填）</li>
+        <li>✅ <strong>Tooltip 鍵盤 + a11y 內建</strong>（list sortable header）</li>
+        <li>✅ <strong>Dark mode 全站可用</strong>（Light/Dark/System 三模式 + localStorage 持久化 + System 自動切換）</li>
+        <li>✅ <strong>Toast 全面升級 sonner</strong>（綠/紅配色 + 自動 dismiss + 主題同步）</li>
+        <li>✅ <strong>緊急修復 Event 500 + Hook 註冊</strong>（4 個 handler + 中央映射表 + error sanitizer）</li>
+        <li>✅ <strong>4 Stages + P3 + P3.5 全部 4 Gate 全綠</strong>（TDD + lint + regression + reviewer）</li>
+        <li>✅ <strong>5 張 E2E 截圖留底</strong>（Sheet / Tooltip / Event error UI / Dark mode / Sonner toast light + dark）</li>
+      </ul>
+    </section>
+
+    <!-- 3. AC 驗收對應 -->
+    <section class="card">
+      <h2><span class="card-icon">📋</span>驗收標準對應（全部 AC ✅）</h2>
+      <div class="progress-bar">
+        <div class="progress-segment done" title="Sheet Stage 1 — 6 AC"></div>
+        <div class="progress-segment done" title="Tooltip Stage 2 — 4 AC"></div>
+        <div class="progress-segment done" title="Dark mode Stage 3 — 5 AC"></div>
+        <div class="progress-segment done" title="Toast sonner Stage 4 — 5 AC"></div>
+        <div class="progress-segment done" title="P3 Tech debt — 3 AC"></div>
+        <div class="progress-segment done" title="P3.5 Event 500 — 4 AC"></div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Stage</th><th>AC 數</th><th>結果</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Stage 1 — Sheet</td><td>6 AC</td><td><span class="status-pill status-done">✅ 6/6</span></td></tr>
+          <tr><td>Stage 2 — Tooltip</td><td>4 AC</td><td><span class="status-pill status-done">✅ 4/4</span></td></tr>
+          <tr><td>Stage 3 — Dark mode</td><td>5 AC</td><td><span class="status-pill status-done">✅ 5/5</span></td></tr>
+          <tr><td>Stage 4 — Toast sonner</td><td>5 AC</td><td><span class="status-pill status-done">✅ 5/5</span></td></tr>
+          <tr><td>P3 — Tech debt</td><td>3 AC</td><td><span class="status-pill status-done">✅ 3/3</span></td></tr>
+          <tr><td>P3.5 — Event 500 緊急 bug</td><td>4 AC</td><td><span class="status-pill status-done">✅ 4/4</span></td></tr>
+          <tr style="font-weight: 700; background: #f9fafb;">
+            <td>總計</td><td>27 AC</td><td><span class="status-pill status-done">✅ 27/27（100%）</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 4. 測試基線對比 -->
+    <section class="card">
+      <h2><span class="card-icon">📈</span>測試基線對比（Sprint 19 → 20）</h2>
+      <table>
+        <thead><tr><th>階段</th><th>vitest tests</th><th>files</th><th>delta</th></tr></thead>
+        <tbody>
+          <tr><td>Sprint 19 baseline</td><td>866</td><td>74</td><td>—</td></tr>
+          <tr><td>Sprint 20 Stage 1 收尾</td><td>881</td><td>77</td><td>+15 / +3</td></tr>
+          <tr><td>Sprint 20 Stage 2 收尾</td><td>892</td><td>78</td><td>+11 / +1</td></tr>
+          <tr><td>Sprint 20 P3 收尾</td><td>894</td><td>79</td><td>+2 / +1</td></tr>
+          <tr><td>Sprint 20 P3.5 收尾</td><td>907</td><td>80</td><td>+13 / +1</td></tr>
+          <tr><td>Sprint 20 Stage 3 收尾</td><td>922</td><td>81</td><td>+15 / +1</td></tr>
+          <tr style="font-weight: 700; background: #f9fafb;">
+            <td>Sprint 20 Stage 4 收尾</td><td>923</td><td>80</td><td>+1 / -1</td>
+          </tr>
+          <tr style="font-weight: 700; color: var(--success); background: #d1fae5;">
+            <td>總增量（Sprint 19 → 20）</td><td>923</td><td>80</td><td>+57 / +6</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 12px; color: var(--muted); font-size: 13px;">
+        💡 Stage 4 file 數 -1 是因為刪除 <code>extension-card.test.tsx</code>（依賴 ToastProvider wrapper）
+      </p>
+    </section>
+
+    <!-- 5. 改動檔案摘要 -->
+    <section class="card">
+      <h2><span class="card-icon">📝</span>改了什麼（精選）</h2>
+      <table>
+        <thead><tr><th>類型</th><th>檔案</th><th>Stage</th></tr></thead>
+        <tbody>
+          <tr><td>➕ 新增</td><td><code>components/ui/sheet.tsx</code></td><td>Stage 1</td></tr>
+          <tr><td>➕ 新增</td><td><code>components/ui/tooltip.tsx</code></td><td>Stage 2</td></tr>
+          <tr><td>➕ 新增</td><td><code>components/theme/theme-provider.tsx</code></td><td>Stage 3</td></tr>
+          <tr><td>➕ 新增</td><td><code>components/theme/theme-toggle.tsx</code></td><td>Stage 3</td></tr>
+          <tr><td>➕ 新增</td><td><code>components/ui/sonner.tsx</code></td><td>Stage 4</td></tr>
+          <tr><td>➕ 新增</td><td><code>lib/runtime/error-sanitizer.ts</code></td><td>P3.5</td></tr>
+          <tr><td>✏️ 修改</td><td><code>app/layout.tsx</code></td><td>Stage 3 + 4</td></tr>
+          <tr><td>✏️ 修改</td><td><code>lib/runtime/dynamic-handler.ts</code></td><td>P3 + P3.5</td></tr>
+          <tr><td>✏️ 修改</td><td><code>lib/extensions/hooks-registry.ts</code></td><td>P3.5</td></tr>
+          <tr><td>✏️ 修改</td><td><code>app/api/crud/[spec]/route.ts</code></td><td>P3.5</td></tr>
+          <tr><td>✏️ 修改</td><td><code>components/admin/extension-card.tsx</code></td><td>Stage 4</td></tr>
+          <tr><td>🗑️ 刪除</td><td><code>components/ui/toast.tsx</code></td><td>Stage 4</td></tr>
+          <tr><td>🗑️ 刪除</td><td><code>components/ui/toast.test.tsx</code></td><td>Stage 4</td></tr>
+          <tr><td>🗑️ 刪除</td><td><code>components/admin/extension-card.test.tsx</code></td><td>Stage 4</td></tr>
+          <tr><td>➖ 移除依賴</td><td><code>@radix-ui/react-toast</code></td><td>Stage 4</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 6. E2E 截圖 -->
+    <section class="card">
+      <h2><span class="card-icon">🖼️</span>E2E 截圖（Sprint 20 留底）</h2>
+      <table>
+        <thead><tr><th>Stage</th><th>截圖檔名</th><th>內容</th></tr></thead>
+        <tbody>
+          <tr><td>Stage 1</td><td><code>tech-053-sheet-open.png</code></td><td>Sheet 抽屜編輯開啟</td></tr>
+          <tr><td>Stage 2</td><td><code>tech-054-tooltip-sortable.png</code></td><td>Tooltip + sortable header</td></tr>
+          <tr><td>P3.5</td><td><code>tech-056-event-error-ui.png</code></td><td>Event 500 錯誤 UI（sanitizer 處理後）</td></tr>
+          <tr><td>Stage 3</td><td><code>tech-057-dark-mode.png</code></td><td>Dark mode 全頁面</td></tr>
+          <tr><td>Stage 4</td><td><code>tech-058-sonner-toast.png</code></td><td>Sonner success toast（light mode）</td></tr>
+          <tr><td>Stage 4</td><td><code>tech-058-sonner-toast-dark.png</code></td><td>Sonner toast（dark mode，P1 修復驗證）</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 7. 已知問題 -->
+    <section class="card">
+      <h2><span class="card-icon">⚠️</span>已知問題 / 限制</h2>
+      <p style="margin-bottom: 12px; color: var(--muted);">
+        老實標記已發現但這次沒解決的問題，避免「假完成」。
+      </p>
+      <table>
+        <thead><tr><th>問題</th><th>嚴重性</th><th>位置</th></tr></thead>
+        <tbody>
+          <tr><td>list/get handler 仍無 try/catch</td><td><span class="status-pill status-partial">P2</span></td><td><code>lib/runtime/dynamic-handler.ts</code></td></tr>
+          <tr><td>Sanitizer SAFE_PATTERNS 漏</td><td><span class="status-pill status-partial">P2</span></td><td><code>lib/runtime/error-sanitizer.ts</code></td></tr>
+          <tr><td>Hook type contract vs runtime 不一致</td><td><span class="status-pill status-partial">P3</span></td><td><code>lib/hooks/hook-sdk.ts</code></td></tr>
+          <tr><td>Registry completeness regex 不支援嵌套</td><td><span class="status-pill status-partial">P3</span></td><td><code>lib/extensions/hooks-registry.ts</code></td></tr>
+          <tr><td>State machine 錯誤訊息被過濾</td><td><span class="status-pill status-partial">P3</span></td><td><code>lib/runtime/error-sanitizer.ts</code></td></tr>
+          <tr><td>TooltipProvider 重複建立</td><td><span class="status-pill status-partial">P3</span></td><td><code>sortable-header-cell.tsx</code></td></tr>
+          <tr><td><code>bun.lock</code> 陳舊</td><td><span class="status-pill status-partial">P3</span></td><td>repo root（housekeeping）</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 8. 下一步建議 -->
+    <section class="card" style="background: linear-gradient(135deg, #eef2ff 0%, #fae8ff 100%); border: none;">
+      <h2><span class="card-icon">🚀</span>下一步建議</h2>
+
+      <h3 style="margin-top: 16px; margin-bottom: 12px; color: var(--primary);">立即可做（建議優先）</h3>
+      <div class="next-steps">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div>
+            <strong>建立 Sprint 21 規劃</strong>
+            <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">
+              處理 P2 tech debt（list/get try/catch + Sanitizer SAFE_PATTERNS 補完），預估 1.5 SP
+            </p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div>
+            <strong>清理 <code>bun.lock</code></strong>
+            <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">
+              <code>rm bun.lock</code> — 之前用 Bun 安裝留下，CI 不讀，避免誤導
+            </p>
+          </div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div>
+            <strong>決定 Sprint 21 大方向</strong>
+            <p style="color: var(--muted); font-size: 14px; margin-top: 4px;">
+              穩定化（P2 tech debt + E2E 持久化測試）vs 加新功能（mountPoints / Tiptap）
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 20px; margin-bottom: 12px; color: var(--primary);">下一個 Sprint 考慮</h3>
+      <ul style="padding-left: 20px;">
+        <li>P2 tech debt（list/get try/catch + Sanitizer patterns）— 1.5 SP</li>
+        <li>mountPoints 機制實作（讓 Extension 注入 React component）— 3 SP</li>
+        <li>Hook contract 統一（hook-sdk.ts 型別與 runtime 一致）— 0.5 SP</li>
+        <li>E2E 持久化測試框架（用 fixture reset DB）— 2 SP</li>
+      </ul>
+
+      <h3 style="margin-top: 20px; margin-bottom: 12px; color: var(--primary);">長期方向（Think Big）</h3>
+      <ul style="padding-left: 20px;">
+        <li><strong>穩定化為主</strong>：先把 P2 tech debt 清完，避免 production 因 DB / state machine 錯誤暴露內部訊息</li>
+        <li><strong>Extension 機制完整化</strong>：mountPoints 實作後，Extension 才能注入自定義 React component，durable 解釋 dark mode 是否走 Extension 機制</li>
+        <li><strong>測試金字塔升級</strong>：E2E 從 17 升到 30+（持久化 + RWD + A11y），守護測試覆蓋率從 30% 升到 60%+</li>
+      </ul>
+    </section>
+
+    <footer>
+      🌳 由 dav-submitter skill 自動產生 · 2026-08-26 20:10 · Sprint 20 (UI 元件擴充 + 全局主題切換)
+    </footer>
+
+  </div>
+</body>
+</html>

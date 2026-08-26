@@ -860,6 +860,65 @@ export interface Workflow<T> {
 
 ---
 
+## 15. Component Provider Tree（Sprint 20 新增）
+
+> **職責**：定義 Next.js App Router 下，所有 Provider 的層次結構與啟動順序。
+
+### 15.1 Provider 架構圖
+
+```
+RootLayout (app/layout.tsx)
+├── <html lang="zh-Hant" suppressHydrationWarning>  ← next-themes 需要
+│   ├── <body>
+│   │   ├── <ThemeProvider attribute="class">      ← Sprint 20 新增
+│   │   │   │  • next-themes 全局主題
+│   │   │   │  • defaultTheme="system" 預設跟隨系統
+│   │   │   │  • enableSystem 允許 Light/Dark/System
+│   │   │   │
+│   │   │   └── {children}
+│   │   │
+│   │   └── <Toaster richColors position="bottom-right" />  ← Sprint 20 新增
+│   │      │  • sonner 全局通知
+│   │      │  • 與 ThemeProvider 同級（避免主題切換後 toast 樣式未更新）
+│   │
+│   └── (children = 各路由 layout)
+└── </body>
+</html>
+```
+
+### 15.2 設計原則
+
+| 原則 | 說明 |
+|---|---|
+| **ThemeProvider 在 RootLayout** | 全局主題，不能放在 `/admin` 子 layout（會造成非 /admin 頁面無主題）|
+| **Toaster 與 ThemeProvider 同級** | 確保 toast 能套用當前主題 CSS variables |
+| **Toaster 不在 children 內** | 避免 layout re-render 時 toast 重新掛載 |
+| **`suppressHydrationWarning` 在 `<html>`** | next-themes 強制要求（避免 SSR/CSR 主題不一致警告）|
+
+### 15.3 /admin 子 layout 的 Provider 樹
+
+```
+AdminLayout (app/admin/layout.tsx)
+├── (redirect to /login if !user)                   ← auth gate
+├── <div className="min-h-screen bg-muted/30 flex">
+│   ├── <AdminSidebar user={user} ... />            ← 內含 ThemeToggle 按鈕
+│   └── <main className="flex-1 p-8">{children}</main>
+```
+
+**AdminLayout 不放 ThemeProvider**（已經在 RootLayout）。ThemeToggle 按鈕由 sidebar 直接讀 `useTheme()` from `next-themes`。
+
+### 15.4 Extension 自有樣式
+
+| 機制 | 位置 | 與 dark mode 關係 |
+|---|---|---|
+| **Extension 元件** | `extensions/<name>/components/*.tsx` | 自動繼承 globals.css CSS variables |
+| **Extension 頁面** | `extensions/<name>/pages/*.tsx` | 同上 |
+| **Extension 自有 CSS** | `extensions/<name>/styles/*.css` | 可用 CSS variables，若自定義顏色需用 `hsl(var(--xxx))` 格式 |
+
+**重要**：Extension **不需要知道 dark mode**。所有顏色透過 globals.css 的 CSS variables 統一管理，light/dark 自動切換。
+
+---
+
 **相關文檔**：
 - 📐 [UX/UI 設計](./DESIGN.md)
 - 📝 [JSON 功能規範](./specs/json-spec.md)

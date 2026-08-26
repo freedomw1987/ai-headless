@@ -356,6 +356,52 @@ Code              text-sm   (14px)  font-mono     (JetBrains Mono)
   Danger variant:  bg danger-50     text danger-700
 ```
 
+### 6.6 抽屜（Sheet — Sprint 20 新增）
+
+```
+  從視窗右側滑入的模態面板
+  寬度: w-full sm:max-w-sm  (mobile 全寬 / desktop 400px)
+  背景: white            (light)  /  popover (dark)
+  陰影: shadow-lg        (右側陰影明顯)
+  動畫: slide-in-from-right 200ms ease-out
+  用途: detail page 抽屜式編輯、其他不需切頁的操作
+```
+
+### 6.7 提示框（Tooltip — Sprint 20 新增）
+
+```
+  hover / focus 觸發的浮動提示
+  位置: top / right / bottom / left  (預設 top)
+  背景: primary-900      文字: white         rounded-md
+  padding: px-3 py-1.5   text-xs
+  動畫: fade-in + zoom-in 100ms
+  鍵盤: Esc 關閉、Tab 導航（Radix UI 內建）
+```
+
+### 6.8 通知（Toast / Sonner — Sprint 20 升級）
+
+```
+  螢幕右下角浮動通知（Sonner）
+  寬度: w-[356px]         最大 5 則佇列
+  背景: white             (light)  /  popover (dark)
+  陰影: shadow-lg
+  變體: default / success / error / warning
+  動畫: slide-in-from-right 200ms
+  自動消失: success/info 4 秒、error 6 秒
+  取代舊 toast.tsx（徹底改寫，無兼容層）
+```
+
+### 6.9 主題切換（ThemeToggle — Sprint 20 新增）
+
+```
+  圖示按鈕（Sun / Moon / Monitor 循環）
+  位置: /admin sidebar 頂部 / header
+  狀態: light → dark → system → light 循環
+  持久化: localStorage (next-themes 內建)
+  三模式: Light / Dark / System
+  系統跟隨: 偵測 prefers-color-scheme media query
+```
+
 ---
 
 ## 7. 佈局原則（Layout Principles）
@@ -405,6 +451,34 @@ Code              text-sm   (14px)  font-mono     (JetBrains Mono)
 3. **shadcn/ui 優先**：能用現成組件就用，AI 自己寫的組件風格要跟 shadcn 一致
 4. **icon 用 lucide-react**，統一 icon 庫
 5. **必須響應式**：每個組件都要考慮 mobile 場景
+
+### 8.1a 已採用的 shadcn/ui 元件清單（截至 Sprint 20）
+
+> 新增元件時，記得同步更新此表 + `components/ui/` 元件源碼。
+
+| Sprint | 元件 | 用途 | 設計細節見 |
+|---|---|---|---|
+| 17 | Badge | 標籤 / 狀態徽章 | §6.5 |
+| 17 | Empty | 空狀態 | §7.2 |
+| 17 | Card + 6 sub | 卡片容器 | §6.3 |
+| 17 | Table + 7 sub | 表格列表 | §6.4 |
+| 17 | Input / Textarea / Label | 表單輸入 | §6.2 |
+| 17 | Dialog | 對話框 | — |
+| 18 | DropdownMenu + 14 sub | 下拉選單 | — |
+| 18 | Pagination + 7 sub | 分頁導航 | — |
+| 18 | Skeleton | 載入骨架屏 | — |
+| 19 | Select | 下拉選擇 | — |
+| 19 | Switch | 開關 | — |
+| **20** | **Sheet** | **抽屜面板** | **§6.6** |
+| **20** | **Tooltip** | **浮動提示** | **§6.7** |
+| **20** | **Sonner (Toast)** | **通知** | **§6.8** |
+
+**輔助套件**：
+- **next-themes**（Sprint 20 新增）— 主題切換（Light/Dark/System）
+- **Radix UI** — 所有複雜互動元件的底座（鍵盤導航 + a11y 內建）
+
+**未採用的 shadcn 元件**（按需 Sprint 21+）：
+- Accordion、Alert、Avatar、Checkbox、Combobox、Command、Form、Popover、RadioGroup、Separator、Tabs、Textarea、Toast（已升級 sonner）
 
 ### 8.2 AI 必須輸出的 metadata
 
