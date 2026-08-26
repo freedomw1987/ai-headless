@@ -253,15 +253,22 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
     }
 
     // 平行查詢 items + total（效能優化）
-    const [items, total] = await Promise.all([
-      modelClient.findMany({
-        where,
-        orderBy: { [sortField]: sortOrder },
-        skip,
-        take: pageSize,
-      }),
-      modelClient.count({ where }),
-    ]);
+    // TD-401: try/catch 避免 DB 拋錯 → 500 + 暴露 Prisma 訊息
+    let items: unknown[];
+    let total: number;
+    try {
+      [items, total] = await Promise.all([
+        modelClient.findMany({
+          where,
+          orderBy: { [sortField]: sortOrder },
+          skip,
+          take: pageSize,
+        }),
+        modelClient.count({ where }),
+      ]);
+    } catch (e) {
+      return { status: 500, error: sanitizeErrorMessage(e) };
+    }
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -290,10 +297,16 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
     if (!id) return { status: 400, error: 'id 必填' };
     // 讀取不強迫權限
 
-    // @ts-expect-error dynamic Prisma access
-    const item = await (db as unknown as Record<string, { findFirst: (args: unknown) => Promise<unknown> }>)[tableName].findFirst({
-      where: model.softDelete ? { id, deletedAt: null } : { id },
-    });
+    // TD-401: try/catch 避免 DB 拋錯 → 500 + 暴露 Prisma 訊息
+    let item: unknown;
+    try {
+      // @ts-expect-error dynamic Prisma access
+      item = await (db as unknown as Record<string, { findFirst: (args: unknown) => Promise<unknown> }>)[tableName].findFirst({
+        where: model.softDelete ? { id, deletedAt: null } : { id },
+      });
+    } catch (e) {
+      return { status: 500, error: sanitizeErrorMessage(e) };
+    }
     if (!item) return { status: 404, error: 'Not found' };
 
     return { status: 200, data: item };

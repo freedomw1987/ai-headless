@@ -9,7 +9,7 @@
  * 5. Disabled extension 自動擋掉
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Sprint 25: mock dynamic-permission 避免 chain 加載 next-auth (測試環境無 next/server)
 vi.mock('@/lib/auth/dynamic-permission', () => ({
@@ -81,5 +81,64 @@ describe('TECH-032 — Disabled extension 處理', async () => {
     // 所以 isExtensionEnabledByName 回 true → 通過
     // 這個 test 暫時 disable，改用更精確的測試
     expect([200, 403]).toContain(result.status);
+  });
+});
+
+// ==============================================
+// TD-401: list/get handler 應該 try/catch 避免暴露 Prisma 錯誤
+// ==============================================
+
+describe('TD-401 — Handler error handling (避免暴露 Prisma 錯誤)', () => {
+  // 重新建立 handlers 但 mock db.user.findMany 拋錯
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production'); // 模擬 production,錯誤訊息被 sanitize
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('list handler DB 拋錯 → 返回通用 500 不暴露 Prisma 訊息', async () => {
+    // mock db.findMany 拋 Prisma 錯誤
+    const { db } = await import('@/lib/db');
+    const originalFindMany = (db as any).todo?.findMany;
+    (db as any).todo = {
+      ...((db as any).todo ?? {}),
+      findMany: vi.fn().mockRejectedValue(
+        new Error('Prisma Client known: Invalid `prisma.user.findUnique()` invocation'),
+      ),
+      count: vi.fn().mockRejectedValue(
+        new Error('Prisma Client known: connection timeout'),
+      ),
+    };
+
+    const handlers = createDynamicHandlers(await loadSpec('todo'));
+    const result = await handlers.list({ user: { id: 'u1', role: 'admin' } });
+
+    expect(result.status).toBe(500);
+    // 不應暴露 Prisma 內部錯誤訊息
+    expect(JSON.stringify(result)).not.toMatch(/Prisma Client/i);
+
+    // 恢復
+    (db as any).todo.findMany = originalFindMany;
+  });
+
+  it('get handler DB 拋錯 → 返回通用 500 不暴露 Prisma 訊息', async () => {
+    const { db } = await import('@/lib/db');
+    (db as any).todo = {
+      ...((db as any).todo ?? {}),
+      findFirst: vi.fn().mockRejectedValue(
+        new Error('Prisma Client known: database connection failed'),
+      ),
+    };
+
+    const handlers = createDynamicHandlers(await loadSpec('todo'));
+    const result = await handlers.get({
+      params: { id: 'u1' },
+      user: { id: 'u1', role: 'admin' },
+    });
+
+    expect(result.status).toBe(500);
+    expect(JSON.stringify(result)).not.toMatch(/Prisma Client/i);
   });
 });
