@@ -1,12 +1,14 @@
 'use client';
 
 /**
- * /admin/roles/[id]/permissions — Client Component (Task 9)
+ * /admin/roles/[id]/permissions — Client Component (Task 9 + Sprint 22 TD-6)
  *
  * 功能:
  * - 顯示 role 詳細資訊 + permissions 矩陣
  * - checkbox 變更立即自動儲存 (debounce + 樂觀更新)
  * - 內建 role 矩陣唯讀
+ * - 動態讀取所有 permission codes (含 extension permissions)
+ *   透過 GET /api/admin/permissions 取得,自動適配 extension 新增的 permissions
  */
 
 import { useEffect, useState, useTransition, useRef, useCallback } from 'react';
@@ -17,16 +19,15 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 // ==============================================
-// 內建 permission codes（與 seed-rbac 一致）
+// 動態 permission codes (Sprint 22 TD-6)
+// 不再 hardcoded — 從 /api/admin/permissions 讀取
 // ==============================================
 
-const ALL_PERMISSIONS = [
-  { code: 'users:read', label: '讀取用戶', resource: 'Users' },
-  { code: 'users:write', label: '編輯用戶', resource: 'Users' },
-  { code: 'users:assign', label: '指派角色', resource: 'Users' },
-  { code: 'roles:read', label: '讀取角色', resource: 'Roles' },
-  { code: 'roles:write', label: '編輯角色', resource: 'Roles' },
-] as const;
+type PermissionItem = {
+  code: string;
+  resource: string;
+  label: string;
+};
 
 type Role = {
   id: string;
@@ -48,21 +49,30 @@ export function MatrixPageClient({ roleId }: Props) {
   const [selectedCodes, setSelectedCodes] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [allPermissions, setAllPermissions] = useState<PermissionItem[]>([]);
   const [, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ==============================================
-  // 載入 role
+  // 載入 role + 所有 permissions
   // ==============================================
   async function load() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/roles/${roleId}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setRole(data.data);
-      setSelectedCodes(new Set(data.data.permissions.map((p: { code: string }) => p.code)));
+      const [roleRes, permsRes] = await Promise.all([
+        fetch(`/api/admin/roles/${roleId}`),
+        fetch('/api/admin/permissions'),
+      ]);
+      if (!roleRes.ok) throw new Error(`HTTP ${roleRes.status}`);
+      if (!permsRes.ok) throw new Error(`HTTP ${permsRes.status}`);
+
+      const roleData = await roleRes.json();
+      const permsData = await permsRes.json();
+
+      setRole(roleData.data);
+      setAllPermissions(permsData.data);
+      setSelectedCodes(new Set(roleData.data.permissions.map((p: { code: string }) => p.code)));
     } catch (e) {
       setError(e instanceof Error ? e.message : '載入失敗');
     } finally {
@@ -146,7 +156,7 @@ export function MatrixPageClient({ roleId }: Props) {
   }
 
   // 按 resource 分組
-  const grouped = ALL_PERMISSIONS.reduce<Record<string, typeof ALL_PERMISSIONS[number][]>>(
+  const grouped = allPermissions.reduce<Record<string, PermissionItem[]>>(
     (acc, p) => {
       if (!acc[p.resource]) acc[p.resource] = [];
       acc[p.resource]!.push(p);
