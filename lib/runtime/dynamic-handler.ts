@@ -507,14 +507,35 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
         sm.setState(itemWithStatus.status);
         const newState = sm.transition({ event });
 
-        // @ts-expect-error dynamic Prisma access
-        const updated = await (db as unknown as Record<string, { update: (args: unknown) => Promise<unknown> }>)[tableName].update({
-          where: { id },
-          data: { status: newState },
+        // TD-516: 用 Prisma transaction + 重新查 status 避免並發 race condition
+        // - Transaction 確保讀寫原子性
+        // - 重新查 status 確認仍是 itemWithStatus.status (未被其他 transaction 改)
+        // - 若已被改, 拋錯 → catch → 409 Conflict
+        const txClient = (db as any)[tableName];
+        const updated = await txClient.$transaction(async (tx: any) => {
+          const fresh = await tx.findUnique({ where: { id } });
+          if (!fresh) throw new Error('Not found in transaction');
+          const freshStatus = (fresh as { status: string }).status;
+          if (freshStatus !== itemWithStatus.status) {
+            // 並發其他 transaction 已改 status
+            throw new Error(`Race condition: status changed from ${itemWithStatus.status} to ${freshStatus}`);
+          }
+          return tx.update({
+            where: { id },
+            data: { status: newState },
+          });
         });
 
         return { status: 200, data: updated };
       } catch (e) {
+        // TD-516: Race condition (status 被其他 transaction 改) → 409 Conflict
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.startsWith('Race condition:')) {
+          return {
+            status: 409,
+            error: msg,
+          };
+        }
         return {
           status: 400,
           error: sanitizeErrorMessage(e),

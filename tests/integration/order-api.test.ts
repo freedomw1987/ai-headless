@@ -29,6 +29,8 @@ vi.mock('@/lib/db', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    // TD-516: transitionOrder 改用 db.$transaction,需 mock
+    $transaction: vi.fn(),
   },
 }));
 
@@ -37,6 +39,17 @@ import { db } from '@/lib/db';
 describe('order-workflow - 核心 API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // TD-516: setup $transaction mock 包裹 findUniqueOrThrow/update
+    vi.mocked(db.$transaction).mockImplementation(
+      async (fn: any) =>
+        fn({
+          order: {
+            findUniqueOrThrow: vi.mocked(db.order.findUniqueOrThrow),
+            update: vi.mocked(db.order.update),
+          },
+        }),
+    );
   });
 
   describe('getOrderStateMachine', () => {

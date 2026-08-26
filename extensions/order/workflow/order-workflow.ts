@@ -83,31 +83,37 @@ export async function transitionOrder(
   event: OrderEvent,
   payload?: Record<string, unknown>,
 ) {
-  // 1. 讀 DB
-  const order = await db.order.findUniqueOrThrow({
-    where: { id: orderId },
+  // TD-516: 用 Prisma transaction + 重新查 status 避免並發 race condition
+  // - Transaction 確保讀寫原子性
+  // - 重新查 status 確認 status 仍是進入時的狀態
+  // - 若已被其他 transaction 改, 拋 'Race condition' → catch 轉 409
+  return await db.$transaction(async (tx) => {
+    // 1. 讀 DB (在 transaction 內)
+    const order = await tx.order.findUniqueOrThrow({
+      where: { id: orderId },
+    });
+
+    // 2. 建立 StateMachine + 載入現有狀態
+    const machine = getOrderStateMachine();
+    machine.setState(order.status);
+
+    // 3. 觸發 transition（無效會拋 InvalidTransitionError）
+    const newState = machine.transition({ event, payload });
+
+    // 4. 持久化 (transaction 內,原子性)
+    const updated = await tx.order.update({
+      where: { id: orderId },
+      data: {
+        status: newState,
+        // merge payload 到 stateData
+        stateData: (payload
+          ? { ...(order.stateData as Record<string, unknown>), ...payload }
+          : order.stateData) as object,
+      },
+    });
+
+    return updated;
   });
-
-  // 2. 建立 StateMachine + 載入現有狀態
-  const machine = getOrderStateMachine();
-  machine.setState(order.status);
-
-  // 3. 觸發 transition（無效會拋 InvalidTransitionError）
-  const newState = machine.transition({ event, payload });
-
-  // 4. 持久化
-  const updated = await db.order.update({
-    where: { id: orderId },
-    data: {
-      status: newState,
-      // merge payload 到 stateData
-      stateData: (payload
-        ? { ...(order.stateData as Record<string, unknown>), ...payload }
-        : order.stateData) as object,
-    },
-  });
-
-  return updated;
 }
 
 // ==============================================
