@@ -747,6 +747,31 @@ Sprint 16 完成 **Stage 1**（TECH-038b list formatter）和 **Stage 2**（TECH
 | CRUD 完整度 | Create + Read（缺 Update）| **Create + Read + Update** 完整 |
 | shadcn 元件 | Table / Card / Button / Badge / Empty / Input / Textarea / Label | **+ DropdownMenu / Pagination / Skeleton** |
 
+### Sprint 19 Stage 1 — Server Side 分頁（commit `eef3ca4`）
+
+**解決 list page 100 筆寫死上限**（Sprint 14 一路傳承下來）。
+
+- `lib/runtime/dynamic-handler.ts`：`list()` 從 `ctx.query` 讀 `page` / `pageSize`
+  - 預設 1 / 10，上限 100
+  - 用 `Promise.all` 平行查詢 `items` + `count`
+  - 回傳 `{ items, total, page, pageSize, totalPages }`
+- `app/api/crud/[spec]/route.ts`：GET handler 從 searchParams 讀 `?page=` `?pageSize=` → 傳給 `handlers.list()`
+- `app/admin/crud/[spec]/page.tsx`：加 `searchParams` prop + 解析 `page` / `pageSize`
+  - 顯示「共 N 筆資料（第 X / Y 頁）」
+  - 顯示「第 X / Y 頁（顯示第 N 到 M 筆，共 Z 筆）」分頁資訊
+- `components/admin/list-pagination-nav.tsx`：加 `mode='server'` 支援
+  - 接受 `basePath` 而非 `onPageChange`（Server Component 不能傳函數給 Client Component）
+  - PaginationLink 用 `<a href>` 組合成 URL
+
+### Sprint 19 測試基線
+
+| 項目 | Sprint 18 完成 | Sprint 19 完成 |
+|---|---|---|
+| vitest | 828 / 72 | **839 / 73**（+11）|
+| E2E | 43 | 43 |
+| Typecheck | ✅ 綠 | ✅ 綠 |
+| list 筆數上限 | 寫死 100 | **無上限（分頁）** |
+
 ---
 
 ## Sprint 1 Review Fixes（7 SP）

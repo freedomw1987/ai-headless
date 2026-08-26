@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 18 完成）
+> **最後更新**：2026-08-26（Sprint 19 Stage 1 完成）
 
 ---
 
@@ -25,6 +25,7 @@
 | **Sprint 16** | [**sprint-16.md**](./sprint-16.md) | ⚠️ partial | **67%** (2/3) | ✅ **全綠** | **list page 改 Server Component + formatter 真實套用 + RWD E2E（customRenderer 客戶端留 Sprint 17）** |
 | **Sprint 17** | [**sprint-17.md**](./sprint-17.md) | ✅ | **100%** (5.5/5.5) | ✅ **全綠** | **list/detail/form UI 改進（shadcn） + customRenderer 客戶端動態渲染（webpack dynamic import）** |
 | **Sprint 18** | [**sprint-18.md**](./sprint-18.md) | ✅ | **100%** (6.5/6.5) | ✅ **全綠** | **CRUD 編輯功能（缺 update 解決） + dropdown-menu/pagination/skeleton 三個 shadcn 元件** |
+| **Sprint 19 Stage 1** | [**sprint-19.md**](./sprint-19.md) | ✅ | **100%** (3/3) | ✅ **全綠** | **100 筆上限打破：server side 分頁（Promise.all 平行查詢 + searchParams + 分頁資訊顯示）** |
 
 ---
 
@@ -77,7 +78,18 @@
 - **detail page loading state**：從「載入中…」文字改為 4 個 Skeleton（標題/描述/3 行內容）
 - **守護測試 +36**（9+6+7+8+6）+ 4 個更新
 - **E2E 更新**：RWD 測試偵測 row 改用 `[data-testid^="row-actions-"]`（取代舊的「檢視」link 偵測）
-- **Sprint 19 待做**：list page 整合 ListPaginationNav + server side 分頁 + URL 同步
+
+## 🏆 Sprint 19 Stage 1 重點發現
+
+- **100 筆上限打破**：`take: 100` 寫死（從 Sprint 14 傳承）→ server side `take/skip` 分頁
+- **Promise.all 平行查詢**：`[findMany, count]` 平行查詢，round-trip 從 2N 變 N
+- **Server Component 架構延續**：list page 仍為 Server Component，searchParams 解析為 server side
+- **shadcn Pagination 元素就緒**（Sprint 18 Stage 2.2），Stage 2 整合即可用
+- **守護測試 +10**（4 handler + 2 route + 4 list page）
+- **手動驗證（Playwright 截圖）**：?page=1&pageSize=2 → 「共 2 筆資料（第 1 / 1 頁）」 + 2 rows 正確
+- **設計權衡**：Stage 1 簡化為文字分頁資訊（Stage 2 嵌入 ListPaginationNav + URL 同步）
+- **教訓**：「Server Component 不能傳函數給 Client Component」限制 → ListPaginationNav `mode='server'` 改用 `basePath` 而非函數 prop
+- **Sprint 19 Stage 2 待做**：list page 嵌入 ListPaginationNav + URL `?page=` 同步（1.5 SP）
 
 ## 🏆 Sprint 17 重點發現
 
@@ -97,19 +109,20 @@
 
 ## 📐 跨 Sprint 共同觀察
 
-| 觀察 | Sprint 5 | Sprint 6 | Sprint 11-14 | Sprint 15 | Sprint 16 | Sprint 17 |
-|------|----------|----------|--------------|----------|----------|-----------|
-| Reviewer P1 重要 | ✅ TD-501 | ✅ TD-601 | ✅ setExtensionEnabled race | - | - | - |
-| 重構揭露深層 bug | ✅ TD-501 | ✅ TD-508 | ✅ Compiler 揭露 11+ bug | ✅ Stage 3 formatter partial 揭露 RSC 限制 | ✅ Stage 1 揭露 Sprint 15 Stage 3 的 false claim | ✅ Stage 1.1 CardTitle semantic HTML 修正 |
-| 預防機制投資高 | ✅ JWT augmentation | ✅ no-floating-promises | ✅ Manual dev server verification | ✅ | ✅ | ✅ |
-| E2E 是下一個缺口 | ⚠️ TD-503 | ✅ 已補 | ✅ Sprint 14 E2E 29/29 綠 | ⚠️ RWD E2E 留 Sprint 16 | ✅ Sprint 16 完成 4 spec × 3 viewport = 43 E2E 全綠 | ✅ 43 E2E 全綠（未變）|
-| Typecheck ≠ 真能用 | - | - | ✅ Sprint 13/14 兩次揭露 | ✅ Sprint 15 揭露「Server Component 函數傳遞限制」 | ✅ Sprint 16 揭露「守衛測試只驗結構不等於 runtime 套用」 | ✅ Stage 1.1 CardTitle 是 `<div>` 揭露 SEO 問題 |
-| 守衛檢查演進 | - | - | Sprint 9「每個 spec 都有 disable guard」是 false claim | ✅ Sprint 15「總是 guard」修正 | ✅ Sprint 16 揭露「守衛測試需驗 runtime 執行」 | ✅ 3 個 shadcn UI 守護測試（11+11+15）|
-| SoT 擴展 | - | - | spec.json 是 manifest/API/UI 的 SoT | ✅ spec.json 是 formatter/customRenderer 的 SoT | ✅ spec.json 拆 fnRef 純 fnName 後是 formatter 唯一介面 | ✅ components/ui/ 是 shadcn 元件 SoT |
-| UI 一致性 | - | - | Sprint 13 完成 Order Demo UI | Sprint 15 partial 一致 | Sprint 16 list/detail/form 都是純 HTML | ✅ Sprint 17 **完成**（shadcn 統一 + customRenderer 真實渲染）| ✅ Sprint 18 完成（+ DropdownMenu / Pagination / Skeleton + CRUD Update）|
-| customRenderer 設計 | - | - | - | ✅ Sprint 15 `{{fn:}}` 語法（partial：僅 server side 跑） | ✅ Sprint 16 揭露 JSX server side require SyntaxError | ✅ Sprint 17 Stage 2 採用 webpack dynamic import（零 build step）| - |
-| CRUD 完整度 | - | - | Sprint 9 完成 C+R | - | - | - | ✅ Sprint 18 完成 C+R+**U** |
-| 守護測試 pattern | - | - | Sprint 9「每個 spec 都有 disable guard」是 false claim | ✅ Sprint 15「總是 guard」修正 | ✅ Sprint 16 揭露「守衛測試需驗 runtime 執行」 | ✅ 4 個 shadcn UI 守護測試（11+11+15+9） | ✅ 5 個守護測試（9+6+7+8+6）+ E2E 改 data-testid |
+| 觀察 | Sprint 5 | Sprint 6 | Sprint 11-14 | Sprint 15 | Sprint 16 | Sprint 17 | Sprint 18 | Sprint 19 Stage 1 |
+|------|----------|----------|--------------|----------|----------|-----------|-----------|------------------|
+| Reviewer P1 重要 | ✅ TD-501 | ✅ TD-601 | ✅ setExtensionEnabled race | - | - | - | - | - |
+| 重構揭露深層 bug | ✅ TD-501 | ✅ TD-508 | ✅ Compiler 揭露 11+ bug | ✅ Stage 3 formatter partial 揭露 RSC 限制 | ✅ Stage 1 揭露 Sprint 15 Stage 3 的 false claim | ✅ Stage 1.1 CardTitle semantic HTML 修正 | - | ✅ Stage 1 揭露「函數不能傳給 Client Component」限制 |
+| 預防機制投資高 | ✅ JWT augmentation | ✅ no-floating-promises | ✅ Manual dev server verification | ✅ | ✅ | ✅ | ✅ | ✅ Playwright 截圖驗證 |
+| E2E 是下一個缺口 | ⚠️ TD-503 | ✅ 已補 | ✅ Sprint 14 E2E 29/29 綠 | ⚠️ RWD E2E 留 Sprint 16 | ✅ Sprint 16 完成 4 spec × 3 viewport = 43 E2E 全綠 | ✅ 43 E2E 全綠（未變）| ✅ 43 E2E 全綠（未變）| ✅ 43 E2E 全綠（Stage 2 加 URL 同步 E2E）|
+| Typecheck ≠ 真能用 | - | - | ✅ Sprint 13/14 兩次揭露 | ✅ Sprint 15 揭露「Server Component 函數傳遞限制」 | ✅ Sprint 16 揭露「守衛測試只驗結構不等於 runtime 套用」 | ✅ Stage 1.1 CardTitle 是 `<div>` 揭露 SEO 問題 | ✅ Detail loading state 原本用「載入中…」文字 | ✅ Playwright 手動驗證分頁資料正確 |
+| 守衛檢查演進 | - | - | Sprint 9「每個 spec 都有 disable guard」是 false claim | ✅ Sprint 15「總是 guard」修正 | ✅ Sprint 16 揭露「守衛測試需驗 runtime 執行」 | ✅ 3 個 shadcn UI 守護測試（11+11+15）| ✅ 4 個守護測試 + Sprint 16 修正 | ✅ tech-050（10 個）= handler 4 + route 2 + list page 4 |
+| SoT 擴展 | - | - | spec.json 是 manifest/API/UI 的 SoT | ✅ spec.json 是 formatter/customRenderer 的 SoT | ✅ spec.json 拆 fnRef 純 fnName 後是 formatter 唯一介面 | ✅ components/ui/ 是 shadcn 元件 SoT | ✅ spec.json 的 listUI/CRUD 動作定義 SoT | ✅ ListPaginationNav `mode='server'` basePath 統一介面 |
+| UI 一致性 | - | - | Sprint 13 完成 Order Demo UI | Sprint 15 partial 一致 | Sprint 16 list/detail/form 都是純 HTML | ✅ Sprint 17 **完成**（shadcn 統一 + customRenderer 真實渲染）| ✅ Sprint 18 完成（+ DropdownMenu / Pagination / Skeleton + CRUD Update）| ✅ 文字分頁資訊保持一致（Stage 2 加 ListPaginationNav UI）|
+| customRenderer 設計 | - | - | - | ✅ Sprint 15 `{{fn:}}` 語法（partial：僅 server side 跑） | ✅ Sprint 16 揭露 JSX server side require SyntaxError | ✅ Sprint 17 Stage 2 採用 webpack dynamic import（零 build step）| - | - |
+| CRUD 完整度 | - | - | Sprint 9 完成 C+R | - | - | - | ✅ Sprint 18 完成 C+R+**U** | - |
+| 守護測試 pattern | - | - | Sprint 9「每個 spec 都有 disable guard」是 false claim | ✅ Sprint 15「總是 guard」修正 | ✅ Sprint 16 揭露「守衛測試需驗 runtime 執行」 | ✅ 4 個 shadcn UI 守護測試（11+11+15+9） | ✅ 5 個守護測試（9+6+7+8+6）+ E2E 改 data-testid | ✅ tech-050 handler 4 + route 2 + list page 4 |
+| 分頁機制 | - | - | Sprint 14 寫死 take: 100 | - | - | - | - | ✅ Sprint 19 Stage 1 server side 分頁（Promise.all + take/skip + total/totalPages）|
 
 ---
 

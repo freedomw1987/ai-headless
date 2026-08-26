@@ -10,11 +10,11 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 18 — CRUD 編輯功能 + 三個 shadcn 元件** ✅ 完成 6.5 / 6.5 SP |
-| **Sprint 17 狀態** | ✅ 100% 收尾（5.5/5.5 SP）|
-| **測試基線** | **871 tests / 72 files** / 4 Gate 全綠（828 vitest + 43 E2E）|
-| **下一個 P0** | Sprint 19 規劃（list page 整合 ListPaginationNav / server side 分頁）|
-| **路線圖關鍵** | ✅ CRUD 完整（Create + Read + **Update**）+ shadcn DropdownMenu/Pagination/Skeleton 元件齊全 |
+| **當前 Sprint** | **Sprint 19 Stage 1 — Server Side 分頁** ✅ 完成 3 / 3 SP |
+| **Sprint 18 狀態** | ✅ 100% 收尾（6.5/6.5 SP）|
+| **測試基線** | **882 tests / 73 files** / 4 Gate 全綠（839 vitest + 43 E2E）|
+| **下一個 P0** | Sprint 19 Stage 2（list page 嵌入 ListPaginationNav + URL 同步）|
+| **路線圖關鍵** | ✅ Server Side 分頁（100 筆上限打破） |
 
 ### Sprint 15 進度（Runtime Spec 精簡化）
 
@@ -62,6 +62,15 @@
 | **Stage 2** | customRenderer 客戶端 React component 動態渲染 | 2 | Sprint 16 Stage 1 留 |
 | **Spike** | JSX 預編譯方案評估（tsx-loader / esbuild / swc）| 0.5 | Sprint 16 揭露 |
 | **合計** | | **5.5 SP** | |
+
+### Sprint 19 進度（Stage 1 完成 3 / 3 SP）
+
+| Task | 計劃 | 實際 | 狀態 |
+|---|---|---|---|
+| **Stage 1.1 handler** | 1 SP | 1 SP | ✅ commit `eef3ca4`（list() 加 page/pageSize/total/totalPages）|
+| **Stage 1.2 API** | 0.5 SP | 0.5 SP | ✅ commit `eef3ca4`（GET handler 讀 ?page= ?pageSize=）|
+| **Stage 1.3 list page** | 1 SP | 1 SP | ✅ commit `eef3ca4`（searchParams + 分頁資訊顯示）|
+| **Stage 1.4 守衛測試** | 0.5 SP | 0.5 SP | ✅ commit `eef3ca4`（tech-050 10 守衛測試）|
 
 ### Sprint 18 進度（完成 6.5 / 6.5 SP）
 
