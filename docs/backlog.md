@@ -10,78 +10,52 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 20 — UI 元件擴充 + 全局主題切換**（5.5 SP，4 Stages）|
-| **Sprint 19 狀態** | ✅ **100% 收尾（8.5/8.5 SP）**（Stage 1+2+3）|
-| **測試基線** | **923 tests / 80 files** / Sprint 20 全部 4 Stages 收尾（含 P3 + P3.5）|
-| **下一個 P0** | Sprint 21（待規劃）|
-| **路線圖關鍵** | ✅ Sprint 20 全收尾（Sheet + Tooltip + Dark mode + Toast sonner + P3 + P3.5）|
+| **當前 Sprint** | **Sprint 21 — US-102-P2 動態 RBAC**（5-7 SP，Plan Gate 進行中）|
+| **Sprint 20 狀態** | ✅ **100% 收尾（7/7 SP）**（Stage 1+2+3+4+P3+P3.5）|
+| **測試基線** | **923 tests / 80 files** |
+| **下一個 P0** | Sprint 21 Plan Gate ✅ + Design Gate ✅ → Execution Gate（commit 1 起，9 commit）|
+| **路線圖關鍵** | ✅ Sprint 20 全收尾 → ✅ Sprint 21 Plan Gate → ✅ Design Gate（4 個待辦完成） → 🚧 Execution Gate |
 
-### Sprint 20 規劃（UI 元件擴充 + 全局主題切換，5.5 SP）
+### Sprint 21 規劃（US-102-P2 動態 RBAC，預估 7 SP）
 
 > **日期**: 2026-08-26
-> **用戶決定**: UI 元件擴充（Sheet / Tooltip / dark mode / Toast 升級 sonner）
-> **關鍵澄清**: ThemeProvider 全局主題、Extension 自有樣式獨立 — 不走 Extension 機制
-> **架構決策**: 用 next-themes ThemeProvider（`app/layout.tsx`）+ ThemeToggle 按鈕（`/admin` 顯眼位置）
+> **用戶決定**: M2 唯一 P1 user story — 後台用戶管理 Phase 2（動態 RBAC）
+> **Plan Gate 狀態**: 🟡 進行中（Q1-Q4 ✅ / Q5-Q7 待解決）
+> **PRD**: [docs/prd/09-rbac.md](prd/09-rbac.md)
 
-| Stage | 內容 | SP | 驗收標準 |
-|---|---|---|---|
-| **1 — Sheet** | shadcn Sheet 元件 + detail page 抽屜式編輯 | 1.5 | ✅ **收尾（1.5/1.5 SP）** ① Sheet 元件建好（DialogPrimitive + cva side variants）<br>② detail「編輯」按鈕點擊從右側滑出 Sheet<br>③ Sheet 內顯示 DynamicFormClient（預填 initialData）<br>④ onSuccess callback 關閉 Sheet（refresh 在 form-client 內部）<br>⑤ `/edit` page 保留兼容<br>⑥ 12 個守護測試 + 3 個 E2E 全綠 |
-| **2 — Tooltip** | shadcn Tooltip + 1 個使用場景 | 1 | ✅ **收尾（1/1 SP）** ① Tooltip 元件建好（Radix UI 內建鍵盤 + a11y）<br>② 場景：list sortable header（記錄「點擊切換排序」+ 狀態）<br>③ 11 個守護測試 + 2 個 E2E（hover + toggle sort）<br>⑤ 架構：Server Component 抽 SortableHeaderCell client wrapper |
-| **3 — Dark mode** | next-themes ThemeProvider + ThemeToggle | 1.5 | ✅ **收尾（1.5/1.5 SP）** ① `app/layout.tsx` 加 ThemeProvider（attribute="class", defaultTheme="system", enableSystem, disableTransitionOnChange）<br>② ThemeToggle 按鈕（Sun/Moon icons）放 `/admin` sidebar 底部（user info 下、登出上）<br>③ localStorage 持久化（next-themes 內建）<br>④ Light/Dark/System 三模式（DropdownMenu）<br>⑤ 15 個守護測試（tech-057）+ 3 個 E2E（含截圖 tech-057-dark-mode.png） |
-| **4 — Toast sonner 升級** | 徹底改寫 + 移除舊 toast.tsx | 1.5 | ✅ **收尾（1.5/1.5 SP）** ① sonner 1.7.1 安裝（Stage 3 已裝）<br>② 移除 `components/ui/toast.tsx` + `toast.test.tsx` + `extension-card.test.tsx`<br>③ 新建 `components/ui/sonner.tsx`（client wrapper，useTheme 動態 theme prop）<br>④ `extension-card.tsx` 改用 `toast.success()` / `toast.error()` from sonner<br>⑤ `extensions-page-client.tsx` 移除 ToastProvider wrapper<br>⑥ `app/layout.tsx` 在 ThemeProvider 內加 `<Toaster />`<br>⑦ 13 個守護測試（tech-058）+ 4 個 E2E（含 light + dark 截圖） |
-| **P3** | Dead code + null date | 0 | ✅ **收尾** ① Stage 1 reviewer 提的 dead code（get handler 268-269）<br>② Sprint 18 留下的 `publishedAt` null date 處理（Zod optional + create input 自動 null + update input 保留 null + UI form 不傳 publishedAt 預設 null） |
-| **P3.5** | Event 500 + Hook 註冊（user 報） | 1.5 | ✅ **收尾** ① Bug A：dynamic-handler.ts 4 個 handler（create/update/del/transition）包 try/catch + sanitizeErrorMessage（避免 500 + 暴露 SQL/內部錯誤）<br>② Bug B：hooks-registry.ts 中央映射表 + `registerAllExtensions()` 在 route.ts setup() 內呼叫（修「`Cannot read properties of undefined (reading 'cancelled')`」之前未註冊的 hook）<br>③ `lib/runtime/error-sanitizer.ts`（60 行，SAFE_PATTERNS = Zod + 業務前綴 + 中文必填/格式）<br>④ 13 個守護測試（tech-056，含 reviewer 第二輪抓到漏的 `beforeCreateTodo`）<br>⑤ 3 個 E2E（含截圖 tech-056-event-error-ui.png） |
+| 進度 | 內容 | 狀態 |
+|---|---|---|
+| **Q1** | 內建 role 不能刪（`isSystem=true`）| ✅ A 已確認 |
+| **Q2** | 自定義 role 命名規則（小寫 + 底線 + ≤32 字 + 唯一 + 預留 `admin/editor/viewer`）| ✅ A 已確認 |
+| **Q3** | `/admin/roles` 公開但只有 admin 可進可改 | ✅ A 已確認 |
+| **Q4** | 只有 admin 能授權權限 | ✅ A 已確認 |
+| **Q5** | Session strategy（JWT vs database）| ✅ A — JWT + 1 分鐘快取 + 失效 API |
+| **Q6** | hasPermission 重構策略 | ✅ A — 保留純函式 + `hasDynamicPermission` 漸進式遷移 |
+| **Q7** | 既有 auth.test.ts 22 個測試處理 | ✅ A — 保留寫死矩陣測試 + 新增動態查 DB 測試 |
+
+---
 
 ### Sprint 20 收尾紀錄
 
-> **Stage 1 收尾（1.5/1.5 SP）** — 2026-08-26
-> - 改動：新建 `components/ui/sheet.tsx`（DialogPrimitive + cva 4 sides）；改 `dynamic-detail-client.tsx`（SheetTrigger 包 Button + onSuccess callback）；改 `dynamic-form-client.tsx`（加 onSuccess prop）；改 `ui-config.ts`（DetailUIConfig.formConfig + buildFormUIConfig 接受 mode）
-> - 測試：12 個守護測試（tech-053）+ 3 個 E2E（含截圖） + tech-046 同步更新反映 SheetTrigger 變更
-> - Reviewer 提 3 個 P2 Finding：① 守護測試語義過寬（已修） ②「- 新增」後缀錯位（已修：buildFormUIConfig 依 mode 動態） ③ 既有 dead code `dynamic-handler.ts:268-269`（P3 留待後續清理）
-> - 4 Gate 全綠：Gate 1 TDD (紅→綠)、Gate 2 lint/typecheck、Gate 3 regression (77 files / 881 vitest)、Gate 4 reviewer + E2E
+✅ **Sprint 20 全收尾（7/7 SP）** — 2026-08-26
+- **測試基線**：866 → **923**（+57）
+- **檔案基線**：74 → **80**（+6：sheet / tooltip / sonner / theme-provider / theme-toggle / error-sanitizer）
+- **截圖**：5 張（tech-053 sheet-open、tech-054 tooltip-sortable、tech-056 event-error-ui、tech-057 dark-mode、tech-058 sonner-toast-light + dark）
+- **4 Gate 全綠**：每 Stage 1+2+3+4+P3+P3.5
+- **完整反思**：[Sprint 20 Reflection](reflection/sprint-20.md)
 
-> **Stage 2 收尾（1/1 SP）** — 2026-08-26
-> - 改動：新建 `components/ui/tooltip.tsx`（shadcn 標準 Radix primitive + TooltipProvider）；新建 `components/admin/sortable-header-cell.tsx`（client wrapper，封裝 Tooltip + URL 組裝）；改 `app/admin/crud/[spec]/page.tsx`（移除直接用 Tooltip + icon + buildSortHref function，改用 SortableHeaderCell）
-> - 安裝：@radix-ui/react-tooltip@1.2.16
-> - 測試：11 個守護測試（tech-054）+ 2 個 E2E（含截圖 tech-054-tooltip-sortable.png）+ tech-052 同步更新反映 SortableHeaderCell 架構
-> - 架構：Server Component（list page）透過 client wrapper（SortableHeaderCell）使用 Tooltip，避免把整個 list page 變 client；Server→Client 不傳 function prop（URL 內聯用 URLSearchParams 組裝）
-> - Reviewer 提 4 個 P2 Finding：① TooltipProvider 重複建立（**接受留 P3**：未來可抽 SortableHeader 整個 TableHeader 共享 Provider） ② 註解誤導（已修） ③ Icon 缺少 a11y 標註（已修：icon aria-hidden + link aria-label） ④ 冗餘型別斷言（已修：list page 改傳原值）
-> - 4 Gate 全綠：Gate 1 TDD (6 failed → 11 passed)、Gate 2 lint/typecheck、Gate 3 regression (78 files / 892 vitest)、Gate 4 reviewer + E2E
+| Stage | 主題 | SP | 狀態 | 反思章節 |
+|---|---|---|---|---|
+| **Stage 1** | Sheet（抽屜式編輯）| 1.5 | ✅ | [→](reflection/sprint-20.md#stage-1-重點sheet) |
+| **Stage 2** | Tooltip（sortable header）| 1 | ✅ | [→](reflection/sprint-20.md#stage-2-重點tooltip) |
+| **Stage 3** | Dark mode（next-themes ThemeProvider）| 1.5 | ✅ | [→](reflection/sprint-20.md#stage-3-重點dark-mode) |
+| **Stage 4** | Toast sonner 升級（徹底改寫）| 1.5 | ✅ | [→](reflection/sprint-20.md#stage-4-重點toast-sonner-升級) |
+| **P3** | Dead code + null date | 0 | ✅ | [→](reflection/sprint-20.md#p3-重點dead-code--null-date) |
+| **P3.5** | Event 500 + Hook 註冊（user 報 bug）| 1.5 | ✅ | [→](reflection/sprint-20.md#p35-重點event-500--hook-註冊) |
 
-> **P3 收尾（0 SP）** — 2026-08-26
-> - 改動：新建 `tests/integration/tech-055-p3-dead-code-null-date.test.ts`（2 守護測試）；改 `lib/runtime/dynamic-handler.ts`（get handler 移除 dead code line 268-269；Zod schema `publishedAt` 改 optional；create input 自動加 publishedAt: null；update input 保留型別）；改 `app/admin/crud/[spec]/dynamic-form-client.tsx`（publishedAt 欄位不傳，預設 null）
-> - 4 Gate 全綠：Gate 1 TDD (2 passed)、Gate 2 lint/typecheck、Gate 3 regression (79 files / 894 vitest)、Gate 4 reviewer OK
+### Sprint 20 揭露的技術債（留 Sprint 21+）
 
-> **P3.5 收尾（1.5 SP）** — 2026-08-26
-> - 改動：新建 `lib/runtime/error-sanitizer.ts`（60 行，sanitizeErrorMessage + SAFE_PATTERNS）；改 `lib/runtime/dynamic-handler.ts`（create/update/del/transition 4 個 handler 包 try/catch + sanitizeErrorMessage；invokeHook 回傳邏輯修正 `(r as { data: ... }).data` → `r as Record<string, unknown>`）；改 `lib/extensions/hooks-registry.ts`（+`beforeCreateTodo` import + safeRegister）；改 `app/api/crud/[spec]/route.ts`（setup() 內呼叫 `registerAllExtensions()`）；新建 `tests/integration/tech-056-p3-5-hook-registration-error-handling.test.ts`（10 → 13 測試，含 reviewer 第二輪抓到漏的 `beforeCreateTodo`）；新建 `tests/e2e/tech-056-p3-5-event-create-error-handling.spec.ts`（3 E2E）
-> - 架構：手動映射表（vs 自動掃描 manifest）；registry 完整性靠「completeness guard 測試」保護；safeRegister 用 try/catch 容錯「already registered」（dev hot reload 安全）；error-sanitizer 只允許 SAFE_PATTERNS（Zod / 業務錯誤）暴露；try/catch 範圍只包 hook + Prisma 區塊，不包 Zod/auth/early return
-> - Reviewer 第一輪：攔截 `beforeCreateTodo` 漏註冊問題（blocking）；第二輪：OK with notes（5 個 P2/P3 不阻 merge）
-> - 4 Gate 全綠：Gate 1 TDD (3 failed → 13 passed)、Gate 2 lint/typecheck、Gate 3 regression (80 files / 907 vitest)、Gate 4 reviewer + E2E
-
-> **Stage 3 收尾（1.5/1.5 SP）** — 2026-08-26
-> - 改動：新建 `components/theme/theme-provider.tsx`（~30 行，client component 包 NextThemesProvider）；新建 `components/theme/theme-toggle.tsx`（~50 行，client component，DropdownMenu 三選項 + Sun/Moon/Monitor icons）；改 `app/layout.tsx`（body 內加 ThemeProvider）；改 `app/admin/admin-sidebar.tsx`（user info 下、登出上加 `<ThemeToggle />`）；安裝 `next-themes 0.4.6`
-> - 架構：ThemeProvider attribute="class" 配合 tailwind `darkMode: ['class']`；defaultTheme="system" 尊重 OS 偏好；enableSystem + disableTransitionOnChange
-> - 測試：15 個守護測試（tech-057）+ 3 個 E2E（含截圖 tech-057-dark-mode.png，整頁深色確認）
-> - 4 Gate 全綠：Gate 1 TDD (15 passed)、Gate 2 lint/typecheck、Gate 3 regression (81 files / 922 vitest)、Gate 4 reviewer + E2E
-
-> **Stage 4 收尾（1.5/1.5 SP）** — 2026-08-26
-> - 改動：新建 `components/ui/sonner.tsx`（~25 行，client component，包 SonnerToaster + position="top-right" + richColors + closeButton + duration 4000 + useTheme 動態 theme prop）；改 `app/layout.tsx`（ThemeProvider 內加 `<Toaster />`）；改 `components/admin/extension-card.tsx`（useToast() show() → toast.success() / toast.error() from sonner）；改 `app/admin/extensions/extensions-page-client.tsx`（移除 ToastProvider wrapper）；**刪除**：`components/ui/toast.tsx` + `components/ui/toast.test.tsx` + `components/admin/extension-card.test.tsx`（後者依賴 ToastProvider wrapper，整個移除）；**移除依賴**：`@radix-ui/react-toast`（pnpm remove，package.json 死依賴）
-> - 架構：徹底改寫，無兼容層，無 useToast shim；Toaster 在 root layout（ThemeProvider 同級，全站共用）；呼叫端對稱改寫（toast.success() / toast.error()）
-> - 測試：13 個守護測試（tech-058，含 reviewer 第二輪加的 `theme prop` 防 regression 守護）+ 4 個 E2E（含 light + **dark** 截圖 tech-058-sonner-toast-dark.png）
-> - Reviewer 第一輪：BLOCK（1 P1 dark mode 整合缺口 + 1 P2 死依賴 + 1 P3 恆真斷言）；第二輪：MERGE OK with notes（1 P3 housekeeping note：`bun.lock` 陳舊，非功能問題）
-> - 4 Gate 全綠：Gate 1 TDD (11 failed → 13 passed)、Gate 2 lint/typecheck、Gate 3 regression (80 files / 923 vitest)、Gate 4 reviewer + E2E
-
-## 🏆 Sprint 20 全收尾（5.5 SP + P3 + P3.5 = 7 SP）
-
-> **日期**: 2026-08-26
-> **總 SP**: 7（原 5.5 + P3.5 是 user 報的新 bug，+1.5）
-> **測試基線**: Sprint 19 866 → Sprint 20 收尾 **923**（+57）
-> **檔案基線**: Sprint 19 74 → Sprint 20 收尾 **80**（+6：sheet.tsx、tooltip.tsx、sonner.tsx、theme-provider.tsx、theme-toggle.tsx、error-sanitizer.tsx）
-> **截圖**: 5 張（tech-053-sheet-open、tech-054-tooltip-sortable、tech-056-event-error-ui、tech-057-dark-mode、tech-058-sonner-toast-light + dark）
-
-### 技術債（下一個 Sprint 安排）
-
-| 优先级 | 項目 | 描述 | 文件 |
+| 優先級 | 項目 | 描述 | 文件 |
 |---|---|---|---|
 | **P2** | list/get handler 沒 try/catch | DB 拋錯 → 500（Prisma 錯誤訊息暴露給前端）| `lib/runtime/dynamic-handler.ts` |
 | **P2** | Sanitizer SAFE_PATTERNS 漏 | `Cannot register for cancelled/past event` 在 production 被過濾為通用「提交失敗」 | `lib/runtime/error-sanitizer.ts` |
@@ -342,6 +316,37 @@
 
 ## 📞 對話記錄
 
+> Date Time： 2026-08-26 17:30
+> 用戶：項目中有什麼開發任務？（查 Sprint 20 進度）
+> BA(我)：列出 Sprint 20 全收尾（7/7 SP）+ Sprint 21 候選任務（推薦 US-102-P2 動態 RBAC）
+> 用戶：好，1（選 Sprint 21 US-102-P2）
+> BA(我)：依 SOP 進 Plan Gate，一次一個問題問 Q1-Q4
+> Q1 用戶：A — 內建3 個 role 不能刪
+> Q2 用戶：A — 小寫 + 底線 + ≤32 字 + 唯一 + 預留保留字
+> Q3 用戶：A — `/admin/roles` 公開但只有 admin 可進可改
+> Q4 用戶：A — 只有 admin 能授權權限
+> BA(我)：寫入 `docs/backlog.md` US-102-P2 開工 checklist + 新建 `docs/prd/09-rbac.md`
+> 用戶：1（先解決 Q5-Q7 技術問題）
+> BA(我)：Q5 Session strategy → 用戶 A（JWT + 1 分鐘快取 + 失效 API）
+> 用戶：但做之前先整理 `backlog.md` 讓他可讀
+> BA(我)：發現實際 631 行（不是 843），推薦 A 方案（小整理 + 建 Sprint 20 reflection）
+> 用戶：A
+> BA(我)：新建 `docs/reflection/sprint-20.md` + 精簡 `backlog.md` Sprint 20 五段（6 頁 → 1 頁 + 6 行連結表）+ reflection/index.md 加 Sprint 20 行
+> 用戶：好，1（先把 Q5 寫進 PRD，然後進 Q6）
+> BA(我)：PRD 開頭狀態列更新 + 新增 §12 Plan Gate 紀錄 + §12.3 Q5 詳細設計（架構圖 + 4 個關鍵改動 + Sprint 20 技術債連動表 + SP 影響）；backlog.md Sprint 21 規劃表 Q5 狀態同步
+> Q6 用戶：A — 保留純函式 + 漸進式遷移（雙函式 4 Sprint 計畫，Sprint 25 強制清）
+> BA(我)：PRD 新增 §12.4 Q6 詳細設計（雙函式 API 範例 + 漸進式遷移順序表 + Sprint 25 強制清規則 + 風險控制手段）；backlog.md Sprint 21 規劃表 Q6 狀態同步
+> Q7 用戶：A — 保留寫死矩陣測試 + 新增動態查 DB 測試（漸進式）
+> BA(我)：PRD 新增 §12.5 Q7 詳細設計（測試集分區策略 + 純函式微調範例 + 動態測試範例 + 與 Q5/Q6 關聯）；新增 §13 Plan Gate 完成總結（7 個決策一覽 + Sprint 21 最終 SP 8.25 SP + Plan Gate 完成證明 + Design Gate 待辦）；backlog.md Sprint 21 規劃表 Q7 狀態同步 + 「下一個 P0」改為 Design Gate
+> 結果：Sprint 21 Plan Gate ✅ 完成（Q1-Q7 全解決，PRD 8.25 SP）。下一步：Design Gate（wireframe + Task 順序微調 + seed 詳寫）
+> 用戶：1（進 Design Gate）
+> BA(我)：Design Gate 4 個待辦全完成。
+> 待辦 1（wireframe）：PRD §4.3 加 Mermaid RBAC 流程圖（ASCII 保留為 fallback）+ §4.4 Sprint 21-25 漸進式遷移 Gantt 圖
+> 待辦 2（Task 順序）：PRD §8 拆 Task 4 成 4a/4b/4c（cache + 雙函式 + 失效 API）+ 拆 Task 12 成 12a/12b（既有測試更新 + 新增動態測試）+ 加 §8.1 Task 依賴關係圖
+> 待辦 3（seed）：PRD §5.3 BUILTIN_ROLES + BUILTIN_PERMISSIONS_BY_ROLE + PermissionCode 常數 + idempotent upsert 完整 TS 實作 + 4 個關鍵設計說明
+> 待辦 4（commit）：PRD 新增 §8.2 Commit 規劃（9 個 commit 表 + 5 個規劃原則 + 7 天開發順序）+ backlog.md「下一個 P0」改為 Execution Gate
+> 結果：Sprint 21 Design Gate ✅ 完成（4 個待辦全解決，PRD 完備）。下一步：Execution Gate（Gate 1 TDD → Gate 2 lint → Gate 3 regression → Gate 4 reviewer + E2E）
+
 > Date Time：2026-08-24 11:31
 > 用戶：AI 開發不同項目有 3 個痛點：(1) UI/UX/架構不一致 (2) CRUD 是主需求但 AI 出錯多 (3) 想建立一套技術框架讓 AI 按規範開發
 > BA(我)：先釐清框架形態
@@ -582,24 +587,44 @@
 | **總計** | **49** | **100%** |
 ---
 
-## 📋 US-102 Phase 2 開工 checklist（下個 session 開工前必看）
+## 📋 US-102 Phase 2 開工 checklist（2026-08-26 Sprint 21 開工）
 
-### 產品問題（需用戶確認才能開工）
-1. **admin / editor / viewer 是不是系統內建、不能刪？**
-   - 影響：Role table 是否要加 `isSystem: Boolean` 欄位
-   - 我的建議：是，內建3 個都 `isSystem=true`，不能刪只能「自定義新 role」
+> **Sprint 21 開工狀態**：✅ **Plan Gate 完成**（Q1-Q4 產品問題全部確認，2026-08-26）
+> **確認對話**：見上方「對話記錄」區塊（2026-08-26 Sprint 21 段）
+> **下一個 Gate**：Design Gate（PRD 骨架 + Q5-Q7 技術問題確認）
 
-2. **自定義 role 的命名規則？**
-   - 影響：Role.name 驗證邏輯
-   - 我的建議：小寫 + 底線（e.g. `editor_special`），≤32 字，唯一
+### 產品問題（✅ 已確認，2026-08-26）
 
-3. **Role 是不是用戶在後台能看到的資源？**
-   - 影響：UI 是否要列「所有 role」給用戶選
-   - 我的建議：是 — `/admin/roles` 頁面是公開的 role 管理 UI（admin 才能進）
+#### Q1 ✅ A — 內建 role 不可刪
+- **答案**：內建3 個 role（`admin` / `editor` / `viewer`）`isSystem=true`，不能刪只能「自定義新 role」
+- **影響**：
+  - `Role` table 加 `isSystem: Boolean @default(false)` 欄位
+  - seed 重跑時自動重建內建3 個
+  - UI 內建3 個行內顯示「系統」 badge + 隱藏刪除按鈕
+  - 用戶故事分數：**5 SP**（不變）
 
-4. **誰能授權權限？**
-   - 影響：RBAC middleware / API 守衛
-   - 我的建議：只有 admin 能進 `/admin/roles`、能改 role 的 permission 設定
+#### Q2 ✅ A — 小寫 + 底線 + ≤32 字 + 唯一 + 預留保留字
+- **答案**：`^[a-z][a-z0-9_]{0,31}$`，DB unique index，內建3 個為保留字
+- **影響**：
+  - Zod schema：`name: z.string().regex(/^[a-z][a-z0-9_]{0,31}$/)`
+  - DB：`@@unique([name])`
+  - UI 新增 role form 即時驗證 + 預留字防呆（`admin`/`editor`/`viewer`）
+  - 允許長度範圍：1–32 字（`a` 是合法最短）
+
+#### Q3 ✅ A — `/admin/roles` 是公開資源但只有 admin 可進可改
+- **答案**：`/admin/roles` 公開（其他用戶看 sidebar 入口），但 middleware 守衛只有 admin 能進
+- **影響**：
+  - Sidebar 新增「Roles」入口（admin 才顯示）
+  - `/admin/roles` middleware：非 admin → redirect `/admin`
+  - `/admin/users` 的 Role 下拉：列出**用戶實際可被指派**的 role（含內建3 + 自定義），由當前用戶的 permissions 決定可選範圍
+
+#### Q4 ✅ A — 只有 admin 能授權權限
+- **答案**：只有 admin 能進 `/admin/roles`、能 CRUD 自定義 role、能改 role 的 permissions、能在 `/admin/users` 指派 role
+- **影響**：
+  - `Permission.code` 命名：`resource:action`（預留 Phase 3+ 細粒度授權）
+  - Phase 2 MVP 只實作：`roles:write` / `users:assign` 兩個 permission，預設 admin role 全有
+  - API guard：所有 `/api/roles/*` 端點需 `roles:write` permission
+  - API guard：所有 `/api/users/*` 指派 role 端點需 `users:assign` permission
 
 ### 技術問題（下個 session 開工時決定）
 5. **Session strategy：JWT vs database？**（現狀 JWT + jwt() 重讀 DB hack 已運作）

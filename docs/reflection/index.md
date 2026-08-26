@@ -39,6 +39,7 @@
 ---
 
 | **Sprint 19 Stage 3** | [**sprint-19.md**](./sprint-19.md#stage-3-重點list-排序--篩選) | ✅ | **100%** (4/4) | ✅ **全綠** | **list 排序（sortable header + URL sync）+ 篩選（search form + OR contains）+ SQL injection 白名單防護** |
+| **Sprint 20** | [**sprint-20.md**](./sprint-20.md) | ✅ | **100%** (7/7) | ✅ **全綠** | **UI 元件擴充（Sheet / Tooltip / Dark mode / Sonner toast 升級）+ P3 dead code + P3.5 user 報 bug（hook 註冊 + error sanitizer）** |
 
 ---
 
