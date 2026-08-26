@@ -83,12 +83,16 @@ export async function POST(req: Request) {
   }
 
   const passwordHash = await hashPassword(password);
+  // Phase 2 動態 RBAC: 同時設定 roleId (lookup by name)
+  const targetRoleName = role ?? 'viewer';
+  const roleRecord = await db.role.findUnique({ where: { name: targetRoleName } });
   const user = await db.user.create({
     data: {
       email,
       name: name ?? null,
       passwordHash,
-      role: role ?? 'viewer',
+      role: targetRoleName,
+      roleId: roleRecord?.id,
       isActive: true,
     },
   });

@@ -76,12 +76,20 @@ export async function PATCH(
     if (dup) return NextResponse.json({ error: 'Email 已被使用' }, { status: 400 });
   }
 
+  // Phase 2 動態 RBAC: 若變更 role,同步更新 roleId
+  let roleIdUpdate: string | null | undefined = undefined;
+  if (role) {
+    const roleRecord = await db.role.findUnique({ where: { name: role } });
+    roleIdUpdate = roleRecord?.id ?? null;
+  }
+
   const user = await db.user.update({
     where: { id },
     data: {
       email: email ?? undefined,
       name: name ?? undefined,
       role: role ?? undefined,
+      roleId: roleIdUpdate,
       isActive: isActive ?? undefined,
     },
   });

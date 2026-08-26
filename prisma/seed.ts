@@ -31,9 +31,22 @@ async function seedUsers(): Promise<void> {
   ];
 
   for (const u of users) {
+    // 查找對應 role id (Phase 2 動態 RBAC)
+    const roleRecord = await db.role.findUnique({ where: { name: u.role } });
+    const roleId = roleRecord?.id;
+
     const existing = await db.user.findUnique({ where: { email: u.email } });
     if (existing) {
-      console.log(`✅ ${u.email} 已存在 (role: ${existing.role})`);
+      // Backfill roleId 若為 null (Sprint 21 修正: TD-1)
+      if (!existing.roleId && roleId) {
+        await db.user.update({
+          where: { email: u.email },
+          data: { roleId },
+        });
+        console.log(`✅ ${u.email} 已 backfill roleId`);
+      } else {
+        console.log(`✅ ${u.email} 已存在 (role: ${existing.role}, roleId: ${existing.roleId ?? 'null'})`);
+      }
       continue;
     }
     const passwordHash = await hashPassword(u.password);
@@ -43,10 +56,11 @@ async function seedUsers(): Promise<void> {
         name: u.name,
         passwordHash,
         role: u.role,
+        roleId,
         isActive: true,
       },
     });
-    console.log(`✅ 建立了 ${u.email}`);
+    console.log(`✅ 建立了 ${u.email} (roleId: ${roleId})`);
   }
 }
 

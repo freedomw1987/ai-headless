@@ -78,6 +78,22 @@ vi.mock('@/lib/db', () => ({
         return Promise.resolve(u);
       }),
     },
+    // Phase 2 RBAC: 加入 role lookup mock
+    role: {
+      findUnique: vi.fn(({ where }: { where: { name: string } }) => {
+        // 內建 role 對應固定 ID (與 prisma/seed-rbac 一致)
+        const builtins: Record<string, string> = {
+          admin: 'sys_role_admin',
+          editor: 'sys_role_editor',
+          viewer: 'sys_role_viewer',
+        };
+        return Promise.resolve(
+          builtins[where.name]
+            ? { id: builtins[where.name], name: where.name }
+            : null,
+        );
+      }),
+    },
   },
 }));
 
