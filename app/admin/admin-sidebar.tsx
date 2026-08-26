@@ -7,6 +7,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -85,6 +86,9 @@ export function AdminSidebar({
           {user.email}
           <br />
           <span className="font-medium">{user.role}</span>
+        </div>
+        <div className="mb-2">
+          <ThemeToggle />
         </div>
         <Button
           variant="outline"
