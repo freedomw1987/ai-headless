@@ -131,6 +131,9 @@
 - ❌ list page 沒有嵌入 ListPaginationNav UI（只有分頁資訊文字）
 - ❌ URL `?page=` 切換需手動改網址（無 click 互動）
 
+> ✅ **Sprint 19 Stage 2 已解決**：嵌入完整 shadcn Pagination UI（PaginationLink + Ellipsis + isActive + 上一頁/下一頁）+ URL `?page=` 同步，commit `462478b`
+> ✅ **Sprint 19 Stage 3 已擴展**：sortable header + 搜尋 input + SQL injection 白名單防護，commit `811fe24`
+
 ### 2.4 可維護性 ✅
 
 **Server Component 架構延續**：
