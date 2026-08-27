@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 29 收尾）
+> **最後更新**：2026-08-26（Sprint 30 收尾）
 
 ---
 
@@ -49,6 +49,7 @@
 | **Sprint 27** | [**sprint-27.md**](./sprint-27.md) | ✅ | **100%** (2.5/2.5) | ✅ **全綠** | **Clean code 改進：2 commits (TD-523 StrictHookFunction 雙軌制 + TD-524 AppError class + ErrorCategory enum 取代 regex)，21 個新測試，1075/1075 全綠。3 條新學習 (L19-L21)：class-based error vs regex 維護性、雙軌制演進模式、TypeScript Function Contravariance** |
 | **Sprint 28** | [**sprint-28.md**](./sprint-28.md) | ✅ | **100%** (5/5) | ✅ **全綠** | **Order Workflow 改進：4 commits (TD-519 Order 列表分頁 [已由 Sprint 19 涵蓋] + TD-520 Order Zod 驗證 [已由 Sprint 19 涵蓋] + TD-516 transaction 避免 race condition + TD-517 TransitionLog audit log)，17 個新測試 + 既有 3 個 order 測試加 mock，1094/1094 全綠。4 條新學習 (L22-L25)：backlog Ready audit、Prisma transaction 雙層防護、Extension code vs Dynamic handler 一致性、利用既有 schema** |
 | **Sprint 29** | [**sprint-29.md**](./sprint-29.md) | ✅ | **100%** (3-4/3-4) | ✅ **全綠** | **UserId 注入 + Blog/Event Audit Log：4 commits (動態 handler 統一注入 userId + Order 確認注入生效 + blog transition 整合 TransitionLog + 新增 event transition 函式整合 TransitionLog)，10 個新測試 + 既有 1 個 blog-event-todo 測試加 mock，1104/1104 全綠。4 條新學習 (L26-L29)：UserId 注入應在 handler 層、vitest mock require 場景靜態分析次佳解、extension transition 與 Order 一致、Sprint reflection TD 應立即清** |
+| **Sprint 30** | [**sprint-30.md**](./sprint-30.md) | ✅ | **100%** (1.5-2/1.5-2) | ✅ **全綠** | **Event workflow 動態化 + Order cancelEvent log：1 commit (event-workflow transitionEvent 從 spec.workflows 動態讀取代 hard-code + order-workflow 新增 cancelEvent 函式加 $transaction + TransitionLog)，5 個新測試，1109/1109 全綠。3 條新學習 (L30-L32)：spec workflow 動態讀而非 hard-code、Order cancelEvent 之前被 Sprint 28 漏掉、動態讀 spec 適用於時間觸發** |
 
 ---
 
