@@ -89,7 +89,35 @@ export async function cancelEvent(id: string) {
   return db.event.update({ where: { id }, data: { status: 'cancelled' } });
 }
 
-// Sprint 29 commit 4: 新增 transitionEvent 函式 (與 Order/Blog 一致)
+// Sprint 30 commit 1: 從 spec 動態讀取 (而非寫死)
+import { loadSpec } from '@/lib/runtime/spec-loader';
+
+// Sprint 30 commit 1: 從 spec 動態讀 (TD-新發現 C)
+// Event spec 用 lifecycle workflow, transition 無 event 欄位
+// (所有 transition 為時間觸發) 。 event handler 依 fromState + 傳入的 event 名
+// 推導 toState: 以 fromState 為 key , 查所有 transition 找到 toState
+async function buildEventTransitions(
+  fromState: string,
+  event: string,
+): Promise<string | null> {
+  const spec = await loadSpec('event');
+  const wf = spec.models[0]?.workflows?.[0];
+  if (!wf) return null;
+  for (const t of wf.transitions) {
+    const froms = Array.isArray(t.from) ? t.from : [t.from];
+    if (!froms.includes(fromState)) continue;
+    // event 名稱 (start/end/cancel) 決定 toState
+    // upcoming --start--> ongoing, upcoming --cancel--> cancelled
+    // ongoing --end--> past, ongoing --cancel--> cancelled
+    // 根據 event 名推導 (to 是唯一且明確)
+    if (event === 'start' && t.to === 'ongoing') return t.to;
+    if (event === 'end' && t.to === 'past') return t.to;
+    if (event === 'cancel' && t.to === 'cancelled') return t.to;
+  }
+  return null;
+}
+
+// Sprint 30 commit 1: 新增 transitionEvent 函式 (與 Order/Blog 一致)
 export async function transitionEvent(
   id: string,
   event: string,
@@ -99,15 +127,8 @@ export async function transitionEvent(
     const evt = await tx.event.findUniqueOrThrow({ where: { id } });
     const fromState = evt.status;
 
-    // Event lifecycle workflow: upcoming → ongoing, ongoing → past, etc.
-    // (在 spec 定義的 transitions)
-    const transitions: Record<string, Record<string, string>> = {
-      upcoming: { start: 'ongoing', cancel: 'cancelled' },
-      ongoing: { end: 'past', cancel: 'cancelled' },
-      past: {},
-      cancelled: {},
-    };
-    const toState = transitions[fromState]?.[event];
+    // Sprint 30 commit 1: 從 spec 動態讀取 (TD-新發現 C 修正)
+    const toState = await buildEventTransitions(fromState, event);
     if (!toState) {
       throw new Error(
         `Event transition 不存在: ${fromState} --(${event})--> ?`,

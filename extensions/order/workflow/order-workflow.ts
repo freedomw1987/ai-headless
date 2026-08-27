@@ -182,3 +182,36 @@ export async function deleteOrder(orderId: string) {
 export function getOrderStateMachineSchema() {
   return orderStateMachineSchema;
 }
+
+// Sprint 30 commit 1: Order cancelEvent 加 TransitionLog (TD-新發現 D)
+export async function cancelEvent(
+  orderId: string,
+  payload?: Record<string, unknown>,
+) {
+  return db.$transaction(async (tx) => {
+    const order = await tx.order.findUniqueOrThrow({ where: { id: orderId } });
+    const fromState = order.status;
+
+    // Order lifecycle: draft/pending_payment/paid 可以 cancel
+    // (參考 spec.workflows[0].transitions)
+    const updated = await tx.order.update({
+      where: { id: orderId },
+      data: { status: 'cancelled' },
+    });
+
+    // 寫 TransitionLog (audit trail)
+    await tx.transitionLog.create({
+      data: {
+        machineName: 'order',
+        entityType: 'Order',
+        entityId: orderId,
+        fromState,
+        toState: 'cancelled',
+        userId: (payload?.userId as string) ?? null,
+        reason: 'cancel',
+      },
+    });
+
+    return updated;
+  });
+}
