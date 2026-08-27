@@ -429,7 +429,7 @@
 | **TD-523** | Tech Debt | Hook function type contract 太鬆 | HookFunction<T = unknown> 接受任何型別 → silent type drift 風險 (Sprint 26 TD-403 揭露) | 1 | SP27+ | M1 | 📋 Ready（待破壞性變更） |
 | **TD-524** | Tech Debt | Sanitizer 用 regex 而非 error taxonomy | SAFE_PATTERNS 用 regex 陣列 → 手動加 regex 易遺漏 (Sprint 26 揭露) | 1.5 | SP27+ | M1 | 📋 Ready（需重構所有 throw 點） |
 | **TD-521** | Tech Debt | Disable Guard 測試補完 | Sprint 9 補完 Disable Guard 時發現：`listEnabledExtensions()` 有個 `\|\| true` bug，Sidebar filter 形同失效；其他 helper 也沒 unit test | 1 | SP9 | M6 | ✅ Done（本 session Sprint 9 補完）|
-| **TD-522** | Tech Debt | Order Extension manifest 缺失 | `extensions/order/` 沒有 `manifest.json`，導致 extension-manager filesystem scan 漏掉，/api/extensions 看不到 order（但 API guard 仍 work） | 0.5 | SP9+ | M6 | 📋 Ready（Sprint 10+）|
+| **TD-522** | Tech Debt | Order Extension manifest 缺失 | `extensions/order/` 沒有 `manifest.json`，導致 extension-manager filesystem scan 漏掉，/api/extensions 看不到 order（但 API guard 仍 work） | 0.5 | SP9+ | M6 | ✅ Done（Sprint 32 audit：extensions/order/manifest.json 已存在，內容完整含 hooks/actions/computed/workflows/permissions/nav） |
 | **US-204** | User Story | 訂單狀態機 | 訂單狀態：draft → pending_payment → paid → shipped → completed | 8 | SP2 | M1-WS | ✅ Done（Sprint 8：後端 + Demo UI，24 個測試）|
 | **US-206** | User Story | AI 生成狀態機系統 | 「做訂單管理含狀態機」→ AI 生成 JSON + workflow TS + 測試 | 8 | SP2 | M1 | 📋 Backlog |
 | **TD-306** | Tech Debt | Auth.js v5 整合 | `lib/auth/.gitkeep` 為空 | 5 | SP2 | M2 | ✅ Done |
