@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 31 收尾）
+> **最後更新**：2026-08-26（Sprint 32 收尾）
 
 ---
 
@@ -51,6 +51,7 @@
 | **Sprint 29** | [**sprint-29.md**](./sprint-29.md) | ✅ | **100%** (3-4/3-4) | ✅ **全綠** | **UserId 注入 + Blog/Event Audit Log：4 commits (動態 handler 統一注入 userId + Order 確認注入生效 + blog transition 整合 TransitionLog + 新增 event transition 函式整合 TransitionLog)，10 個新測試 + 既有 1 個 blog-event-todo 測試加 mock，1104/1104 全綠。4 條新學習 (L26-L29)：UserId 注入應在 handler 層、vitest mock require 場景靜態分析次佳解、extension transition 與 Order 一致、Sprint reflection TD 應立即清** |
 | **Sprint 30** | [**sprint-30.md**](./sprint-30.md) | ✅ | **100%** (1.5-2/1.5-2) | ✅ **全綠** | **Event workflow 動態化 + Order cancelEvent log：1 commit (event-workflow transitionEvent 從 spec.workflows 動態讀取代 hard-code + order-workflow 新增 cancelEvent 函式加 $transaction + TransitionLog)，5 個新測試，1109/1109 全綠。3 條新學習 (L30-L32)：spec workflow 動態讀而非 hard-code、Order cancelEvent 之前被 Sprint 28 漏掉、動態讀 spec 適用於時間觸發** |
 | **Sprint 31** | [**sprint-31.md**](./sprint-31.md) | ✅ | **100%** (1.5-2/1.5-2) | ✅ **全綠** | **Action Hook Transition Log 補完：2 commits (todo completeTodo 加 TransitionLog + event cancelEvent action 加 TransitionLog，audit 揭露 Sprint 30 reflection TD-新發現 E 修復)，7 個新測試，1114/1116 全綠。4 條新學習 (L33-L36)：action hook 需 audit trail、ActionContext 缺 userId workaround、Todo vs Event fromState 邏輯不同、audit 揭露應立即修** |
+| **Sprint 32** | [**sprint-32.md**](./sprint-32.md) | ✅ | **100%** (4/4) | ✅ **全綠** | **手機 RWD 完整 + TD-522：5 commits (TD-522 Order manifest audit 已完成 + admin-sidebar collapse 漢堡按鈕 + DataTable 確認 RWD shadcn 內建 + users/roles header RWD + Playwright E2E snapshot)，6 個新測試，1119/1121 全綠。4 條新學習 (L37-L40)：sidebar collapse 是手機 RWD 第一步、shadcn Table 內建 overflow-auto 不需額外 wrapper、flex-col sm:flex-row header RWD、Playwright E2E snapshot 守護未來 RWD 回歸** |
 
 ---
 
