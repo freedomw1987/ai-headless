@@ -28,6 +28,7 @@ export function DataTable<T>({ columns, data, actions }: DataTableProps<T>) {
   return (
     <Card>
       <CardContent className="p-0">
+        {/* Sprint 32: 手機 RWD — shadcn Table 內建 overflow-auto,允許橫向滑動 */}
         <Table>
           <TableHeader>
             <TableRow>
