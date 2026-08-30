@@ -803,7 +803,13 @@ function getEncryptionKey(): Buffer {
   const hex = process.env.AI_ENCRYPTION_KEY;
   if (!hex || hex.length !== 64) {
     throw new Error(
-      'AI_ENCRYPTION_KEY is required (64 hex chars = 32 bytes). Generate via: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+      'AI_ENCRYPTION_KEY is required (production deploy 必須設定). Expected: 64 hex chars (32 bytes). Generate via: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+    );
+  }
+  // S44-B §4.1: 驗證是否都是 hex chars (不只是長度檢查)
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    throw new Error(
+      `AI_ENCRYPTION_KEY contains non-hex chars. Expected: 64 hex chars (32 bytes). Generate via: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`,
     );
   }
   return Buffer.from(hex, 'hex');

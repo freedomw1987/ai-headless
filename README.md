@@ -254,6 +254,36 @@ export async function beforeCreateEvent(ctx) {
 
 ---
 
+## 🚀 Production Deployment Checklist
+
+Production deploy 前必查項目（缺一不可）：
+
+### 環境變數
+- [ ] `DATABASE_URL` — PostgreSQL 連線（生產 DB）
+- [ ] `NEXTAUTH_SECRET` — Auth.js session 加密金鑰
+- [ ] `AI_ENCRYPTION_KEY` — AI API Key AES-256-GCM 加密金鑰（64 hex chars / 32 bytes）
+  - ⚠️ 必填，缺了啟動會 throw
+  - 失去 key = 所有加密 AI API Key 永久無法解密，需重輸入
+  - 生成：`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+- [ ] `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` — 原生 provider fallback（即使有 Custom URL 也建議設）
+
+### Migration
+- [ ] `pnpm db:deploy` 套用全部 migrations（生產不可用 `db:migrate`）
+
+### 建置
+- [ ] `pnpm build` 成功
+- [ ] `pnpm test` 全綠
+- [ ] `pnpm typecheck` 全綠
+
+### Security
+- [ ] HTTPS 強制
+- [ ] CORS 設定嚴格
+- [ ] Rate limiting 啟用
+
+詳細部署說明見 [`.env.example`](.env.example)。
+
+---
+
 ## 🤝 貢獻
 
 歡迎 PR！請確保：
