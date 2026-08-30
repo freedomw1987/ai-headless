@@ -7,7 +7,7 @@
 //
 // 純函式，方便測試。
 
-import type { JsonSpec, Field, FieldType } from '@/lib/specs/json-spec.types';
+import type { JsonSpec, Field, FieldType, View } from '@/lib/specs/json-spec.types';
 import { parseFnRef } from '@/lib/runtime/extension-loaders';
 
 export type UIInputType =
@@ -38,6 +38,10 @@ export type ListUIConfig = {
   fields: UIField[];
   apiEndpoint: string;
   createLink: string;
+  /** Sprint C: 原 spec (讓子組件讀 list config) */
+  spec?: JsonSpec;
+  /** Sprint 33: 可用 view 清單（沒定義時 fallback 為 [TableView]）*/
+  views?: View[];
 };
 
 export type FormUIConfig = {
@@ -87,11 +91,22 @@ export function buildListUIConfig(spec: JsonSpec): ListUIConfig {
     });
   }
 
+  // Sprint 33: views 提取 (沒定義 fallback TableView)
+  // 讀取順序：spec.ui.pages.list.views (後加的) → spec.list.views (既有 top-level)
+  const listViews =
+    spec.ui?.pages?.list?.views?.length
+      ? spec.ui.pages.list.views
+      : spec.list?.views?.length
+        ? spec.list.views
+        : undefined;
+
   return {
     title: model.label ?? spec.label ?? spec.name,
     fields,
     apiEndpoint: `/api/crud/${spec.name}`,
     createLink: `/admin/crud/${spec.name}/new`,
+    spec, // Sprint C
+    views: listViews ?? [{ type: 'table' as const, label: '表格' }],
   };
 }
 

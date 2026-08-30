@@ -30,6 +30,7 @@ const fakeUser = {
   email: 'admin@example.com',
   name: 'Admin',
   role: 'admin' as const,
+  permissions: ['roles:write', 'users:write', 'extensions:write'],
 };
 
 // Sprint 12：模擬從 manifest.nav 生成的 nav items
@@ -43,12 +44,16 @@ const defaultExtensionNavItems: ExtensionNavItem[] = [
 function renderSidebar(
   enabledExtensions: string[],
   extensionNavItems = defaultExtensionNavItems,
+  isMobileOpen = false,
+  onMobileOpenChange = () => {},
 ) {
   return render(
     <AdminSidebar
       user={fakeUser}
       enabledExtensions={enabledExtensions}
       extensionNavItems={extensionNavItems}
+      isMobileOpen={isMobileOpen}
+      onMobileOpenChange={onMobileOpenChange}
     />,
   );
 }
@@ -62,11 +67,12 @@ describe('AdminSidebar — 基礎渲染', () => {
     expect(screen.getByRole('button', { name: '登出' })).toBeTruthy();
   });
 
-  it('永遠顯示「總覽」、「用戶管理」、「Extensions」（不需 extension 啟用）', () => {
+  it('永遠顯示「總覽」、「用戶管理」、「Extensions 管理」（Sprint 29）', () => {
     renderSidebar([]);
     expect(screen.getByText('總覽')).toBeTruthy();
     expect(screen.getByText('用戶管理')).toBeTruthy();
-    expect(screen.getByText('Extensions')).toBeTruthy();
+    // Sprint 29: Extensions 管理只在 admin 看得到（底部）
+    expect(screen.getByText('Extensions 管理')).toBeTruthy();
   });
 });
 
@@ -159,7 +165,12 @@ describe('AdminSidebar — Nav Link href', () => {
 describe('AdminSidebar — extensionNavItems prop（向後相容）', () => {
   it('沒傳 extensionNavItems → 不顯示 extension 連結（不 throw）', () => {
     render(
-      <AdminSidebar user={fakeUser} enabledExtensions={['blog', 'event']} />,
+      <AdminSidebar
+        user={fakeUser}
+        enabledExtensions={['blog', 'event']}
+        isMobileOpen={false}
+        onMobileOpenChange={() => {}}
+      />,
     );
     expect(screen.queryByText('部落格')).toBeNull();
     expect(screen.queryByText('活動')).toBeNull();

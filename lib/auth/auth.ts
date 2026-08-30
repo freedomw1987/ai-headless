@@ -33,6 +33,7 @@ export type AuthUser = {
   id: string;
   email: string;
   name?: string | null;
+  image?: string | null; // Sprint 29-2: avatar URL
   role: Role;
   permissions?: string[]; // Sprint 23+: 動態 permissions array (含 admin wildcard '*')
 };

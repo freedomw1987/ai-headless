@@ -13,7 +13,8 @@ import { resolve } from 'node:path';
 
 const HANDLER = resolve('lib/runtime/dynamic-handler.ts');
 const ROUTE = resolve('app/api/crud/[spec]/route.ts');
-const LIST_PAGE = resolve('app/admin/crud/[spec]/page.tsx');
+// Sprint B5: SortableHeaderCell 整合進 CrudListClient
+const LIST_PAGE = resolve('app/admin/crud/[spec]/crud-list-client.tsx');
 const SORTABLE_HEADER = resolve('components/admin/sortable-header-cell.tsx');
 
 describe('Sprint 19 Stage 3 — list sort + filter', () => {
@@ -90,41 +91,37 @@ describe('Sprint 19 Stage 3 — list sort + filter', () => {
   });
 
   describe('list page — sort + filter UI', () => {
+    // Sprint B5: searchParams + form GET 仍在 page.tsx (Server Component)
+    const PAGE = resolve('app/admin/crud/[spec]/page.tsx');
     it('list page 從 searchParams 讀 sort + order + q', () => {
-      const content = readFileSync(LIST_PAGE, 'utf-8');
+      const content = readFileSync(PAGE, 'utf-8');
       expect(content).toMatch(/searchParams:\s*Promise<\{[^}]*sort[^}]*order[^}]*q/s);
     });
 
     it('list page 顯示搜尋 input（搜尋全部欄位）', () => {
-      const content = readFileSync(LIST_PAGE, 'utf-8');
+      const content = readFileSync(PAGE, 'utf-8');
       // <Input type="search" name="q"> 或類似
       expect(content).toMatch(/name=["']q["']/);
     });
 
     it('list page 用 form GET 提交搜尋', () => {
-      const content = readFileSync(LIST_PAGE, 'utf-8');
+      const content = readFileSync(PAGE, 'utf-8');
       // <form method="GET"> 含 q input
       expect(content).toMatch(/<form[^>]*method=["']GET["']/);
     });
 
-    it('list page TableHead 用 SortableHeaderCell 包覆 sortable 連結', () => {
-      // Sprint 20 Stage 2：sortable 連結邏輯搬到 SortableHeaderCell client wrapper
-      // list page 只需 import + 使用，URL 組裝在 client 內部
-      const listContent = readFileSync(LIST_PAGE, 'utf-8');
-      expect(listContent).toMatch(/<SortableHeaderCell/);
+    it('CrudListClient 用 SortableHeaderCell 包覆 sortable 連結', () => {
+      // Sprint B5: SortableHeaderCell 整合進 CrudListClient (透過 renderHeader prop)
+      const clientContent = readFileSync(resolve('app/admin/crud/[spec]/crud-list-client.tsx'), 'utf-8');
+      expect(clientContent).toMatch(/<SortableHeaderCell/);
       const cellContent = readFileSync(SORTABLE_HEADER, 'utf-8');
       // client wrapper 內含 sort + order URL params
       expect(cellContent).toMatch(/params\.set\(['"]sort['"]/);
       expect(cellContent).toMatch(/params\.set\(['"]order['"]/);
     });
 
-    it('list page 當前排序欄位顯示方向箭頭（透過 SortableHeaderCell client wrapper）', () => {
-      // Sprint 20 Stage 2：icon 邏輯搬到 SortableHeaderCell（client component）
-      const listContent = readFileSync(LIST_PAGE, 'utf-8');
+    it('SortableHeaderCell 顯示方向箭頭（根據 order 動態選擇 icon）', () => {
       const cellContent = readFileSync(SORTABLE_HEADER, 'utf-8');
-      // list page 用 SortableHeaderCell
-      expect(listContent).toMatch(/<SortableHeaderCell/);
-      // icon 邏輯在 SortableHeaderCell 內
       expect(cellContent).toMatch(/ChevronUp|ChevronDown|ArrowUpDown/);
       // 根據 isSorted + order 動態選擇 icon
       expect(cellContent).toMatch(/isSorted\s*\?/);

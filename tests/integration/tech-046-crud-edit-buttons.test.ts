@@ -27,8 +27,10 @@ describe('Sprint 18 Stage 1 — CRUD 編輯按鈕', () => {
   describe('list page 編輯按鈕', () => {
     it('list page 透過 ListRowActions 提供「編輯」連結到 /edit', () => {
       // Sprint 18 Stage 2：list page 是 Server Component，編輯按鈕搬遷到 ListRowActions (client component)
-      const content = readFileSync(LIST_PAGE_PATH, 'utf-8');
-      expect(content).toMatch(/ListRowActions/);
+      // Sprint B 改架構：list page 用 CrudListClient (client)，ListRowActions 搬到 CrudListClient 內
+      const crudListClientPath = resolve(ROOT, 'app/admin/crud/[spec]/crud-list-client.tsx');
+      const crudListClientContent = readFileSync(crudListClientPath, 'utf-8');
+      expect(crudListClientContent).toMatch(/ListRowActions/);
       // ListRowActions 內含「編輯」連結
       const rowActionsPath = resolve(ROOT, 'components/admin/list-row-actions.tsx');
       const rowActionsContent = readFileSync(rowActionsPath, 'utf-8');

@@ -32,7 +32,7 @@ export function ChatInput({ onSubmit, disabled = false, placeholder = '輸入訊
   };
 
   return (
-    <div className="border-t bg-background p-4">
+    <div className="border-t bg-background p-3 sm:p-4">
       <div className="flex gap-2">
         <textarea
           value={text}
@@ -42,7 +42,7 @@ export function ChatInput({ onSubmit, disabled = false, placeholder = '輸入訊
           disabled={disabled}
           rows={2}
           className={cn(
-            'flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm',
+            'flex-1 min-h-[44px] resize-none rounded-md border border-input bg-background px-3 py-2 text-sm',
             'focus:outline-none focus:ring-2 focus:ring-ring',
             'disabled:cursor-not-allowed disabled:opacity-50',
           )}
@@ -51,6 +51,7 @@ export function ChatInput({ onSubmit, disabled = false, placeholder = '輸入訊
         <Button
           onClick={handleSubmit}
           disabled={disabled || !text.trim()}
+          className="shrink-0"
           data-testid="chat-send-button"
         >
           送出

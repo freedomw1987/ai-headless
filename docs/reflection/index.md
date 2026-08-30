@@ -1,7 +1,7 @@
 # Reflection 報告索引
 
 > 本目錄存放各 Sprint / US / Module 反省報告。
-> **最後更新**：2026-08-26（Sprint 32 收尾）
+> **最後更新**：2026-08-30（Sprint 31 收尾）
 
 ---
 
@@ -52,8 +52,10 @@
 | **Sprint 30** | [**sprint-30.md**](./sprint-30.md) | ✅ | **100%** (1.5-2/1.5-2) | ✅ **全綠** | **Event workflow 動態化 + Order cancelEvent log：1 commit (event-workflow transitionEvent 從 spec.workflows 動態讀取代 hard-code + order-workflow 新增 cancelEvent 函式加 $transaction + TransitionLog)，5 個新測試，1109/1109 全綠。3 條新學習 (L30-L32)：spec workflow 動態讀而非 hard-code、Order cancelEvent 之前被 Sprint 28 漏掉、動態讀 spec 適用於時間觸發** |
 | **Sprint 31** | [**sprint-31.md**](./sprint-31.md) | ✅ | **100%** (1.5-2/1.5-2) | ✅ **全綠** | **Action Hook Transition Log 補完：2 commits (todo completeTodo 加 TransitionLog + event cancelEvent action 加 TransitionLog，audit 揭露 Sprint 30 reflection TD-新發現 E 修復)，7 個新測試，1114/1116 全綠。4 條新學習 (L33-L36)：action hook 需 audit trail、ActionContext 缺 userId workaround、Todo vs Event fromState 邏輯不同、audit 揭露應立即修** |
 | **Sprint 32** | [**sprint-32.md**](./sprint-32.md) | ✅ | **100%** (4/4) | ✅ **全綠** | **手機 RWD 完整 + TD-522：5 commits (TD-522 Order manifest audit 已完成 + admin-sidebar collapse 漢堡按鈕 + DataTable 確認 RWD shadcn 內建 + users/roles header RWD + Playwright E2E snapshot)，6 個新測試，1119/1121 全綠。4 條新學習 (L37-L40)：sidebar collapse 是手機 RWD 第一步、shadcn Table 內建 overflow-auto 不需額外 wrapper、flex-col sm:flex-row header RWD、Playwright E2E snapshot 守護未來 RWD 回歸** |
-
----
+| **Sprint 27-A** | [**module-crud-list-enhancements-reflection.md**](./module-crud-list-enhancements-reflection.md) | ✅ | **100%** (28/28) | ✅ **全綠** | **Module: CRUD 列表頁增強 v1.1 (Sprint A-E + RWD + Bug 修補)：5 大功能全部完成 (Infinite scroll / Checkbox + 批次刪除 / 顯示欄位設定 / 進階篩選 / Mobile card view)，49 新測試，1258/1258 全綠 + 79/79 E2E。3 bug 修補（Sprint C hydration、Sprint D filter-after-pagination、FieldType integer）** |
+| **Sprint 28-29** | [**module-sprint28-29-reflection.md**](./module-sprint28-29-reflection.md) | ✅ | **100%** (23/23) | ✅ **全綠** | **Module: Admin Sidebar & Profile 改造（users/roles 統一 CRUD pattern + sidebar 重組 + profile 重設計 + settings page + auth session image refresh fix）：5 個用戶需求全部達成，49 新測試，816/816 全綠 + 79/79 E2E。3 bug 修補（Server→Client function 序列化 / Radix DropdownMenu ARIA role / JWT session image 三層 root cause）** |
+| **Sprint 30** | [**module-sprint30-reflection.md**](./module-sprint30-reflection.md) | ✅ | **100%** (5.5/5.5) | ✅ **全綠** | **Module: 5 個技術債清理守護測試（TD-801 E2E avatar reload / TD-802 JWT name refresh / TD-523 Hook type contract / TD-524 Sanitizer taxonomy / TD-519 Order pagination）：27 守護測試，842/842 全綠 + 80/80 E2E。4 個用 source-code guard + 1 個真改 code（auth/config.ts 加 name refresh）。5 條新學習 (L41-L45)：守護測試 > 改 code、JWT user-mutable 獨立查詢、E2E setup 重要、vi.stubEnv for env-dependent** |
+| **Sprint 31** | [**module-sprint31-reflection.md**](./module-sprint31-reflection.md) | ✅ | **100%** (3/3) | ✅ **全綠** | **Module: 用戶報 Bug + Admin RWD 健檢（TD-911 `*` wildcard 3 層修法 + TD-911b permission code 雙格式 regex + Sprint 31-1 admin 頁面 RWD 守護）：12 新測試 (4 unit + 3 unit + 5 E2E)，849/849 全綠 + 85/85 E2E。4 條新學習 (L46-L49)：用戶報 bug 多半是 3 層 root cause、Test fixture 應貼近真實資料、底層 fix 投資報酬率高、Zod regex 是隱形契約** |
 
 ## 🏆 Sprint 14 重點發現
 

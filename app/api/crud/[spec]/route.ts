@@ -19,6 +19,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 import { loadSpec } from '@/lib/runtime/spec-loader';
 import { createDynamicHandlers } from '@/lib/runtime/dynamic-handler';
+import { batchDeleteSpecItems } from '@/lib/runtime/batch-delete';
 import { registerAllExtensions } from '@/lib/extensions/hooks-registry';
 
 type RouteContext = { params: Promise<{ spec: string }> };
@@ -99,8 +100,27 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id') ?? undefined;
   const event = searchParams.get('event') ?? undefined;
+  const batch = searchParams.get('batch') === 'true';
 
   const body = await request.json().catch(() => ({}));
+
+  // Sprint B3: Batch delete (?batch=true)
+  if (batch) {
+    if (!r.user) {
+      return NextResponse.json({ error: '請先登入' }, { status: 401 });
+    }
+    const ids = (body as { ids?: unknown }).ids;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'ids 必填且不可為空' }, { status: 400 });
+    }
+    // 確保 ids 都是字串
+    const stringIds = ids.filter((id): id is string => typeof id === 'string');
+    if (stringIds.length === 0) {
+      return NextResponse.json({ error: 'ids 必須都是字串' }, { status: 400 });
+    }
+    const result = await batchDeleteSpecItems(r.handlers, { user: r.user }, stringIds);
+    return NextResponse.json(result, { status: 200 });
+  }
 
   // Transition via POST
   if (event) {

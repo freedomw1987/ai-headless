@@ -98,7 +98,11 @@ export async function GET() {
 
   // 2. 載入所有 permission codes
   const codes = await loadPermissionCodes();
-  const data: PermissionItem[] = codes.map((code) => ({
+
+  // TD-911: 過濾掉 * (admin wildcard) — 是 meta-permission, 不應列為可選權限
+  const filteredCodes = codes.filter((c) => c !== PermissionCode.ADMIN_WILDCARD);
+
+  const data: PermissionItem[] = filteredCodes.map((code) => ({
     code,
     resource: parseResource(code),
     label: parseLabel(code),

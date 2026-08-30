@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { PermissionCode } from '@/lib/auth/permissions';
 
 // ==============================================
 // 動態 permission codes (Sprint 22 TD-6)
@@ -71,8 +72,18 @@ export function MatrixPageClient({ roleId }: Props) {
       const permsData = await permsRes.json();
 
       setRole(roleData.data);
-      setAllPermissions(permsData.data);
-      setSelectedCodes(new Set(roleData.data.permissions.map((p: { code: string }) => p.code)));
+      // TD-911: 防禦性過濾 * (admin wildcard) — 即使 API 已過濾, 前端再 filter 一次保險
+      const filteredPerms = (permsData.data as PermissionItem[]).filter(
+        (p) => p.code !== PermissionCode.ADMIN_WILDCARD,
+      );
+      setAllPermissions(filteredPerms);
+      setSelectedCodes(
+        new Set(
+          roleData.data.permissions
+            .map((p: { code: string }) => p.code)
+            .filter((code: string) => code !== PermissionCode.ADMIN_WILDCARD),
+        ),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : '載入失敗');
     } finally {

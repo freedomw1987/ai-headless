@@ -99,12 +99,15 @@ describe('Sprint 19 Stage 1 — Server Side 分頁', () => {
     });
 
     it('list page 用 ListPaginationNav client wrapper 顯示分頁 UI', () => {
-      // Sprint 19 Stage 1 簡化：list page 暫不嵌入 ListPaginationNav
-      // （Server Component 不能傳函數給 Client Component）
-      // Stage 2 用子包裝 client component 串接
-      // 暫時檢查 list page 有分頁資訊顯示
+      // Sprint A 改架構: pagination UI 改為 InfiniteScrollTrigger，
+      // 共 N 筆資料仍保留在 page.tsx，「已載入 X / Y」搬到 CrudListClient
       const content = readFileSync(LIST_PAGE_PATH, 'utf-8');
-      expect(content).toMatch(/第\s*\{page\}\s*\/\s*\{totalPages\}\s*頁/);
+      // 「共 N 筆」仍存在 page.tsx (total 數量)
+      expect(content).toMatch(/共\s*\{total\}/);
+      // InfiniteScrollTrigger 元件存在
+      const triggerPath = resolve(ROOT, 'app/admin/crud/[spec]/infinite-scroll-trigger.tsx');
+      const triggerContent = readFileSync(triggerPath, 'utf-8');
+      expect(triggerContent).toMatch(/InfiniteScrollTrigger/);
     });
 
     it('list page 顯示「共 N 筆」資料數（來自 total，非 items.length）', () => {

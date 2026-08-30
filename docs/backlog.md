@@ -6,16 +6,38 @@
 
 ---
 
-## 📌 當前狀態（2026-08-26）
+## 📑 目錄（TOC）
+
+| Section | 用途 |
+|---------|------|
+| [📌 當前狀態](#-當前狀態) | 最新 sprint 進度、測試基線、下一個 P0 |
+| [📊 Backlog 主表](#-backlog-主表單一表按優先級排序) | P0~P3 + Icebox 全部待辦 item |
+| [🗂️ Sprint 進度歷史](#️-sprint-進度歷史高層摘要) | Sprint 1-29 高層摘要 + Reflection 連結 |
+| [🏗️ 模組劃分](#️-模組劃分modules) | M0~M6 模組定義 |
+| [📝 規範文檔目錄](#-規範文檔目錄核心交付物) | docs/ 內核心交付物索引 |
+| [📋 US-102 Phase 2 開工 checklist](#-us-102-phase-2-開工-checklist2026-08-26-sprint-21-開工) | Sprint 21 RBAC 開工細節 |
+| [📞 對話記錄](./conversation-log.md) | 用戶 ↔ Agent 重要決策對話（已獨立）|
+
+---
+
+## 📌 當前狀態（2026-08-30）
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 26 — Sprint 20 P2 技術債批量修復**（2.5 SP，**100% 收尾**）|
-| **Sprint 25 狀態** | ✅ **100% 收尾（1/1 SP）**（Sprint 25 強制清 hasPermission）|
+| **當前 Sprint** | **Sprint 31 — 用戶報 Bug + Admin RWD 健檢**（3 SP，**100% 收尾**）|
 | **Sprint 26 狀態** | ✅ **100% 收尾（2.5/2.5 SP）**（Sprint 20 P2 技術債 5/5 全清）|
-| **測試基線** | **1054 tests / 80+ files**（Sprint 21-26 累計 +131 測試）|
-| **下一個 P0** | Sprint 27 Plan Gate（決定新方向）|
-| **路線圖關鍵** | ✅ Sprint 21-25（Phase 2 RBAC 11/11）→ ✅ Sprint 26（Sprint 20 P2 清完）→ 📋 Sprint 27+（新方向待定）|
+| **Sprint 27 狀態** | ✅ **100% 收尾（28/28 SP）**（CRUD 列表頁 5 大功能 + 8 個 bug 修補）|
+| **Sprint 28-29 狀態** | ✅ **100% 收尾（23/23 SP）**（users/roles 統一 CRUD + sidebar 重組 + profile 美化 + settings page）|
+| **Sprint 30 狀態** | ✅ **100% 收尾（5.5/5.5 SP）**（TD-801/802/523/524/519 全部守護測試 + JWT name refresh code 改動）|
+| **Sprint 31 狀態** | ✅ **100% 收尾（3/3 SP）**（TD-911 * wildcard bug 3 層修法 + TD-911b permission code 雙格式 + admin RWD 5 E2E 守護）|
+| **測試基線** | **849 integration + 85/85 E2E**（Sprint 31 累計 +12 守護測試）|
+| **下一個 P0** | Sprint 32 Plan Gate（決定新方向）|
+| **路線圖關鍵** | ✅ Sprint 21-26（Phase 2 RBAC + 技術債）→ ✅ Sprint 27（CRUD 列表頁 v1.1）→ ✅ Sprint 28-29（Admin Sidebar & Profile）→ ✅ Sprint 30（5 個技術債守護）→ ✅ Sprint 31（用戶報 Bug + RWD）→ 📋 Sprint 32+（新方向待定）|
+| **Sprint 27 反省報告** | [docs/reflection/module-crud-list-enhancements-reflection.md](reflection/module-crud-list-enhancements-reflection.md) |
+| **Sprint 28-29 反省報告** | [docs/reflection/module-sprint28-29-reflection.md](reflection/module-sprint28-29-reflection.md) |
+| **Sprint 30 反省報告** | [docs/reflection/module-sprint30-reflection.md](reflection/module-sprint30-reflection.md) |
+| **Sprint 31 反省報告** | [docs/reflection/module-sprint31-reflection.md](reflection/module-sprint31-reflection.md) |
+| **Sprint 32 後續 review（2026-08-30）** | [docs/reflection/sprint-32-review.md](reflection/sprint-32-review.md) — 16 個 TD 開立（5 P1 + 6 P2 + 5 P3）|
 
 ### Sprint 21 規劃（US-102-P2 動態 RBAC，預估 7 SP）
 
@@ -53,6 +75,173 @@
 | **Stage 4** | Toast sonner 升級（徹底改寫）| 1.5 | ✅ | [→](reflection/sprint-20.md#stage-4-重點toast-sonner-升級) |
 | **P3** | Dead code + null date | 0 | ✅ | [→](reflection/sprint-20.md#p3-重點dead-code--null-date) |
 | **P3.5** | Event 500 + Hook 註冊（user 報 bug）| 1.5 | ✅ | [→](reflection/sprint-20.md#p35-重點event-500--hook-註冊) |
+
+### Sprint 28-29 進度（Admin Sidebar & Profile 改造 — 100% 收尾）
+
+> **日期**: 2026-08-30
+> **Sprint 範圍**: users/roles 統一 CRUD pattern + sidebar 重組 + profile 美化 + settings page + auth session image refresh fix
+> **反省報告**: [docs/reflection/module-sprint28-29-reflection.md](reflection/module-sprint28-29-reflection.md)
+
+| Sprint | 標題 | SP | 狀態 | 關鍵交付 |
+|---|---|---|---|---|
+| 28-1 | users/roles 整合 CrudListClient | 5 | ✅ | Server Component + `users-list-shell` + `roles-list-shell` + 自訂 Row Actions |
+| 28-2 | renderActions + allowBatchDelete props | 1 | ✅ | CrudListClient 支援自訂 actions |
+| 28-3 | UserRowActions + RoleRowActions (TDD) | 5 | ✅ | 12 個新測試（5 + 7）|
+| 28-4 | DropdownMenu portal + ARIA role 修正 | - | ✅ | E2E selector 改用 menuitem |
+| 29-1 | Sidebar 結構重組 (TDD) | 4 | ✅ | 系統設定 section + Extensions 管理底部 + 13 個新測試 |
+| 29-2 | User Profile 重設計 (TDD) | 3 | ✅ | icon-only buttons 一行 + name + email + role badge + 13 個新測試 |
+| 29-3 | Settings page + API (TDD) | 4 | ✅ | /admin/settings + PATCH /api/profile/me + 20 個新測試 |
+| 29-修 | Auth session image refresh fix | - | ✅ | 修 JWT callback 三層 bug（初次登入 / cache miss / 獨立 query）|
+| **總計** | | **23** | **100%** | |
+
+**Bug 修補（本期 3 個）**：
+
+| # | 問題 | 類型 | 修法 |
+|---|---|---|---|
+| 1 | Server → Client 傳 function 報錯 | Bug | 建 client wrapper shell（users-list-shell / roles-list-shell）|
+| 2 | Radix DropdownMenu 改變 ARIA role | Bug | E2E selector 改用 `getByRole('menuitem')` |
+| 3 | JWT session 沒帶 image（3 層 root cause）| Bug | 1. 初次登入 set token.image 2. cache miss 時 set 3. **每次都跑獨立 query refresh** |
+
+**最終測試基線**：
+- ✅ integration 816/816（Sprint 28-29 新增 49 測試）
+- ✅ E2E 79/79
+- ✅ typecheck 0 errors
+
+**關鍵學習**：
+1. **Server/Client Component 序列化限制** — function prop 不能跨 server→client，用 shell pattern 隔離
+2. **JWT session 不會自動 refresh** — cache 只放不常變資料（permissions），常變的（image）獨立 query
+3. **測試 fixture 應貼近真實 schema** — fakeUser 缺 image 欄位讓 bug 溜過去
+4. **Radix ARIA role 可能改變** — Playwright selector 要驗證實際 role
+5. **設計決策要讓用戶參與** — 3 個方案 + ASCII mockup 讓用戶選，比直接實作省時間
+
+**Sprint 30+ 建議**（背在 Backlog 主表）：
+- E2E 守護測試：avatar reload 後仍顯示同張圖
+- 把 JWT refresh 策略套用到 name 欄位
+- 其他 admin 頁面（dashboard / role 矩陣）RWD 健檢
+- 批次刪除 undo 機制 + 鍵盤快捷鍵
+
+---
+
+### Sprint 30 進度（5 個技術債守護 — 100% 收尾）
+
+> **日期**: 2026-08-30
+> **Sprint 範圍**: TD-801/802/523/524/519 守護測試 + JWT name refresh code 改動
+> **反省報告**: [docs/reflection/module-sprint30-reflection.md](reflection/module-sprint30-reflection.md)
+
+| ID | 主題 | 類型 | 改動 | 測試 |
+|---|---|---|---|---|
+| **TD-801** | E2E 守護測試：avatar reload | 防回歸 | 只加測試（auth/config.ts Sprint 29-3 已修）| +1 E2E |
+| **TD-802** | JWT refresh 套用到 name | code + 防回歸 | auth/config.ts JWT/session callback 加 name | +4 unit |
+| **TD-523** | HookFunction type contract | 防回歸 | 只加測試（Sprint 27 已加 StrictHookFunction）| +5 unit |
+| **TD-524** | Sanitizer error taxonomy | 防回歸 | 只加測試（Sprint 27 已加 AppError + ErrorCategory）| +12 unit |
+| **TD-519** | Order 列表分頁 | 防回歸 | 只加測試（Sprint 19 已加 skip+take）| +5 unit |
+| **總計** | | | **1 code 改動 + 27 守護測試** | |
+
+**關鍵學習**：
+1. **守護測試 > 改 code**：技術債處理優先補測試而非 refactor（ROI 高）
+2. **JWT user-mutable 欄位**：獨立查詢 vs permission cache 是正確的 trade-off
+3. **兩種守護測試**：source-code guard（簡單防移除）+ behavior test（防行為退化）
+4. **E2E setup 重要**：beforeEach reset + page.evaluate 是穩定模式
+5. **vi.stubEnv for env-dependent code**：避免直接 mutate process.env
+
+**Sprint 31+ 建議**（加到 Backlog）：
+- TD-901: 其他 CRUD 頁面 RWD 健檢 (todo/event)
+- TD-902: 批次刪除 undo 機制
+- TD-903: Toolbar 鍵盤快捷鍵
+- TD-905: 移除 hook-sdk.ts 的 deprecated HookFunction（破壞性變更）
+- TD-906: 移除 app-error.ts 的 regex fallback（破壞性變更）
+
+---
+
+### Sprint 31 進度（用戶報 Bug + Admin RWD 健檢 — 100% 收尾）
+
+> **日期**: 2026-08-30
+> **Sprint 範圍**: TD-911 * wildcard 3 層修法 + TD-911b permission 雙格式 + admin RWD 守護
+> **反省報告**: [docs/reflection/module-sprint31-reflection.md](reflection/module-sprint31-reflection.md)
+
+| ID | 主題 | 類型 | 改動 | 測試 |
+|---|---|---|---|---|
+| **TD-911** | `*` wildcard 過濾 | Bug 3 層修法 | API GET filter + PATCH reject + 前端 filter | +4 unit |
+| **TD-911b** | permission code 雙格式 (`:` + `.`) | Bug Zod regex | Zod regex 改用 `[:.]` 接受兩種分隔符 | +3 unit |
+| **Sprint 31-1** | admin 頁面 mobile RWD | 守護測試 | 5 E2E (dashboard / extensions / users / roles / matrix) | +5 E2E |
+| **總計** | | | **3 個檔案改動 + 12 新守護測試** | |
+
+**關鍵 bug 修法**：
+
+1. **TD-911 `*` wildcard 3 層 root cause**：
+   - API GET 不過濾 → 加 `codes.filter(c => c !== PermissionCode.ADMIN_WILDCARD)`
+   - API PATCH 不拒絕 → 加 explicit check return 400
+   - 前端不防禦 → 加 `filter(p => p.code !== ADMIN_WILDCARD)`
+   - DB 清理：`scripts/cleanup-wildcard-permissions.ts` 刪 1 個管理員 role 的 `*` permission
+
+2. **TD-911b 雙格式 regex**：
+   - 舊 regex 只接受 `:`（Sprint 21 設計）
+   - 但 Sprint 21 之前 extension manifest 用 `.` (e.g., `blog.create`)
+   - 新 regex：`/^(\*|[a-z][a-z0-9_]*[:.][a-z][a-z0-9_]*)$/` 用 `[:.]` 同時接受
+
+**關鍵學習**：
+
+1. **用戶報 bug 多半是 3 層 root cause** — 修最底層 + 多層 defensive check
+2. **Test fixture 應貼近真實資料** — Sprint 21 fixture 全用 `users:read`，沒測 `blog.create` dot 格式
+3. **底層 fix 投資報酬率高** — Sprint 27 min-w-0 同時修好所有 admin 頁面 RWD
+4. **Zod regex 是隱形契約** — 重構時要確認所有合法格式都被測試覆蓋
+
+**Sprint 32+ 建議**：
+- TD-1001: API/DB 一致性測試（測真實 schema，不只 fixture）
+- TD-1002: 統一 permission code 格式（全轉 colon 或保留雙格式）
+- TD-1003: User CRUD form RWD 健檢
+- TD-1004: CRUD form RWD 健檢
+
+---
+
+### Sprint 27 進度（CRUD 列表頁增強 v1.1 — 100% 收尾）
+
+> **日期**: 2026-08-30
+> **Sprint 範圍**: CRUD 列表頁 5 大功能 + RWD + 多個 bug 修補
+> **反省報告**: [docs/reflection/module-crud-list-enhancements-reflection.md](reflection/module-crud-list-enhancements-reflection.md)
+
+| Sprint | 標題 | SP | 狀態 | 關鍵交付 |
+|---|---|---|---|---|
+| Sprint A | Infinite scroll pagination | 5 | ✅ | `InfiniteScrollTrigger` + server-side 重撈累積 render |
+| Sprint B | Checkbox + 批次刪除 | 8 | ✅ | Row checkbox + 全選 + BatchDeleteDialog + `lib/runtime/batch-delete.ts` |
+| Sprint C | 顯示欄位設定 | 5 | ✅ | ColumnTogglePopover + localStorage 持久化（三層 fallback）|
+| Sprint D | 進階篩選 | 8 | ✅ | `lib/crud/list-query.ts` 5 類型 + AdvancedFilterDialog + Prisma where 編譯器 |
+| Sprint E | Mobile card view | 2 | ✅ | MobileListView + useMediaQuery + 3 viewport 驗證 |
+| **總計** | | **28** | **100%** | |
+
+**Bug 修補（本期 8 個）**：
+
+| # | 問題 | 類型 | 修法 |
+|---|---|---|---|
+| 1 | Sprint C hydration mismatch（localStorage 影響 SSR）| Bug | useMemo 不讀 localStorage，useEffect mount 後才讀 |
+| 2 | Sprint D filter-after-pagination | Bug | `buildPrismaWhere` 編譯 5 類型 operators，handler.findMany 前套用 |
+| 3 | Sprint D FieldType 缺 integer | 缺失功能 | 加 `integer` type，跟 `number` 共用 operators |
+| 4 | Sprint D enumValues 雙來源 | Bug | `validation.enum ?? options` 向上相容 |
+| 5 | Pre-existing Prisma entityId (todo-extension) | Bug | 測試改用 `db.todo.create()` 拿 id |
+| 6 | Pre-existing Prisma entityId (three-cruds-e2e) | Bug | 同上 |
+| 7 | Blog mobile card overflow (3 層 root cause) | Bug RWD | (1) MobileListView truncate (2) search Input flex-1 (3) admin-shell min-w-0 |
+| 8 | 批次刪除 button 改為隱藏 (無選取時) | UX | conditional render `selectedIds.size > 0` |
+| 9 | 移除 toolbar 小「新增」button | UX | 只保留 page header 大按鈕 |
+
+**最終測試基線**：
+- ✅ integration 1258/1258（含 Sprint 27 新增 49 測試）
+- ✅ E2E 79/79（含 tech-039 RWD 新增 mobile card view 測試）
+- ✅ typecheck 0 errors
+- ✅ lint 0 errors
+
+**關鍵 Sprint E RWD 三層 root cause 學習**：
+1. MobileListView 沒 truncate 長欄位值（HTML content 全文顯示）
+2. search Input 用 `w-full` 在 flex form 內撐開
+3. admin-shell flex parent 缺 `min-w-0`，flex items 預設 `min-width: auto` 被內容撐大
+
+**Sprint 28+ 建議**：
+1. 其他 CRUD 頁面 RWD 健檢（todo/order/event）
+2. CRUD detail page / form page RWD
+3. admin 後台其他頁面 RWD（dashboard/roles/extensions）
+4. 批次刪除 undo 機制（toast 內加 undo button）
+5. Toolbar 鍵盤快捷鍵（Cmd+A 全選、Delete 開批次刪除）
+
+---
 
 ### Sprint 20 揭露的技術債（已 Sprint 26 100% 完成）
 
@@ -333,56 +522,6 @@
 - ⚠️ CHANGELOG 內的「TD-405 崩潰修復」已加 alias 標記指向 TD-601
 
 ---
-
-## 📞 對話記錄
-
-> Date Time： 2026-08-26 17:30
-> 用戶：項目中有什麼開發任務？（查 Sprint 20 進度）
-> BA(我)：列出 Sprint 20 全收尾（7/7 SP）+ Sprint 21 候選任務（推薦 US-102-P2 動態 RBAC）
-> 用戶：好，1（選 Sprint 21 US-102-P2）
-> BA(我)：依 SOP 進 Plan Gate，一次一個問題問 Q1-Q4
-> Q1 用戶：A — 內建3 個 role 不能刪
-> Q2 用戶：A — 小寫 + 底線 + ≤32 字 + 唯一 + 預留保留字
-> Q3 用戶：A — `/admin/roles` 公開但只有 admin 可進可改
-> Q4 用戶：A — 只有 admin 能授權權限
-> BA(我)：寫入 `docs/backlog.md` US-102-P2 開工 checklist + 新建 `docs/prd/09-rbac.md`
-> 用戶：1（先解決 Q5-Q7 技術問題）
-> BA(我)：Q5 Session strategy → 用戶 A（JWT + 1 分鐘快取 + 失效 API）
-> 用戶：但做之前先整理 `backlog.md` 讓他可讀
-> BA(我)：發現實際 631 行（不是 843），推薦 A 方案（小整理 + 建 Sprint 20 reflection）
-> 用戶：A
-> BA(我)：新建 `docs/reflection/sprint-20.md` + 精簡 `backlog.md` Sprint 20 五段（6 頁 → 1 頁 + 6 行連結表）+ reflection/index.md 加 Sprint 20 行
-> 用戶：好，1（先把 Q5 寫進 PRD，然後進 Q6）
-> BA(我)：PRD 開頭狀態列更新 + 新增 §12 Plan Gate 紀錄 + §12.3 Q5 詳細設計（架構圖 + 4 個關鍵改動 + Sprint 20 技術債連動表 + SP 影響）；backlog.md Sprint 21 規劃表 Q5 狀態同步
-> Q6 用戶：A — 保留純函式 + 漸進式遷移（雙函式 4 Sprint 計畫，Sprint 25 強制清）
-> BA(我)：PRD 新增 §12.4 Q6 詳細設計（雙函式 API 範例 + 漸進式遷移順序表 + Sprint 25 強制清規則 + 風險控制手段）；backlog.md Sprint 21 規劃表 Q6 狀態同步
-> Q7 用戶：A — 保留寫死矩陣測試 + 新增動態查 DB 測試（漸進式）
-> BA(我)：PRD 新增 §12.5 Q7 詳細設計（測試集分區策略 + 純函式微調範例 + 動態測試範例 + 與 Q5/Q6 關聯）；新增 §13 Plan Gate 完成總結（7 個決策一覽 + Sprint 21 最終 SP 8.25 SP + Plan Gate 完成證明 + Design Gate 待辦）；backlog.md Sprint 21 規劃表 Q7 狀態同步 + 「下一個 P0」改為 Design Gate
-> 結果：Sprint 21 Plan Gate ✅ 完成（Q1-Q7 全解決，PRD 8.25 SP）。下一步：Design Gate（wireframe + Task 順序微調 + seed 詳寫）
-> 用戶：1（進 Design Gate）
-> BA(我)：Design Gate 4 個待辦全完成。
-> 待辦 1（wireframe）：PRD §4.3 加 Mermaid RBAC 流程圖（ASCII 保留為 fallback）+ §4.4 Sprint 21-25 漸進式遷移 Gantt 圖
-> 待辦 2（Task 順序）：PRD §8 拆 Task 4 成 4a/4b/4c（cache + 雙函式 + 失效 API）+ 拆 Task 12 成 12a/12b（既有測試更新 + 新增動態測試）+ 加 §8.1 Task 依賴關係圖
-> 待辦 3（seed）：PRD §5.3 BUILTIN_ROLES + BUILTIN_PERMISSIONS_BY_ROLE + PermissionCode 常數 + idempotent upsert 完整 TS 實作 + 4 個關鍵設計說明
-> 待辦 4（commit）：PRD 新增 §8.2 Commit 規劃（9 個 commit 表 + 5 個規劃原則 + 7 天開發順序）+ backlog.md「下一個 P0」改為 Execution Gate
-> 結果：Sprint 21 Design Gate ✅ 完成（4 個待辦全解決，PRD 完備）。下一步：Execution Gate（Gate 1 TDD → Gate 2 lint → Gate 3 regression → Gate 4 reviewer + E2E）
-
-> Date Time：2026-08-24 11:31
-> 用戶：AI 開發不同項目有 3 個痛點：(1) UI/UX/架構不一致 (2) CRUD 是主需求但 AI 出錯多 (3) 想建立一套技術框架讓 AI 按規範開發
-> BA(我)：先釐清框架形態
-> 用戶：想用 JSON 規範同時約束前端、後端、DB Schema
-> BA(我)：推薦 A 方案 — Headless Web Framework + AI Coding Guide
-> 用戶：A 方案，最終 AI 能根據用戶需求生成系統
-> BA(我)：框架是底基，用戶可改樣式、可加 Extension
-> 用戶：Q1 = WordPress 風格終端用戶框架，含用戶管理、登入、權限、Blog 等底座
-> 用戶：Q2 = A（MVP）
-> 用戶：Q3 = A（Next.js 原生 + JSON 註冊）
-> 用戶：Q4 = C（OpenAI + Claude 雙模型可切換）
-> 用戶：Q5 = JSON 不在 UI 暴露，但生成後可下載 .json 給用戶打開看
-> 用戶：Q6 = A（Extension 規範用 OpenSpec 風格：MD + JSON + TS + 範例）
-
----
-
 ## 🏗️ 模組劃分（Modules）
 
 | 模組 | 名稱 | 說明 |
@@ -424,10 +563,10 @@
 | **TD-516** | Tech Debt | Order 並發 transition 控制 | 同時間兩個 transition 可能都「成功」，最後寫的贏 | 1 | SP8 | M1-WS | 📋 Ready（待真有並發需求時）|
 | **TD-517** | Tech Debt | Order transition audit log | 沒有記錄「誰、何時、用什麼 event 切到什麼狀態」 | 2 | SP8 | M1-WS | 📋 Ready（待真實用戶）|
 | **TD-518** | Tech Debt | Order transition 權限檢查 | `POST /api/order/{id}/transition` 沒檢查「誰」可以切狀態 | 1 | SP8 | M1-WS | ✅ Done（Sprint 21-25 動態 RBAC 完成：Order transition 自動用 hasDynamicPermission 守衛） |
-| **TD-519** | Tech Debt | Order 列表分頁 | 訂單 >50 筆會慢，沒分頁 | 1 | SP8 | M1-WS | 📋 Ready（Sprint 9+）|
+| **TD-519** | Tech Debt | Order 列表分頁 | 訂單 >50 筆會慢，沒分頁 | 1 | SP8 | M1-WS | ✅ Done（Sprint 19 dynamic-handler 加 skip+take，Sprint 30 5 unit 守護） |
 | **TD-520** | Tech Debt | Order 用 Zod 驗證 form | 目前 createOrderDialog 手寫 if 驗證 | 1 | SP8 | M1-WS | 📋 Ready（Sprint 9+）|
-| **TD-523** | Tech Debt | Hook function type contract 太鬆 | HookFunction<T = unknown> 接受任何型別 → silent type drift 風險 (Sprint 26 TD-403 揭露) | 1 | SP27+ | M1 | 📋 Ready（待破壞性變更） |
-| **TD-524** | Tech Debt | Sanitizer 用 regex 而非 error taxonomy | SAFE_PATTERNS 用 regex 陣列 → 手動加 regex 易遺漏 (Sprint 26 揭露) | 1.5 | SP27+ | M1 | 📋 Ready（需重構所有 throw 點） |
+| **TD-523** | Tech Debt | Hook function type contract 太鬆 | HookFunction<T = unknown> 接受任何型別 → silent type drift 風險 (Sprint 26 TD-403 揭露) | 1 | SP27+ | M1 | ✅ Done（Sprint 27 加 StrictHookFunction，Sprint 30 5 unit 守護）|
+| **TD-524** | Tech Debt | Sanitizer 用 regex 而非 error taxonomy | SAFE_PATTERNS 用 regex 陣列 → 手動加 regex 易遺漏 (Sprint 26 揭露) | 1.5 | SP27+ | M1 | ✅ Done（Sprint 27 加 AppError + ErrorCategory，Sprint 30 12 unit 守護） |
 | **TD-521** | Tech Debt | Disable Guard 測試補完 | Sprint 9 補完 Disable Guard 時發現：`listEnabledExtensions()` 有個 `\|\| true` bug，Sidebar filter 形同失效；其他 helper 也沒 unit test | 1 | SP9 | M6 | ✅ Done（本 session Sprint 9 補完）|
 | **TD-522** | Tech Debt | Order Extension manifest 缺失 | `extensions/order/` 沒有 `manifest.json`，導致 extension-manager filesystem scan 漏掉，/api/extensions 看不到 order（但 API guard 仍 work） | 0.5 | SP9+ | M6 | ✅ Done（Sprint 32 audit：extensions/order/manifest.json 已存在，內容完整含 hooks/actions/computed/workflows/permissions/nav） |
 | **US-204** | User Story | 訂單狀態機 | 訂單狀態：draft → pending_payment → paid → shipped → completed | 8 | SP2 | M1-WS | ✅ Done（Sprint 8：後端 + Demo UI，24 個測試）|
@@ -453,6 +592,11 @@
 | **US-S6-1** | User Story | TD-503 abort E2E | 切換 chat / SPA 切換 / disabled 守護 3 場景（reviewer P1）| 2 | SP6 | M6 | ✅ Done |
 | **TD-601** | Defect | /admin/extensions 崩潰修復 | async 函數漏 await → await + try/catch + lint + smoke test | 2 | SP6 | M7 | ✅ Done |
 | **TD-510** | Tech Debt | Backlog ID 撞號修正 | 既有兩個 `TD-405` 已透過本次重整重新編號 | 0.5 | SP6 | M0 | ✅ Done（本次重整）|
+| **TD-803** | Defect | JWT callback 每次都打 DB 抵銷 Sprint 23 cache | `lib/auth/config.ts:155-167` 把 name/image 獨立 query 設成「總是查詢」，違反 Sprint 28-29 教訓（cache 只放不常變）。修正：只在 cache miss 路徑查，或拆兩個獨立 cache | 0.5 | SP30 | M2 | 📋 Ready（Sprint 32 review R1） |
+| **TD-804** | Defect | `?filters=` parse 失敗 silent swallow 導致無過濾回傳 | `lib/runtime/dynamic-handler.ts:262-279` `catch {}` 吃掉錯誤 → user 看到不該看到的 rows（資料洩漏風險）。修正：parse 失敗要回 400 或 warning log | 0.5 | SP30 | M1 | 📋 Ready（Sprint 32 review R2） |
+| **TD-805** | Defect | Infinite scroll 無 page 上限（self-DoS 風險） | `app/admin/crud/[spec]/page.tsx` Sprint A：`Promise.all(1..N)` 累積查詢，user 不斷 scroll 自我 DoS。修正：hard cap（例如 ≤20）後改 cursor pagination | 1 | SP30 | M4 | 📋 Ready（Sprint 32 review R3） |
+| **TD-806** | Defect | Batch delete 缺 TransitionLog + 無 batch size cap | `app/api/crud/[spec]/route.ts` Sprint B3：沒寫 audit log（與 Sprint 31 `cancelEvent` 補法不一致），可一次砍整張表。修正：每筆寫 TransitionLog + max batch ≤ 100 | 1 | SP30 | M4 | 📋 Ready（Sprint 32 review R4） |
+| **TD-807** | Tech Debt | `lib/auth/config.ts` 縮排壞掉 | `:99` `callbacks: {` 少 2 空格，`:134` `if (fresh) {` 少 6 空格 — 繞過 formatter 編輯。修正：跑 prettier 再 commit | 0.1 | SP30 | M2 | 📋 Ready（Sprint 32 review R5） |
 
 ### P2（一般 / 改進）
 
@@ -470,6 +614,10 @@
 | **TD-513** | Tech Debt | use-chat-sessions.ts 測試 | TD-508 重構未涵蓋 hook 整合測試 | 1 | SP6 | M5 | ✅ Done（盤點 2026-08-24，16 個測試 case 已實作）|
 | **US-S6-2** | User Story | 平板 RWD 優化 | 768-1024px sidebar 太擠 | 1 | SP6 | M6 | 📋 Ready |
 | **TD-515** | Tech Debt | Extension State 持久化用 Prisma | `.extension-state.json` 寫 filesystem，多實例部署狀態不一致（舊 TD-405，已重新編號）| 2 | SP6 | M7 | ✅ Done（Prisma Extension.isEnabled，盤點 2026-08-24） |
+| **TD-808** | Tech Debt | 手機 sidebar 缺 Escape 鍵關閉 | `app/admin/admin-sidebar.tsx`：開啟後只能用 close button 或 backdrop 關，keyboard user 不友善。修正：加 `useEffect` listener | 0.5 | SP30 | M7 | 📋 Ready（Sprint 32 review U1） |
+| **TD-809** | Tech Debt | 手機 sidebar 缺 body scroll lock + route-change auto-close | sidebar 開啟時內容仍可滾動；programmatic navigation 後 sidebar 維持開啟。修正：`document.body.style.overflow='hidden'` + `usePathname` 監聽 | 0.5 | SP30 | M7 | 📋 Ready（Sprint 32 review U2） |
+| **TD-810** | Tech Debt | 手機 sidebar backdrop 用 `<button>` 違反 keyboard 慣例 | backdrop 是 `<button>`，鍵盤 user 必須 Tab 才能關。修正：用 `<div role="presentation">` 或加鍵盤 listener | 0.3 | SP30 | M7 | 📋 Ready（Sprint 32 review U3） |
+| **TD-811** | Tech Debt | Working tree 50+ 檔案未提交需拆 commit | Sprint A/B3/C/D + 29-3 + TD-802 + users/roles page-client 刪除 refactor 全在 working tree，未進任何 commit。風險：`git checkout .` 會全部遺失。修正：拆成 4-5 個獨立 commit，每個跑 Gate 1-4 | 1 | SP30 | M0 | 📋 Ready（Sprint 32 review U4） |
 
 ### P3（細節 / 可選）
 
@@ -482,6 +630,32 @@
 | **TD-506** | Tech Debt | ChatSidebar close emoji → icon | 視覺一致性 + 無障礙 | 0.5 | SP5 | M5 | ✅ Done |
 | **TD-509** | Tech Debt | JWT augmentation JSDoc | 解釋 TS quirk：`import type { JWT }` 是 module-load trigger | 0.5 | SP6 | M6 | ✅ Done |
 | **TD-512** | Tech Debt | E2E mock SW 相容性 | localStorage 跨 navigation，若加 service worker 可能衝突 | 1 | SP7 | M6 | 📋 Ready |
+| **TD-7xx** | Tech Debt | 其他 CRUD 頁面 RWD 健檢 (todo/order/event) | Sprint 27 只修 blog，其他 CRUD 頁面需要同樣健檢 | 1 | SP28 | M4 | 📋 Ready |
+| **TD-7xx** | Tech Debt | CRUD detail / form page RWD | CRUD edit drawer / form page 在 mobile 下的 RWD 健檢 | 2 | SP28 | M4 | 📋 Ready |
+| **TD-7xx** | Tech Debt | admin 其他頁面 RWD (dashboard/roles/extensions) | admin 後台非 CRUD 頁面的 RWD 健檢 | 2 | SP28 | M4 | 📋 Ready |
+| **US-7xx** | User Story | 批次刪除 undo 機制 | 批次刪除完成後 toast 加 undo button，防止誤刪 | 2 | SP28 | M4 | 📋 Ready |
+| **US-7xx** | User Story | Toolbar 鍵盤快捷鍵 | Cmd+A 全選、Delete 開批次刪除 dialog、Esc 關 dialog | 1 | SP28 | M4 | 📋 Ready |
+| **US-7xx** | User Story | 進階篩選 localStorage 持久化 | 目前用 URL params，可考慮存 localStorage 保留最近一次篩選 | 1 | SP28 | M4 | 📋 Ready |
+| **TD-7xx** | Tech Debt | Pre-existing Prisma 預防 E2E | 寫 E2E 確保 transitionLog.entityId 必填，防止再犯 | 1 | SP28 | M1 | 📋 Ready |
+| **TD-801** | Tech Debt | E2E 守護測試：avatar reload 後仍顯示同張圖 | Sprint 28-29 修的 JWT image bug 改守護測試，防止 session callback 漏欄位 | 1 | SP30 | M2 | ✅ Done（Sprint 30 +1 E2E）|
+| **TD-802** | Tech Debt | JWT refresh 策略套用到 name 欄位 | user.name 也有同樣 session 不 refresh 的問題（Sprint 28-29 教訓）| 1 | SP30 | M2 | ✅ Done（Sprint 30 JWT callback 加 name refresh + 4 unit 守護）|
+| **US-801** | User Story | Admin dashboard RWD 健檢 | 跟 Sprint 27 CRUD 列表頁同樣處理 | 1 | SP30 | M4 | 📋 Ready |
+| **US-802** | User Story | Role 矩陣頁 RWD 健檢 | /admin/roles/:id/permissions 頁面在 mobile 下檢查 | 1 | SP30 | M2 | 📋 Ready |
+| **US-803** | User Story | 批次刪除 undo 機制 | toast 內加 undo button，防止誤刪（從 Sprint 27 延續）| 2 | SP30 | M4 | 📋 Ready |
+| **US-804** | User Story | Toolbar 鍵盤快捷鍵 | Cmd+A 全選 / Delete 開批次刪除 dialog / Esc 關 dialog | 1 | SP30 | M4 | 📋 Ready |
+| **TD-812** | Tech Debt | Batch delete RBAC + TransitionLog 守護測試 | 補 unit + integration test：RBAC 邊界 + 每筆刪除有 TransitionLog 紀錄 | 0.5 | SP30 | M4 | 📋 Ready（Sprint 32 review T1） |
+| **TD-813** | Tech Debt | `?filters=` parse 邊界測試 | 補 integration test：malformed JSON、無效欄位、injection 防護、Sprint 32 review R2 守護 | 0.5 | SP30 | M1 | 📋 Ready（Sprint 32 review T2） |
+| **TD-814** | Tech Debt | Infinite scroll trigger + 累積 render 測試 | 補 unit test：max page guard、`useTransition`、cumulative render 正確性 | 0.5 | SP30 | M4 | 📋 Ready（Sprint 32 review T3） |
+| **TD-815** | Tech Debt | Sidebar Escape / route-change / backdrop 三種關閉路徑 E2E | Playwright 補 3 個情境測試（目前 `admin-mobile-rwd.spec.ts` 只測漢堡 toggle） | 0.5 | SP30 | M7 | 📋 Ready（Sprint 32 review T4） |
+| **TD-816** | Tech Debt | JWT name/image cache miss vs hit 路徑測試 | 補 unit test：cache miss 查 DB、cache hit 不查；防止 R1 再犯 | 0.5 | SP30 | M2 | 📋 Ready（Sprint 32 review T5） |
+| **TD-817** | Tech Debt | `lib/runtime/batch-delete.ts` 檔案健檢 | 被 `route.ts` 引用但不在 working tree 改動清單。確認檔案存在、有 unit test、respects permission checks、寫 TransitionLog | 0.5 | SP30 | M4 | 📋 Ready（Sprint 32 review T6） |
+| **TD-818** | Tech Debt | Lockfile 雙軌整理 | `bun.lock` + `pnpm-lock.yaml` 都改動，CI 一邊裝一邊不裝。修正：挑一個（推薦 pnpm，CI 已用 `--frozen-lockfile`）並 `.gitignore` 另一個 | 0.3 | SP30 | M0 | 📋 Ready（Sprint 32 review F1） |
+| **TD-901** | Tech Debt | 其他 CRUD 頁面 RWD 健檢 (todo/event) | Sprint 27 只修 blog，其他 CRUD 頁面需要同樣健檢 | 1 | SP31 | M4 | 📋 Ready |
+| **TD-902** | Tech Debt | 批次刪除 undo 機制 | toast 內加 undo button，防止誤刪 | 2 | SP31 | M4 | 📋 Ready |
+| **TD-903** | Tech Debt | Toolbar 鍵盤快捷鍵 | Cmd+A 全選 / Delete 開批次刪除 dialog | 1 | SP31 | M4 | 📋 Ready |
+| **TD-904** | Tech Debt | admin dashboard RWD 健檢 | dashboard 頁面在 mobile 下檢查 | 1 | SP31 | M4 | 📋 Ready |
+| **TD-905** | Tech Debt | 移除 hook-sdk.ts 的 deprecated HookFunction | TD-523 完整清理（破壞性變更：所有 hook 必須改用 StrictHookFunction）| 2 | SP31 | M1 | 📋 Ready |
+| **TD-906** | Tech Debt | 移除 app-error.ts 的 regex fallback | TD-524 完整清理（破壞性變更：所有 throw 必須改用 AppError）| 3 | SP31 | M1 | 📋 Ready |
 
 ### 冰盒（Backlog Icebox）
 
@@ -493,81 +667,41 @@
 
 ---
 
-## 🗂️ Sprint 進度歷史
+## 🗂️ Sprint 進度歷史（高層摘要）
 
-### Sprint 1（跑通單一 CRUD pipeline）— ✅ Done
-35 SP / 194 測試全綠 / 4 Gate 全通過
+> **完整細節**：見 `docs/reflection/` 各 Sprint 報告。
 
-| 子任務 | 標題 | SP | 狀態 |
-|--------|------|----|------|
-| S1.1 | 專案骨架 | 1 | ✅ |
-| S1.2 | Prisma Schema (9 models) | 1 | ✅ |
-| S1.3 | JSON Schema + TS Types | 3 | ✅ |
-| S1.4 | Schema Generator | 3 | ✅ |
-| S1.5 | API Generator | 3 | ✅ |
-| S1.6 | UI Generator | 5 | ✅ |
-| S1.7 | Permission Generator | 1 | ✅ |
-| S1.8 | AI Pipeline 骨架 | 5 | ✅ |
-| S1.9 | Extension Loader + API | 5 | ✅ |
-| S1.10 | 共用 CRUD 組件 | 5 | ✅ |
-| S1.11 | 整合測試 | 3 | ✅ |
-
-### Sprint 2 規劃（混合模式 SDK 主力，35 SP）
-
-**混合模式 SDK 必修**（19 SP）：
-- S2.1 Hook SDK + TD-301（Hook Runtime 實作）= 5 + 5 = **10 SP**（重點）
-- S2.2 Action SDK = 3 SP
-- S2.3 Computed SDK = 3 SP
-- S2.4 Workflow Engine = 8 SP
-
-**關鍵技術債**（13 SP）：
-- TD-302 Relation Select = 3 SP
-- TD-303 Tiptap 富文本 = 3 SP
-- TD-304 Pipeline Stage 類型安全 = 1 SP
-- TD-305 Field.relation 雙軌制 = 2 SP ✅
-- TD-306 Auth.js v5 = 5 SP ✅
-
-**整合**（8 SP）：
-- S2.5 `{{fn:...}}` 引用解析器 = 3 SP
-- S2.8 整合測試 = 5 SP
-
-### Sprint 3+ 規劃（完整 Demo，40 SP）
-
-| ID | 子任務 | 說明 | SP | 模組 | 狀態 |
-|----|--------|------|----|------|------|
-| **S3.1** | Todo Extension | 第二個 CRUD（title + completed + dueDate）| 5 | M3 | Pending |
-| **S3.2** | Event Extension | 第三個 CRUD（datetime + 多對多報名 + 容量 Hook）| 8 | M3 | Pending |
-| **S3.3** | E2E CRUD Demo | 三個 CRUD 端到端 + 截圖 | 5 | M3 | Pending |
-| **S3.4** | AI Chat 完整 UI | sidebar + streaming + 多 session + Markdown | 12 | M5 | Pending |
-| **S3.5** | Extension 安裝 UI | `/admin/extensions` + 啟用/停用 | 5 | M6 | Pending |
-| **S3.6** | 文檔站點 | README + docs/ + CHANGELOG | 5 | M0 | Pending |
-
-### Sprint 4-5（Tech Debt 清整期）
-
-| Sprint | 完成項目 | 詳見 |
-|--------|----------|------|
-| Sprint 4 | TD-401, TD-402, TD-403, TD-406, TD-405(→TD-515) 等 RWD/UX 債 | [S4 Reflection](reflection/sprint-4-reflection.md) |
-| Sprint 5 | TD-501~TD-506 + TD-502/503/504/505 完整修復 | [S5 Reflection](reflection/sprint-5-reflection.md) |
-
-### Sprint 6（起步 4 Task 已完成）
-
-詳見上方「當前狀態」表格 + [S6 Reflection](reflection/sprint-6-reflection.md)
-
----
-
-## 📚 Sprint Reflection 索引
-
-| Sprint | 報告 | 重點發現 |
-|--------|------|----------|
-| Sprint 3 | [sprint-3-reflection.md](reflection/sprint-3-reflection.md) | 初版 |
-| Sprint 4 | [sprint-4-reflection.md](reflection/sprint-4-reflection.md) | RWD/UX 改進 |
-| Sprint 5 | [sprint-5-reflection.md](reflection/sprint-5-reflection.md) | Chat 重構 + 6 個 Tech Debt 一次清 |
-| **Sprint 6** | [sprint-6-reflection.md](reflection/sprint-6-reflection.md) | 發現 → 修復 → 預防 pattern + 揭露 TD-514 P0（CI 缺失）|
-| **Sprint 14** | [sprint-14.md](reflection/sprint-14.md) | **方向大轉彎**：Compiler → Runtime 路線 + 揭露 event/todo 缺 requiresExtension |
-
-完整索引見 [reflection/index.md](reflection/index.md)
-
----
+| Sprint | 主題 | 範圍 / 狀態 | Reflection |
+|--------|------|------------|------------|
+| Sprint 1 | 跑通單一 CRUD pipeline | 35 SP ✅ Done（11 個子任務）| [sprint-1](#) |
+| Sprint 2 | 混合模式 SDK 主力 | 35 SP ✅ Done（Hook/Action/Computed/Workflow SDK）| [sprint-2](#) |
+| Sprint 3 | 完整 Demo | 40 SP ✅ Done（Todo/Event Extensions + AI Chat + E2E）| [sprint-3](reflection/sprint-3-reflection.md) |
+| Sprint 4 | Tech Debt 清整期 | ✅ Done（RWD/UX 債）| [sprint-4](reflection/sprint-4-reflection.md) |
+| Sprint 5 | Tech Debt 清整期 | ✅ Done（6 個 TD + Chat 重構）| [sprint-5](reflection/sprint-5-reflection.md) |
+| Sprint 6 | 持續修復 | ✅ Done（發現→修復→預防 pattern + TD-514 P0）| [sprint-6](reflection/sprint-6-reflection.md) |
+| Sprint 7 | StateMachine + CI | ✅ Done | [sprint-7](#) |
+| Sprint 8 | US-204 Demo UI | ✅ Done | [sprint-8](reflection/sprint-8-reflection.md) |
+| Sprint 9 | Blog/Event/Todo CRUD + Disable Guard | ✅ Done | [sprint-9](reflection/sprint-9-reflection.md) |
+| Sprint 10 | Compiler Pipeline | ✅ Done（修正 Sprint 9 §13 違背）| [sprint-10-phase-1](reflection/sprint-10-phase-1.md) / [phase-2](reflection/sprint-10-phase-2.md) |
+| Sprint 11 | Compiler 完善 | ✅ Done | [phase-a](reflection/sprint-11-phase-a.md) / [phase-b](reflection/sprint-11-phase-b.md) |
+| Sprint 13 | RWD/UX + DataTable | ✅ Done | [sprint-13](reflection/sprint-13.md) |
+| Sprint 14 | Runtime 取代 Compiler | ✅ Done（9.5/9.5 SP）| [sprint-14](reflection/sprint-14.md) |
+| Sprint 15 | Runtime Spec 精簡化 | ✅ Done | [sprint-15](reflection/sprint-15.md) |
+| Sprint 16 | Runtime 精簡化收尾 + RWD | ✅ Done | [sprint-16](reflection/sprint-16.md) |
+| Sprint 17 | customRenderer 客戶端 | ✅ Done | [sprint-17](reflection/sprint-17.md) |
+| Sprint 18 | Shadcn UI + DropdownMenu | ✅ Done（6.5/6.5 SP）| [sprint-18](#) |
+| Sprint 19 | List Sort + Filter | ✅ Done（8.5/8.5 SP）| [sprint-19](#) |
+| Sprint 20 | 多對多 + Audit | ✅ Done（7/7 SP）| [sprint-20](reflection/sprint-20.md) |
+| Sprint 21 | US-102-P2 動態 RBAC | ✅ Done（11/11 SP）| [sprint-21](reflection/sprint-21.md) |
+| Sprint 22 | RBAC 完成 + P2 細節 | ✅ Done | [sprint-22](reflection/sprint-22.md) |
+| Sprint 23 | Permission System 完善 | ✅ Done | [sprint-23](reflection/sprint-23.md) |
+| Sprint 24 | Sidebar Mobile | ✅ Done | [sprint-24](#) |
+| Sprint 25 | 強制清 hasPermission | ✅ Done | [sprint-25](#) |
+| Sprint 26 | Sprint 20 P2 技術債批量修復 | ✅ Done（2.5/2.5 SP）| [sprint-26](reflection/sprint-26.md) |
+| Sprint 27 | Clean code 改進（TD-523/524）| ✅ Done | [sprint-27](reflection/sprint-27.md) |
+| Sprint 27-A | Module: CRUD 列表頁增強 v1.1 | ✅ Done（28/28 SP）| [module-crud-list-enhancements-reflection.md](reflection/module-crud-list-enhancements-reflection.md) |
+| Sprint 28-29 | Module: Admin Sidebar & Profile | ✅ Done（23/23 SP）| [module-sprint28-29-reflection.md](reflection/module-sprint28-29-reflection.md) |
+| Sprint 30+ | 下一個 P0 | 📋 待 Plan Gate（先修 TD-803..818 必修項）| [sprint-32-review.md](reflection/sprint-32-review.md) |
 
 ## 📝 規範文檔目錄（核心交付物）
 

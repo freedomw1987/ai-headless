@@ -66,8 +66,8 @@ describe('S4.5 Blog JsonSpec', () => {
     expect(() => validateJsonSpec(spec)).not.toThrow();
   });
 
-  it('BlogPost 含 7 個 fields', () => {
-    expect(spec.models[0]!.fields).toHaveLength(7);
+  it('BlogPost 含 8 個 fields (Sprint 39 加 coverUrl)', () => {
+    expect(spec.models[0]!.fields).toHaveLength(8);
   });
 
   it('BlogPost 含 hooks（beforeCreate）', () => {

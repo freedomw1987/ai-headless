@@ -52,9 +52,18 @@ test.describe('Sprint 16 TECH-039 — RWD list page', () => {
         await expect(newBtn).toBeVisible();
         await expect(newBtn).toBeEnabled();
 
-        // 3. 表格存在（list page 渲染 <table>）
-        const table = page.locator('table').first();
-        await expect(table).toBeVisible();
+        // 3. Sprint E: < 768px 顯示 MobileListView card，≥ 768px 顯示 table
+        const isMobile = vp.width < 768;
+        if (isMobile) {
+          // mobile: MobileListView 內部含 data-testid=mobile-list-view
+          // 桌面 table 在 mobile 被 hidden（CSS hidden md:block），不計為 visible
+          const cardView = page.locator('[data-testid=mobile-list-view], [data-testid=mobile-empty-state]').first();
+          await expect(cardView).toBeVisible();
+        } else {
+          // tablet/desktop: table 顯示
+          const table = page.locator('table').first();
+          await expect(table).toBeVisible();
+        }
 
         // 4. 若有 items，「檢視」連結至少一個可見（在 viewport 內或可水平捲動）
         // Sprint 18 Stage 2: list row actions 改用 DropdownMenu（⋯按鈕）
@@ -71,21 +80,17 @@ test.describe('Sprint 16 TECH-039 — RWD list page', () => {
     }
   }
 
-  test('mobile viewport 下水平捲動表格不破版', async ({ page }) => {
+  test('mobile viewport 下顯示 card view (Sprint E)', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/admin/crud/blog');
 
-    // 表格寬度可能 > viewport，但應該可水平捲動（不會 overflow:hidden 切掉）
-    const table = page.locator('table').first();
-    await expect(table).toBeVisible();
+    // Sprint E: mobile 顯示 card view，不顯示 table
+    const cardView = page.locator('[data-testid=mobile-list-view], [data-testid=mobile-empty-state]').first();
+    await expect(cardView).toBeVisible();
 
-    // 表格的 scrollWidth >= clientWidth 表示可捲動
-    const tableBox = await table.boundingBox();
-    if (tableBox) {
-      // 表格不被裁切（其寬度 >= viewport - padding）
-      // 允許 10px 容差（避免 box-sizing 計算誤差）
-      expect(tableBox.width).toBeGreaterThan(0);
-    }
+    // Card 內有 checkbox
+    const checkbox = page.locator('[data-testid^=mobile-card-][data-testid$=-checkbox]').first();
+    await expect(checkbox).toBeVisible();
   });
 
   test('desktop viewport 下 sidebar 與表格同時可見', async ({ page }) => {

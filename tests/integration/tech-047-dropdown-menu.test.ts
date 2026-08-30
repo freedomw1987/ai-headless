@@ -61,10 +61,11 @@ describe('Sprint 18 Stage 2 — dropdown-menu 元件', () => {
 
   describe('list page 整合', () => {
     it('list page 用 DropdownMenu（透過 ListRowActions）', () => {
-      const content = readFileSync(LIST_PAGE_PATH, 'utf-8');
-      // list page 是 Server Component，不直接用 DropdownMenu，
-      // 但透過 ListRowActions（client component）使用
-      expect(content).toMatch(/ListRowActions/);
+      // Sprint B 改架構: list page (Server) 用 CrudListClient，ListRowActions 搬到 CrudListClient 內
+      const crudListClientPath = resolve(ROOT, 'app/admin/crud/[spec]/crud-list-client.tsx');
+      const crudListClientContent = readFileSync(crudListClientPath, 'utf-8');
+      // CrudListClient 透過 ListRowActions (client) 使用 DropdownMenu
+      expect(crudListClientContent).toMatch(/ListRowActions/);
       // 確認 ListRowActions 內含 DropdownMenu
       const rowActionsPath = resolve(ROOT, 'components/admin/list-row-actions.tsx');
       const rowActionsContent = readFileSync(rowActionsPath, 'utf-8');

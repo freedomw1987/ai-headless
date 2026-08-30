@@ -3,12 +3,13 @@
  * 包 sidebar + 內容區
  *
  * Sprint 12 TECH-023：Sidebar nav items 改從 manifest.nav 自動生成
+ * Sprint 32 RWD：漢堡按鈕抽到 AdminShell，與 sidebar 共享 toggle state
  */
 
 import { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth/auth';
-import { AdminSidebar } from './admin-sidebar';
+import { AdminShell } from './admin-shell';
 import { listEnabledExtensions } from '@/lib/extensions/extension-enabled';
 import { listInstalledExtensions } from '@/lib/extensions/extension-manager';
 import { getEnabledExtensionNavItems } from '@/lib/extensions/extension-nav';
@@ -29,13 +30,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const extensionNavItems = getEnabledExtensionNavItems(allManifests);
 
   return (
-    <div className="min-h-screen bg-muted/30 flex">
-      <AdminSidebar
-        user={user}
-        enabledExtensions={enabledNames}
-        extensionNavItems={extensionNavItems}
-      />
-      <main className="flex-1 p-8">{children}</main>
-    </div>
+    <AdminShell
+      user={user}
+      enabledExtensions={enabledNames}
+      extensionNavItems={extensionNavItems}
+    >
+      {children}
+    </AdminShell>
   );
 }

@@ -2,6 +2,15 @@
   "name": "blog",
   "label": "Blog",
   "requiresExtension": "blog",
+  "list": {
+    "allowColumnToggle": true,
+    "defaultColumns": ["title", "status", "publishedAt", "readingTime"],
+    "views": [
+      { "type": "table", "label": "表格" },
+      { "type": "kanban", "label": "看板", "primaryField": "title", "groupByField": "status" },
+      { "type": "gallery", "label": "圖庫", "primaryField": "title", "imageField": "coverUrl" }
+    ]
+  },
   "workflows": [
     {
       "name": "blogPost",
@@ -48,6 +57,12 @@
           "type": "string",
           "label": "摘要",
           "validation": { "max": 500 }
+        },
+        {
+          "name": "coverUrl",
+          "type": "string",
+          "label": "封面 URL",
+          "list": { "defaultVisible": false }
         },
         {
           "name": "status",

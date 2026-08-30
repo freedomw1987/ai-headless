@@ -82,9 +82,11 @@ describe('Sprint 20 Stage 2 — Tooltip 元件 + sortable header 場景', () => 
 
   describe('list page 整合', () => {
     it('list page 用 SortableHeaderCell（不改為 client component）', () => {
-      const content = readFileSync(LIST_PAGE_PATH, 'utf-8');
-      expect(content).toMatch(/import.*\{[^}]*\bSortableHeaderCell\b[^}]*\}.*from\s+['"]@\/components\/admin\/sortable-header-cell['"]/);
-      expect(content).toMatch(/<SortableHeaderCell/);
+      // Sprint B 改架構: SortableHeaderCell 從 page.tsx 搬到 CrudListClient (client component)
+      const crudListClientPath = resolve(ROOT, 'app/admin/crud/[spec]/crud-list-client.tsx');
+      const crudListClientContent = readFileSync(crudListClientPath, 'utf-8');
+      expect(crudListClientContent).toMatch(/import.*\{[^}]*\bSortableHeaderCell\b[^}]*\}.*from\s+['"]@\/components\/admin\/sortable-header-cell['"]/);
+      expect(crudListClientContent).toMatch(/<SortableHeaderCell/);
     });
 
     it('list page 已移除直接用 Tooltip（避免把 Server Component 變 client）', () => {

@@ -2,6 +2,15 @@
   "name": "event",
   "label": "活動管理",
   "requiresExtension": "event",
+  "list": {
+    "allowColumnToggle": true,
+    "defaultColumns": ["title", "status", "startAt", "capacity"],
+    "views": [
+      { "type": "table", "label": "表格" },
+      { "type": "kanban", "label": "看板", "primaryField": "title", "groupByField": "status" },
+      { "type": "calendar", "label": "月曆", "primaryField": "title", "dateField": "startAt" }
+    ]
+  },
   "models": [
     {
       "name": "Event",

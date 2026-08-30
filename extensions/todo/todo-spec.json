@@ -2,6 +2,16 @@
   "name": "todo",
   "label": "待辦事項",
   "requiresExtension": "todo",
+  "list": {
+    "allowColumnToggle": true,
+    "defaultColumns": ["title", "completed", "dueDate", "priority"],
+    "views": [
+      { "type": "table", "label": "表格" },
+      { "type": "todo-list", "label": "待辦清單", "primaryField": "title" },
+      { "type": "kanban", "label": "看板", "primaryField": "title", "groupByField": "priority" },
+      { "type": "calendar", "label": "月曆", "primaryField": "title", "dateField": "dueDate" }
+    ]
+  },
   "models": [
     {
       "name": "Todo",
@@ -12,7 +22,8 @@
           "name": "title",
           "type": "string",
           "label": "標題",
-          "validation": { "required": true, "min": 1, "max": 200 }
+          "validation": { "required": true, "min": 1, "max": 200 },
+          "list": { "defaultVisible": true }
         },
         {
           "name": "description",
@@ -23,12 +34,14 @@
           "name": "completed",
           "type": "boolean",
           "label": "已完成",
-          "validation": { "default": false }
+          "validation": { "default": false },
+          "list": { "defaultVisible": true }
         },
         {
           "name": "dueDate",
           "type": "datetime",
-          "label": "截止日期"
+          "label": "截止日期",
+          "list": { "defaultVisible": true }
         },
         {
           "name": "priority",
@@ -37,7 +50,8 @@
           "validation": {
             "enum": ["low", "medium", "high"],
             "default": "medium"
-          }
+          },
+          "list": { "defaultVisible": true }
         }
       ],
       "computed": [

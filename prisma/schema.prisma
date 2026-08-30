@@ -256,6 +256,8 @@ model BlogPost {
   status        String    @default("draft") // draft | pending | published | archived
   publishedAt   DateTime?
   readingTime   Int       @default(0) // computed
+  // Sprint 39: coverUrl for gallery view
+  coverUrl      String?
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

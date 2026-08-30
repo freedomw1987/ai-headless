@@ -2,6 +2,14 @@
   "name": "order",
   "label": "Order",
   "requiresExtension": "order",
+  "list": {
+    "allowColumnToggle": true,
+    "defaultColumns": ["orderNumber", "customer", "amount", "status"],
+    "views": [
+      { "type": "table", "label": "表格" },
+      { "type": "kanban", "label": "看板", "primaryField": "orderNumber", "groupByField": "status" }
+    ]
+  },
   "workflows": [
     {
       "name": "order",

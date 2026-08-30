@@ -17,6 +17,7 @@ import { getRequiredExtension } from '@/lib/specs/extension-derive';
 import { hasDynamicPermission } from '@/lib/auth/dynamic-permission';
 import { guardExtensionApi } from '@/lib/extensions/api-guard';
 import { parseHookReference } from '@/lib/specs/json-spec.validator';
+import { applyFilters, buildPrismaWhere, type FieldType, type Filter, type FilterableField } from '@/lib/crud/list-query';
 import { invokeHook, hasHook } from '@/lib/extensions/hooks';
 import { sanitizeErrorMessage } from '@/lib/runtime/error-sanitizer';
 import { createStateMachine } from '@/lib/state-machine/state-machine';
@@ -252,6 +253,33 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
       }
     }
 
+    // Sprint D 修補：filter 條件轉 Prisma where（避免「先分頁再 filter」bug）
+    const rawFiltersForWhere = ctx.query?.filters;
+    if (rawFiltersForWhere) {
+      try {
+        const parsed = typeof rawFiltersForWhere === 'string'
+          ? JSON.parse(rawFiltersForWhere)
+          : rawFiltersForWhere;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const filterableFields: FilterableField[] = (spec.models[0]?.fields ?? []).map((f) => ({
+            name: f.name,
+            type: f.type as unknown as FieldType,
+            enumValues: (f as { validation?: { enum?: string[] }; options?: string[] }).validation?.enum
+              ?? (f as { options?: string[] }).options,
+          }));
+          const filterWhere = buildPrismaWhere(parsed as Filter[], filterableFields);
+          // 合併到 where：AND 語意
+          if (Object.keys(filterWhere).length > 0) {
+            where.AND = where.AND
+              ? [...(where.AND as Record<string, unknown>[]), filterWhere]
+              : [filterWhere];
+          }
+        }
+      } catch {
+        // ignore filter parsing errors
+      }
+    }
+
     // 平行查詢 items + total（效能優化）
     // TD-401: try/catch 避免 DB 拋錯 → 500 + 暴露 Prisma 訊息
     let items: unknown[];
@@ -269,6 +297,7 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
     } catch (e) {
       return { status: 500, error: sanitizeErrorMessage(e) };
     }
+    // Sprint D 修補：filter 已在 Prisma where 套用（讓 DB 先 filter 再分頁）
 
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
 

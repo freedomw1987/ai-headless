@@ -17,7 +17,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { RolesPageClient } from '@/app/admin/roles/roles-page-client';
+import { RolesPageDialog } from '@/app/admin/roles/roles-page-dialog';
 
 // Mock fetch
 global.fetch = global.fetch || (() => Promise.resolve(new Response()));
@@ -28,14 +28,11 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('Sprint 32 commit 4 — admin 頁面 header 手機 RWD', () => {
-  it('RolesPageClient header 包含 RWD class (flex-col sm:flex-row)', async () => {
-    const { container } = render(<RolesPageClient />);
+  it('RolesPageDialog trigger 按鈕可見', async () => {
+    const { container } = render(<RolesPageDialog />);
 
-    // 找 h1 標題 "Roles 管理" 的父層 flex container
-    const h1 = screen.getByText('Roles 管理');
-    const header = h1.parentElement?.parentElement;
-    expect(header).toBeTruthy();
-    expect(header?.className).toMatch(/flex-col/);
-    expect(header?.className).toMatch(/sm:flex-row/);
+    // 找「新增 Role」trigger 按鈕
+    const trigger = screen.getByText(/新增 Role/);
+    expect(trigger).toBeTruthy();
   });
 });

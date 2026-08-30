@@ -76,10 +76,10 @@ test.describe('Sprint 32 — admin 手機 RWD', () => {
       timeout: 15_000,
     });
 
-    // Sidebar 應預設顯示 (sm:flex-row + sm:translate-x-0)
+    // Sidebar 應預設顯示 (sm:translate-x-0)
     const sidebar = page.getByTestId('admin-sidebar');
     await expect(sidebar).toBeVisible();
     const sidebarClass = await sidebar.getAttribute('class');
-    expect(sidebarClass).toMatch(/sm:flex-row/);
+    expect(sidebarClass).toMatch(/sm:translate-x-0/);
   });
 });

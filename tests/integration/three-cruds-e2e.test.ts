@@ -206,16 +206,26 @@ import { completeTodo } from '@/extensions/todo/actions/complete';
 import { beforeCreateEvent } from '@/extensions/event/hooks/before-create';
 import { availableSeats } from '@/extensions/event/computed/available-seats';
 import { registerAttendee } from '@/extensions/event/actions/register-attendee';
+import { db } from '@/lib/db';
 
 describe('S3.3 真實 E2E Flow：Blog/Todo/Event 整合', () => {
   it('Blog → Todo → Event 完整生命週期', async () => {
-    // 1. 建立 Todo（套用 beforeCreate hook）
-    const todo = (await beforeCreateTodo({
+    // 1. 建立 Todo（套用 beforeCreate hook → 實際寫入 DB 拿 id）
+    const hooked = (await beforeCreateTodo({
       model: 'Todo',
       data: {
         title: '  寫 AI 報告  ',
       },
     })) as Record<string, unknown>;
+
+    const todo = await db.todo.create({
+      data: {
+        title: hooked.title as string,
+        completed: false,
+        dueDate: hooked.dueDate as Date,
+        priority: (hooked.priority as string) ?? 'medium',
+      },
+    });
 
     expect(todo.title).toBe('寫 AI 報告');
     expect(todo.priority).toBe('medium');
@@ -224,11 +234,11 @@ describe('S3.3 真實 E2E Flow：Blog/Todo/Event 整合', () => {
     // 2. 計算剩餘天數
     const days = remainingDays({
       completed: false,
-      dueDate: todo.dueDate as string,
+      dueDate: todo.dueDate!.toISOString(),
     });
     expect(days).toBeGreaterThan(0);
 
-    // 3. 標記完成
+    // 3. 標記完成（需要真實 id 才能寫 TransitionLog）
     const completed = await completeTodo(
       {},
       { model: 'Todo', data: todo },
@@ -268,5 +278,9 @@ describe('S3.3 真實 E2E Flow：Blog/Todo/Event 整合', () => {
       },
     );
     expect(reg.userId).toBe('user-1');
+
+    // 7. cleanup
+    await db.transitionLog.deleteMany({ where: { entityId: todo.id } });
+    await db.todo.delete({ where: { id: todo.id } });
   });
 });

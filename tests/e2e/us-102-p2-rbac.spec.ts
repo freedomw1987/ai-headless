@@ -37,9 +37,10 @@ test.describe('US-102-P2 RBAC', () => {
     await expect(page.locator('h1')).toContainText('Roles 管理');
 
     // 至少看到 3 個內建 role (admin / editor / viewer)
-    await expect(page.getByText('admin')).toBeVisible();
-    await expect(page.getByText('editor')).toBeVisible();
-    await expect(page.getByText('viewer')).toBeVisible();
+    // 用 .first() 避免 'Admin' / 'admin' strict mode 衝突
+    await expect(page.getByText('admin').first()).toBeVisible();
+    await expect(page.getByText('editor').first()).toBeVisible();
+    await expect(page.getByText('viewer').first()).toBeVisible();
 
     // 內建 role 顯示「系統」 badge
     const systemBadges = page.getByText('系統');
@@ -50,11 +51,21 @@ test.describe('US-102-P2 RBAC', () => {
     await login(page, 'admin@ai-headless.local', 'admin123');
     await page.goto(`${BASE}/admin/roles`);
 
+    // 清理：如果之前的 test 遺留了同名 role，先刪掉 (避免 strict mode 衝突)
+    const existingRole = page.getByText('content_moderator_e2e');
+    if ((await existingRole.count()) > 0) {
+      const deleteBtn = page.locator('button:near(:text("content_moderator_e2e"))').first();
+      // 如果有刪除按鈕可點，這裡簡化為 skip cleanup (改用 unique name)
+    }
+
+    // 用 unique name (避免 test 間污染)
+    const uniqueName = `content_mod_${Date.now()}`;
+
     // 點新增按鈕
     await page.getByRole('button', { name: '新增 Role' }).click();
 
     // 填表
-    await page.fill('input#name', 'content_moderator_e2e');
+    await page.fill('input#name', uniqueName);
     await page.fill('input#displayName', '內容審核員 E2E');
     await page.fill('textarea#description', 'E2E 測試建立的自定義 role');
 
@@ -65,7 +76,7 @@ test.describe('US-102-P2 RBAC', () => {
     await page.waitForTimeout(500);
 
     // 新 role 出現在列表
-    await expect(page.getByText('content_moderator_e2e')).toBeVisible();
+    await expect(page.getByText(uniqueName).first()).toBeVisible();
   });
 
   test('admin 新增保留字 role 被拒絕', async ({ page }) => {
@@ -87,9 +98,13 @@ test.describe('US-102-P2 RBAC', () => {
     await login(page, 'admin@ai-headless.local', 'admin123');
     await page.goto(`${BASE}/admin/roles`);
 
-    // 點 admin 的「矩陣」按鈕
-    const adminRow = page.locator('tr', { hasText: 'admin' });
-    await adminRow.getByRole('link', { name: /矩陣/ }).click();
+    // 找 admin row（Sprint 28: 行內動作改為 DropdownMenu）
+    const adminRow = page.locator('tr', { hasText: /admin\s*\[系統\]/ });
+    // 先點 admin row 的「⋯」打開 DropdownMenu
+    await adminRow.locator('[data-testid^=role-row-actions-]').click();
+    // DropdownMenu 用 portal 渲染，連結在 document.body 下，不在 row DOM 內
+    // 注意：Radix DropdownMenuItem 把 <a> 渲染為 role="menuitem"，不是 link
+    await page.getByRole('menuitem', { name: /矩陣/ }).first().click();
 
     // 等待導向
     await page.waitForURL(/\/admin\/roles\/[^/]+\/permissions/, { timeout: 5000 });

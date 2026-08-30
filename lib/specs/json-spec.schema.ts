@@ -243,6 +243,39 @@ const menuConfigSchema = z
   })
   .strict();
 
+// ==============================================
+// Sprint 33: View schema
+// ==============================================
+
+const viewSchema = z
+  .object({
+    type: z.enum(['table', 'todo-list', 'kanban', 'calendar', 'gallery']),
+    label: z.string().min(1),
+    icon: z.string().optional(),
+    primaryField: z.string().optional(),
+    secondaryFields: z.array(z.string()).optional(),
+    // kanban 需 groupByField
+    groupByField: z.string().optional(),
+    // calendar 需 dateField
+    dateField: z.string().optional(),
+    // gallery 需 imageField
+    imageField: z.string().optional(),
+    default: z.boolean().optional(),
+  })
+  .strict()
+  .refine(
+    (v) => {
+      // kanban 必須有 groupByField
+      if (v.type === 'kanban' && !v.groupByField) return false;
+      // calendar 必須有 dateField
+      if (v.type === 'calendar' && !v.dateField) return false;
+      // gallery 必須有 imageField
+      if (v.type === 'gallery' && !v.imageField) return false;
+      return true;
+    },
+    { message: 'kanban view 需 groupByField / calendar view 需 dateField / gallery view 需 imageField' },
+  );
+
 const pageConfigSchema = z
   .object({
     columns: z.array(z.string()).optional(),
@@ -254,6 +287,8 @@ const pageConfigSchema = z
       .optional(),
     pageSize: z.number().int().positive().optional(),
     filters: z.array(z.string()).optional(),
+    // Sprint 33: 多 view 支援
+    views: z.array(viewSchema).optional(),
   })
   .strict();
 

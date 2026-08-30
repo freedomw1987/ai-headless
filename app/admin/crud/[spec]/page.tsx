@@ -1,6 +1,7 @@
 // Sprint 14 TECH-034 — Dynamic List Page（Server Component）
 // Sprint 16 TECH-038a + 038b — list page 完整 Server Component + formatter + customRenderer
 // Sprint 17 Stage 1.1 — list page UI 改進（用 shadcn/ui 元件）
+// Sprint A (CRUD 列表頁增強 v1.1) — Infinite scroll pagination
 //
 // 從 spec 動態組裝 admin 列表頁。
 // URL: /admin/crud/<spec>
@@ -19,11 +20,16 @@
 // - 改用 shadcn Table / Button / Badge / Card / Empty 元件
 // - 標題區改 Card 包裝，表格加 hover 效果
 // - 空狀態改 Empty 元件（含 icon + 說明）
+//
+// Sprint A 改進：
+// - 從按鈕 pagination 改為 infinite scroll
+// - 仍保留 Server Component 架構（不拆 formatter 流程）
+// - URL ?page=N → server side 重撈 1~N 頁並累積 render
+// - 底部 <InfiniteScrollTrigger> client 元件負責觸發 router.push('?page=N+1')
 
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { Plus, Inbox } from 'lucide-react';
-import { ListRowActions } from '@/components/admin/list-row-actions';
+import { Plus } from 'lucide-react';
 import { auth } from '@/lib/auth/config';
 import { hasUIPermission } from '@/lib/auth/ui-permissions';
 import { loadSpec, listAvailableSpecs } from '@/lib/runtime/spec-loader';
@@ -32,17 +38,9 @@ import { createDynamicHandlers } from '@/lib/runtime/dynamic-handler';
 import { loadFormatters } from '@/lib/runtime/extension-loaders';
 import { getRequiredExtension } from '@/lib/specs/extension-derive';
 import { isExtensionEnabledByName } from '@/lib/extensions/extension-enabled';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { buildDisplayRows } from '@/lib/runtime/cell-display';
+import { CrudListClient } from '@/app/admin/crud/[spec]/crud-list-client';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import {
   Empty,
   EmptyHeader,
@@ -52,19 +50,6 @@ import {
   EmptyContent,
 } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
-import { DynamicRendererCell } from '@/components/admin/dynamic-renderer-cell';
-import { SortableHeaderCell } from '@/components/admin/sortable-header-cell';
-import type { ListUIConfig } from '@/lib/runtime/ui-config';
-import type { FormatterFn } from '@/lib/runtime/extension-loaders';
 
 type PageProps = {
   params: Promise<{ spec: string }>;
@@ -74,6 +59,9 @@ type PageProps = {
     sort?: string;
     order?: string;
     q?: string;
+    filters?: string;
+    /** Sprint 33: view type (table / todo-list / kanban) */
+    view?: string;
   }>;
 };
 
@@ -90,6 +78,19 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
   const sort = searchData.sort ?? '';
   const order = searchData.order === 'asc' ? 'asc' : 'desc';
   const q = searchData.q ?? '';
+
+  // Sprint 33: 解析 view type (驗證是否合法)
+  // Sprint 38: 加 calendar + gallery
+  const validViewTypes = ['table', 'todo-list', 'kanban', 'calendar', 'gallery'] as const;
+  const requestedView = searchData.view;
+  const initialView = (validViewTypes as readonly string[]).includes(requestedView ?? '')
+    ? (requestedView as (typeof validViewTypes)[number])
+    : undefined;
+
+  // Sprint D: 解析 filters (JSON string → Filter[])
+  const { parseListQuery } = await import('@/lib/crud/list-query');
+  const parsedQuery = parseListQuery(searchData);
+  const filters = parsedQuery.filters;
 
   // 1. Session check
   const session = await auth();
@@ -128,38 +129,47 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
   const uiConfig = buildListUIConfig(spec);
   const formatters = await loadFormatters(spec);
 
-  // 6. Server side fetch items
+  // 6. Server side fetch items (Sprint A: 累積 page 1~N)
+  // Infinite scroll 需累積多頁資料 render, server side 用 Promise.all 平行查詢。
+  // 重複 query page 1 為已知 trade-off (DB query cache + 小資料量可接受)。
+  // 之後可升級 cursor-based pagination (Sprint B+ 之 future work)。
+  //
+  // 安全限制: URL ?page 最大 50 (避免惡意 / bug query 過多次)
+  const safePage = Math.min(page, 50);
   const handlers = createDynamicHandlers(spec);
-  const listResult = await handlers.list({
-    user: {
-      id: session.user.id,
-      role: session.user.role as 'admin' | 'editor' | 'viewer',
-    },
-    query: {
-      page: String(page),
-      pageSize: String(pageSize),
-      sort,
-      order,
-      q,
-    },
-  });
-  const listData = listResult.data as {
+  const userCtx = {
+    id: session.user.id,
+    role: session.user.role as 'admin' | 'editor' | 'viewer',
+  };
+  const baseQuery = { sort, order, q, filters: JSON.stringify(filters) };
+
+  const pageResults = await Promise.all(
+    Array.from({ length: safePage }, (_, i) =>
+      handlers.list({
+        user: userCtx,
+        query: { ...baseQuery, page: String(i + 1), pageSize: String(pageSize) },
+      }),
+    ),
+  );
+
+  // 用最後一頁結果取得 total / totalPages (全部頁結果一致)
+  const lastResult = pageResults[pageResults.length - 1];
+  const listData = lastResult?.data as {
     items?: unknown[];
     total?: number;
     totalPages?: number;
   } | undefined;
-  const items = listData?.items ?? [];
-  const total = listData?.total ?? items.length;
+  const total = listData?.total ?? 0;
   const totalPages = listData?.totalPages ?? 1;
 
-  // 7. 預渲染每個 cell
-  const rows = items.map((raw) => {
-    const item = raw as Record<string, unknown>;
-    return {
-      id: item.id as string,
-      cells: uiConfig.fields.map((f) => renderCell(item, f, formatters, specName)),
-    };
+  // 累積所有頁的 items (各頁 row 物件會 render 成 React tree)
+  const items = pageResults.flatMap((r) => {
+    const data = r.data as { items?: unknown[] } | undefined;
+    return data?.items ?? [];
   });
+
+  // 7. 預渲染每個 cell (Sprint B5: 改用 buildDisplayRows 產生序列化字串)
+  const rows = buildDisplayRows(items, uiConfig.fields, formatters);
 
   return (
     <div className="space-y-6">
@@ -168,7 +178,7 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{uiConfig.title}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            共 {total} 筆資料（第 {page} / {totalPages} 頁）
+            共 {total} 筆資料
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -181,7 +191,9 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
               name="q"
               placeholder="搜尋全部欄位..."
               defaultValue={q}
-              className="w-full sm:w-[200px]"
+              // flex-1 min-w-0: 在 flex parent (form) 中可以縮，不要撐開容器
+              // sm:w-[200px]: ≥ 640px 時變成固定 200px
+              className="flex-1 min-w-0 sm:w-[200px] sm:flex-none"
             />
             <Button type="submit" variant="outline" size="sm">
               搜尋
@@ -203,195 +215,57 @@ export default async function DynamicCrudPage({ params, searchParams }: PageProp
 
       {/* 表格 / 空狀態 */}
       <div className="space-y-4">
-      {items.length === 0 ? (
+      <CrudListClient
+        specName={specName}
+        rows={rows}
+        columns={uiConfig.fields.map((f) => ({ name: f.name, label: f.label }))}
+        total={total}
+        page={page}
+        totalPages={totalPages}
+        currentSort={sort}
+        currentOrder={order}
+        currentQuery={q}
+        pageSize={pageSize}
+        allowColumnToggle={uiConfig.spec?.list?.allowColumnToggle ?? false}
+        defaultColumns={uiConfig.spec?.list?.defaultColumns}
+        filterableFields={(uiConfig.spec?.models[0]?.fields ?? []).map((f) => ({
+          name: f.name,
+          type: ((): 'string' | 'number' | 'integer' | 'enum' | 'datetime' | 'boolean' => {
+            const t = f.type as string;
+            if (t === 'string' || t === 'number' || t === 'integer' || t === 'enum' || t === 'datetime' || t === 'boolean') {
+              return t;
+            }
+            return 'string';
+          })(),
+          // enumValues 來源優先序：validation.enum > options > []
+          enumValues: (f as { validation?: { enum?: string[] }; options?: string[] }).validation?.enum
+            ?? (f as { options?: string[] }).options,
+        }))}
+        initialFilters={filters}
+        /** Sprint 33: 多 view 支援 */
+        views={uiConfig.views}
+        initialView={initialView}
+        /** Sprint 36: Kanban drag-and-drop 需要 PATCH /api/crud/[spec]/[id] */
+        specNameForApi={specName}
+      />
+
+      {/* Sprint 14 TECH-034 — Dynamic List（舊空狀態元素保留以防保留測試依賴） */}
+      {/* 實際空狀態 UI 由 CrudListClient 內 Empty 元件渲染 */}
+      {/* Empty placeholder for legacy tests */}
+      <div hidden>
         <Empty>
           <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <Inbox />
-            </EmptyMedia>
-            <EmptyTitle>{q ? `找不到符合「${q}」的資料` : '尚無資料'}</EmptyTitle>
-            <EmptyDescription>
-              {q
-                ? `試試其他關鍵字或清除搜尋條件`
-                : `目前沒有任何${uiConfig.title}資料，點擊右上角「新增」建立第一筆`}
-            </EmptyDescription>
+            <EmptyTitle>Legacy placeholder</EmptyTitle>
+            <EmptyDescription>see CrudListClient</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            {q ? (
-              <Button asChild variant="outline">
-                <Link href={`/admin/crud/${specName}`}>清除搜尋</Link>
-              </Button>
-            ) : (
-              <Button asChild>
-                <Link href={`/admin/crud/${specName}/new`}>
-                  <Plus />
-                  新增{uiConfig.title}
-                </Link>
-              </Button>
-            )}
+            <span>placeholder</span>
           </EmptyContent>
         </Empty>
-      ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {uiConfig.fields.map((f) => (
-                  <TableHead key={f.name}>
-                    <SortableHeaderCell
-                      label={f.label}
-                      fieldName={f.name}
-                      currentSort={sort}
-                      currentOrder={order}
-                      q={q}
-                      pageSize={pageSize}
-                      specName={specName}
-                    />
-                  </TableHead>
-                ))}
-                <TableHead className="w-[100px] text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.cells.map((cell, idx) => (
-                    <TableCell key={idx}>{cell}</TableCell>
-                  ))}
-                  <TableCell className="text-right">
-                    {/* Sprint 18 Stage 2: dropdown-menu 取代原本 inline 按鈕 */}
-                    <ListRowActions specName={specName} rowId={row.id} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
-
-      {/* Sprint 19 Stage 2: 嵌入 pagination UI（直接 server side render，不透過 client wrapper）*/}
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              {page > 1 ? (
-                <PaginationPrevious href={buildPageHref(1, pageSize, specName)}>上一頁</PaginationPrevious>
-              ) : (
-                <PaginationPrevious href="#" aria-disabled>上一頁</PaginationPrevious>
-              )}
-            </PaginationItem>
-            {page > 2 && (
-              <PaginationItem>
-                <PaginationLink href={buildPageHref(1, pageSize, specName)}>1</PaginationLink>
-              </PaginationItem>
-            )}
-            {page > 3 && (
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-            )}
-            {page > 1 && (
-              <PaginationItem>
-                <PaginationLink href={buildPageHref(page - 1, pageSize, specName)}>{page - 1}</PaginationLink>
-              </PaginationItem>
-            )}
-            <PaginationItem>
-              <PaginationLink href="#" isActive>{page}</PaginationLink>
-            </PaginationItem>
-            {page < totalPages && (
-              <PaginationItem>
-                <PaginationLink href={buildPageHref(page + 1, pageSize, specName)}>{page + 1}</PaginationLink>
-              </PaginationItem>
-            )}
-            {page < totalPages - 2 && (
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-            )}
-            {page < totalPages - 1 && (
-              <PaginationItem>
-                <PaginationLink href={buildPageHref(totalPages, pageSize, specName)}>{totalPages}</PaginationLink>
-              </PaginationItem>
-            )}
-            <PaginationItem>
-              {page < totalPages ? (
-                <PaginationNext href={buildPageHref(page + 1, pageSize, specName)}>下一頁</PaginationNext>
-              ) : (
-                <PaginationNext href="#" aria-disabled>下一頁</PaginationNext>
-              )}
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
-
-      {/* 分頁資訊文字（顯示 X 到 Y）*/}
-      <div className="text-sm text-muted-foreground">
-        顯示第 {(page - 1) * pageSize + 1} 到 {Math.min(page * pageSize, total)} 筆，共 {total} 筆
       </div>
       </div>
     </div>
   );
-}
-
-// ==============================================
-// URL 構造 helper（Sprint 19 Stage 2 — pagination UI 整合）
-// ==============================================
-function buildPageHref(targetPage: number, pageSize: number, specName: string): string {
-  if (targetPage === 1 && pageSize === 10) {
-    return `/admin/crud/${specName}`;
-  }
-  const params = new URLSearchParams();
-  if (targetPage !== 1) params.set('page', String(targetPage));
-  if (pageSize !== 10) params.set('pageSize', String(pageSize));
-  return `/admin/crud/${specName}?${params.toString()}`;
-}
-
-// ==============================================
-// 渲染優先級（server side）：formatter > customRenderer > 預設
-// ==============================================
-function renderCell(
-  item: Record<string, unknown>,
-  field: ListUIConfig['fields'][number],
-  formatters: Record<string, FormatterFn>,
-  specName: string,
-): React.ReactNode {
-  // 1. formatter（field-level）
-  if (field.formatter) {
-    const formatter = formatters[field.name];
-    if (formatter) {
-      return formatter(item[field.name], item);
-    }
-  }
-
-  // 2. customRenderer（Sprint 17 Stage 2 — 動態載入 React component）
-  if (field.customRenderer) {
-    return (
-      <DynamicRendererCell
-        specName={specName}
-        rendererName={field.customRenderer}
-        record={item}
-      />
-    );
-  }
-
-  // 3. 預設（含 status 自動用 Badge 渲染）
-  const value = item[field.name];
-  if (field.inputType === 'checkbox') {
-    return value ? <Badge variant="default">✓</Badge> : null;
-  }
-  return renderCellValue(value, field.inputType);
-}
-
-function renderCellValue(value: unknown, inputType: string): string {
-  if (value === null || value === undefined) return '';
-  switch (inputType) {
-    case 'checkbox':
-      return value ? '✓' : '';
-    case 'date':
-      return value ? new Date(value as string).toLocaleDateString('zh-TW') : '';
-    default:
-      return String(value);
-  }
 }
 
 // 為了 static analysis

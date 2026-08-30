@@ -29,7 +29,7 @@ test.describe('Sprint 20 Stage 1 — Sheet 抽屜式編輯', () => {
     await page.waitForLoadState('networkidle');
 
     // 點第一筆 row 的「⋯」按鈕（展開 DropdownMenu）
-    const firstRowAction = page.locator('button[aria-haspopup="menu"]').first();
+    const firstRowAction = page.locator('[data-testid^="row-actions-"]').first();
     await firstRowAction.click();
     // 點「檢視」
     await page.locator('[role="menuitem"]:has-text("檢視")').first().click();
@@ -62,7 +62,7 @@ test.describe('Sprint 20 Stage 1 — Sheet 抽屜式編輯', () => {
     await page.waitForLoadState('networkidle');
 
     // 點第一筆 row 的「⋯」按鈕（展開 DropdownMenu）
-    const firstRowAction = page.locator('button[aria-haspopup="menu"]').first();
+    const firstRowAction = page.locator('[data-testid^="row-actions-"]').first();
     await firstRowAction.click();
     await page.locator('[role="menuitem"]:has-text("檢視")').first().click();
     await page.waitForURL(/\/admin\/crud\/blog\/[^/]+$/, { timeout: 10_000 });
@@ -82,7 +82,7 @@ test.describe('Sprint 20 Stage 1 — Sheet 抽屜式編輯', () => {
     await page.waitForLoadState('networkidle');
 
     // 點第一筆 row 的「⋯」按鈕（展開 DropdownMenu）
-    const firstRowAction = page.locator('button[aria-haspopup="menu"]').first();
+    const firstRowAction = page.locator('[data-testid^="row-actions-"]').first();
     await firstRowAction.click();
     await page.locator('[role="menuitem"]:has-text("檢視")').first().click();
     await page.waitForURL(/\/admin\/crud\/blog\/[^/]+$/, { timeout: 10_000 });

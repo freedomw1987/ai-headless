@@ -98,6 +98,13 @@ export type Field = {
    * - 不設定時若 type='reference' 自動推導為 { type: 'belongsTo', model: ... }
    */
   relation?: Relation;
+  /**
+   * Sprint C: list view 設定
+   * - defaultVisible: 該欄位在列表頁預設可見 (user 可在 ColumnTogglePopover 切換)
+   */
+  list?: {
+    defaultVisible?: boolean;
+  };
 };
 
 // ==============================================
@@ -285,6 +292,8 @@ export type PageConfig = {
   };
   pageSize?: number;
   filters?: string[];
+  /** Sprint 33: 多 view 支援 — AI 開發可指定 TableView / TodoListView / Kanban 等 */
+  views?: View[];
 };
 
 export type UIConfig = {
@@ -344,6 +353,64 @@ export type JsonSpec = {
    * Sprint 11 TECH-022 新增
    */
   requiresExtension?: string;
+  /**
+   * Sprint C: 列表頁設定
+   * - defaultColumns: 預設顯示的欄位名稱 (user 可在 ColumnTogglePopover 切換)
+   * - allowColumnToggle: 是否允許 user 切換欄位 (default: false)
+   *   若 false，整個 ColumnTogglePopover 不會 render
+   * - views: Sprint 33 — 多 View 顯示選項 (AI 開發可選擇適合的 view)
+   *   沒定義時，預設為 [TableView]（向後相容）
+   *   e.g., [{ type:'table' }, { type:'todo-list', primaryField:'title' }]
+   */
+  list?: {
+    defaultColumns?: string[];
+    allowColumnToggle?: boolean;
+    views?: View[];
+  };
+};
+
+/**
+ * Sprint 33 — View 類型
+ *
+ * 一個 CRUD list 可有多個 View，讓 AI 開發可根據資料特性選擇適合的顯示方式
+ *
+ * 範例 (todo-spec.json)：
+ * ```json
+ * {
+ *   "ui": {
+ *     "pages": {
+ *       "list": {
+ *         "views": [
+ *           { "type": "table", "label": "表格" },
+ *           { "type": "todo-list", "label": "待辦", "primaryField": "title", "secondaryFields": ["completed"] }
+ *         ]
+ *       }
+ *     }
+ *   }
+ * }
+ * ```
+ */
+export type ViewType = 'table' | 'todo-list' | 'kanban' | 'calendar' | 'gallery';
+
+export type View = {
+  /** View 類型 */
+  type: ViewType;
+  /** 顯示名稱（i18n 可後續加）*/
+  label: string;
+  /** Lucide icon 名稱（optional）*/
+  icon?: string;
+  /** 主要顯示欄位 (e.g., title) — for todo-list/kanban/gallery */
+  primaryField?: string;
+  /** 次要顯示欄位清單 — for todo-list */
+  secondaryFields?: string[];
+  /** Kanban 分組依據欄位 (e.g., status) — for kanban only */
+  groupByField?: string;
+  /** Calendar 日期欄位 (e.g., dueDate, startAt) — for calendar only */
+  dateField?: string;
+  /** Gallery 圖片 URL 欄位 (e.g., image, coverUrl) — for gallery only */
+  imageField?: string;
+  /** 是否預設顯示此 view（list 第一個 view 是預設）*/
+  default?: boolean;
 };
 
 // ==============================================

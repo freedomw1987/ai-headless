@@ -16,6 +16,7 @@ import * as path from 'node:path';
 import { loadSpec } from '@/lib/runtime/spec-loader';
 import { validateJsonSpec } from '@/lib/specs/json-spec.validator';
 import type { JsonSpec } from '@/lib/specs/json-spec.types';
+import { db } from '@/lib/db';
 
 // ==============================================
 // 1. Manifest 載入
@@ -222,7 +223,7 @@ describe('S3.1 Todo 真實 CRUD Flow', () => {
 
 describe('S3.1 Todo 跨模組整合', () => {
   it('建立 → 計算剩餘天數 → 完成 → 剩餘天數變 0', async () => {
-    // 1. 模擬建立（套用 beforeCreate hook）
+    // 1. 模擬 beforeCreate hook 的 defaults
     const createCtx = {
       model: 'Todo',
       action: 'create' as const,
@@ -231,19 +232,29 @@ describe('S3.1 Todo 跨模組整合', () => {
         completed: false,
       },
     };
-    const created = (await beforeCreateTodo(createCtx)) as Record<string, unknown>;
+    const hooked = (await beforeCreateTodo(createCtx)) as Record<string, unknown>;
+
+    // 2. 實際寫入 DB 才能拿 id (completeTodo 需要 record.id 寫 TransitionLog)
+    const created = await db.todo.create({
+      data: {
+        title: hooked.title as string,
+        completed: hooked.completed as boolean,
+        dueDate: hooked.dueDate as Date,
+        priority: (hooked.priority as string) ?? 'medium',
+      },
+    });
 
     expect(created.title).toBe('寫報告');
     expect(created.completed).toBe(false);
 
-    // 2. 計算剩餘天數
+    // 3. 計算剩餘天數
     const remaining = remainingDays({
-      completed: created.completed as boolean,
-      dueDate: created.dueDate as string,
+      completed: created.completed,
+      dueDate: created.dueDate!.toISOString(),
     });
     expect(remaining).toBeGreaterThan(0); // 預設 +7 天後
 
-    // 3. 標記完成
+    // 4. 標記完成
     const completeCtx = {
       action: 'complete' as const,
       data: created,
@@ -251,11 +262,15 @@ describe('S3.1 Todo 跨模組整合', () => {
     const completed = await completeTodo({}, completeCtx);
     expect(completed.completed).toBe(true);
 
-    // 4. 重新計算 → 應為 0
+    // 5. 重新計算 → 應為 0
     const finalRemaining = remainingDays({
       completed: true,
       dueDate: completed.dueDate as string,
     });
     expect(finalRemaining).toBe(0);
+
+    // 6. cleanup
+    await db.transitionLog.deleteMany({ where: { entityId: created.id } });
+    await db.todo.delete({ where: { id: created.id } });
   });
 });

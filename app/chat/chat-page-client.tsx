@@ -65,7 +65,7 @@ export function ChatPageClient() {
       </div>
 
       {/* 手機版漢堡按鈕 */}
-      <div className="absolute left-2 top-2 z-10 md:hidden">
+      <div className="absolute left-2 top-2 z-20 md:hidden">
         <button
           onClick={() => setSidebarOpen(true)}
           className="rounded-md bg-background p-2 shadow-md"
@@ -94,7 +94,7 @@ export function ChatPageClient() {
       )}
 
       <main className="flex flex-1 flex-col">
-        <header className="border-b px-6 py-3">
+        <header className="border-b px-4 py-3 sm:px-6">
           <h1 className="text-lg font-semibold">AI Chat</h1>
           <p className="text-sm text-muted-foreground">
             用自然語言描述需求，AI 幫你生成 JsonSpec

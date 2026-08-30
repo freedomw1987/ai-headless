@@ -85,4 +85,9 @@ export async function loadAllSpecs(): Promise<Record<string, JsonSpec>> {
 export function invalidateSpecCache(): void {
   specCache.clear();
   allSpecsCache = null;
-}
+}// Sprint 35 reload trigger
+// Sprint 38 reload trigger Sun Aug 30 17:08:30 CST 2026
+// Sprint 39 reload 1788082192
+// Sprint 39 reload 1788082388
+// Sprint 39 force cache clear 1788082570
+// Sprint 39 final reload 1788082673

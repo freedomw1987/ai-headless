@@ -67,9 +67,11 @@ describe('Sprint 17 Stage 2 — customRenderer 客戶端動態渲染', () => {
   });
 
   describe('list page 整合', () => {
-    it('list page 用 DynamicRendererCell 渲染 customRenderer field', () => {
+    // Sprint B 改架構: cells 從 server-side 序列化為字串，customRenderer 在 cell-display.ts 處理
+    it('list page (Sprint B cell-display) 處理 customRenderer field', () => {
       const content = readFileSync(LIST_PAGE_PATH, 'utf-8');
-      expect(content).toMatch(/DynamicRendererCell/);
+      // Sprint B: page.tsx 用 CrudListClient + cell-display.ts 處理 customRenderer
+      expect(content).toMatch(/CrudListClient|buildDisplayRows|cell-display/);
     });
 
     it('list page 不再用 [capacityBar] placeholder 文字', () => {
@@ -78,10 +80,10 @@ describe('Sprint 17 Stage 2 — customRenderer 客戶端動態渲染', () => {
       expect(content).not.toMatch(/尚.*Sprint.*17.*Stage.*2/);
     });
 
-    it('list page 用 DynamicRendererCell 包裝 customRenderer field', () => {
-      const content = readFileSync(LIST_PAGE_PATH, 'utf-8');
-      // 在 customRenderer 分支看到 DynamicRendererCell 用法
-      expect(content).toMatch(/<DynamicRendererCell/);
+    it('cell-display helper 處理 customRenderer field', () => {
+      const content = readFileSync('lib/runtime/cell-display.ts', 'utf-8');
+      // cell-display.ts 內部用 customRenderer 字串處理
+      expect(content).toMatch(/customRenderer|CellDisplay/);
     });
   });
 });

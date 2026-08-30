@@ -24,9 +24,12 @@ import { invalidateAllCache } from '@/lib/auth/session-cache';
 
 const updateMatrixSchema = z.object({
   permissions: z.array(
+    // TD-911 + TD-911b: 接受 * (admin wildcard) 跟 `:` 或 `.` 兩種格式
+    // - Sprint 21 設計: `users:read` (colon)
+    // - Extension manifest: `blog.create` (dot)
     z.string().regex(
-      /^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$/,
-      'permission code 須符合 resource:action 格式',
+      /^(\*|[a-z][a-z0-9_]*[:.][a-z][a-z0-9_]*)$/,
+      'permission code 須符合 resource:action 格式 (支援 : 或 . 分隔) 或為 * (wildcard)',
     ),
   ),
 });
@@ -113,6 +116,18 @@ export async function PATCH(req: Request, { params }: Params) {
 
   // 5. Transaction: 整組替換
   const codes = Array.from(new Set(parsed.data.permissions)); // dedupe
+
+  // TD-911: 拒絕儲存 * (admin wildcard) — 是 meta-permission, 不應儲存為一般權限
+  if (codes.includes(PermissionCode.ADMIN_WILDCARD)) {
+    return Response.json(
+      {
+        status: 400,
+        error: `不允許儲存 wildcard "${PermissionCode.ADMIN_WILDCARD}" (admin 萬能權限是內建,不需要指派)`,
+      },
+      { status: 400 },
+    );
+  }
+
   await db.$transaction(async (tx) => {
     // 刪除所有舊 permissions
     await tx.permission.deleteMany({
