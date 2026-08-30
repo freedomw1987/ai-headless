@@ -24,22 +24,23 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 40 — CalendarView renderActions bug fix + mobile actions 修法** |
+| **當前 Sprint** | **Sprint 42 Plan Gate — 清剩餘 Sprint 32 review 風險後決定新方向** |
 | **Sprint 26 狀態** | ✅ **100% 收尾（2.5/2.5 SP）**（Sprint 20 P2 技術債 5/5 全清）|
 | **Sprint 27 狀態** | ✅ **100% 收尾（28/28 SP）**（CRUD 列表頁 5 大功能 + 8 個 bug 修補）|
 | **Sprint 28-29 狀態** | ✅ **100% 收尾（23/23 SP）**（users/roles 統一 CRUD + sidebar 重組 + profile 美化 + settings page）|
 | **Sprint 30 狀態** | ✅ **100% 收尾（5.5/5.5 SP）**（TD-801/802/523/524/519 全部守護測試 + JWT name refresh code 改動）|
 | **Sprint 31 狀態** | ✅ **100% 收尾（3/3 SP）**（TD-911 * wildcard bug 3 層修法 + TD-911b permission code 雙格式 + admin RWD 5 E2E 守護）|
-| **Sprint 33-39 狀態** | ✅ **100% 收尾**（View Feature：5 種 views + 4 CRUD + Kanban DnD + localStorage + calendar/gallery）|
-| **Sprint 40 狀態** | ✅ **100% 收尾**（CalendarView renderActions bug fix + mobile actions 修法 + audit 守護測試）|
-| **測試基線** | **921 integration + 109/109 E2E**（Sprint 33-40 累計 +84 守護測試）|
-| **下一個 P0** | Sprint 41 Plan Gate（決定新方向）|
-| **路線圖關鍵** | ✅ Sprint 21-32 → ✅ Sprint 33-40（View Feature + bug fixes）→ 📋 Sprint 41+（新方向待定）|
+| **Sprint 33-40 狀態** | ✅ **100% 收尾**（View Feature：5 種 views + 4 CRUD + Kanban DnD + localStorage + calendar/gallery）|
+| **Sprint 41 狀態** | ✅ **100% 收尾（~4 SP）**（4 P1 fixes：TD-803/804/806/812 + RWD audit 4 頁 + VIEW_REGISTRY 重構 + sidebar 3 關閉路徑 E2E；reflection 由 Sprint 42 開工時反向補寫）|
+| **測試基線** | **1435 integration + 120/120 E2E**（Sprint 41 +24 守護測試）|
+| **下一個 P0** | Sprint 42 Plan Gate（先清 Sprint 32 review 剩餘風險，再決定新方向）|
+| **路線圖關鍵** | ✅ Sprint 21-32 → ✅ Sprint 33-40（View Feature + bug fixes）→ ✅ Sprint 41（4 P1 + RWD audit + 重構）→ 📋 Sprint 42+（剩餘風險 + 新方向）|
 | **Sprint 27 反省報告** | [docs/reflection/module-crud-list-enhancements-reflection.md](reflection/module-crud-list-enhancements-reflection.md) |
 | **Sprint 28-29 反省報告** | [docs/reflection/module-sprint28-29-reflection.md](reflection/module-sprint28-29-reflection.md) |
 | **Sprint 30 反省報告** | [docs/reflection/module-sprint30-reflection.md](reflection/module-sprint30-reflection.md) |
 | **Sprint 31 反省報告** | [docs/reflection/module-sprint31-reflection.md](reflection/module-sprint31-reflection.md) |
 | **Sprint 33-40 反省報告** | [docs/reflection/module-sprint33-40-reflection.md](reflection/module-sprint33-40-reflection.md)（跨 8 sprints 反思）|
+| **Sprint 41 反省報告** | [docs/reflection/module-sprint41-reflection.md](reflection/module-sprint41-reflection.md)（反向補寫：4 P1 + RWD + VIEW_REGISTRY + batch 安全）|
 
 ### Sprint 21 規劃（US-102-P2 動態 RBAC，預估 7 SP）
 
@@ -594,11 +595,11 @@
 | **US-S6-1** | User Story | TD-503 abort E2E | 切換 chat / SPA 切換 / disabled 守護 3 場景（reviewer P1）| 2 | SP6 | M6 | ✅ Done |
 | **TD-601** | Defect | /admin/extensions 崩潰修復 | async 函數漏 await → await + try/catch + lint + smoke test | 2 | SP6 | M7 | ✅ Done |
 | **TD-510** | Tech Debt | Backlog ID 撞號修正 | 既有兩個 `TD-405` 已透過本次重整重新編號 | 0.5 | SP6 | M0 | ✅ Done（本次重整）|
-| **TD-803** | Defect | JWT callback 每次都打 DB 抵銷 Sprint 23 cache | `lib/auth/config.ts:155-167` 把 name/image 獨立 query 設成「總是查詢」，違反 Sprint 28-29 教訓（cache 只放不常變）。修正：只在 cache miss 路徑查，或拆兩個獨立 cache | 0.5 | SP30 | M2 | 📋 Ready（Sprint 32 review R1） |
-| **TD-804** | Defect | `?filters=` parse 失敗 silent swallow 導致無過濾回傳 | `lib/runtime/dynamic-handler.ts:262-279` `catch {}` 吃掉錯誤 → user 看到不該看到的 rows（資料洩漏風險）。修正：parse 失敗要回 400 或 warning log | 0.5 | SP30 | M1 | 📋 Ready（Sprint 32 review R2） |
-| **TD-805** | Defect | Infinite scroll 無 page 上限（self-DoS 風險） | `app/admin/crud/[spec]/page.tsx` Sprint A：`Promise.all(1..N)` 累積查詢，user 不斷 scroll 自我 DoS。修正：hard cap（例如 ≤20）後改 cursor pagination | 1 | SP30 | M4 | 📋 Ready（Sprint 32 review R3） |
-| **TD-806** | Defect | Batch delete 缺 TransitionLog + 無 batch size cap | `app/api/crud/[spec]/route.ts` Sprint B3：沒寫 audit log（與 Sprint 31 `cancelEvent` 補法不一致），可一次砍整張表。修正：每筆寫 TransitionLog + max batch ≤ 100 | 1 | SP30 | M4 | 📋 Ready（Sprint 32 review R4） |
-| **TD-807** | Tech Debt | `lib/auth/config.ts` 縮排壞掉 | `:99` `callbacks: {` 少 2 空格，`:134` `if (fresh) {` 少 6 空格 — 繞過 formatter 編輯。修正：跑 prettier 再 commit | 0.1 | SP30 | M2 | 📋 Ready（Sprint 32 review R5） |
+| **TD-803** | Defect | JWT callback 每次都打 DB 抵銷 Sprint 23 cache | `lib/auth/config.ts:155-167` 把 name/image 獨立 query 設成「總是查詢」，違反 Sprint 28-29 教訓（cache 只放不常變）。修正：只在 cache miss 路徑查，或拆兩個獨立 cache | 0.5 | SP30 | M2 | ✅ Done（Sprint 41 修 code + 2 unit guard）|
+| **TD-804** | Defect | `?filters=` parse 失敗 silent swallow 導致無過濾回傳 | `lib/runtime/dynamic-handler.ts:262-279` `catch {}` 吃掉錯誤 → user 看到不該看到的 rows（資料洩漏風險）。修正：parse 失敗要回 400 或 warning log | 0.5 | SP30 | M1 | ✅ Done partial（Sprint 41 加 console.warn；Sprint 42+ 可考慮完整修 400）|
+| **TD-805** | Defect | Infinite scroll 無 page 上限（self-DoS 風險） | `app/admin/crud/[spec]/page.tsx` Sprint A：`Promise.all(1..N)` 累積查詢，user 不斷 scroll 自我 DoS。修正：hard cap（例如 ≤20）後改 cursor pagination | 1 | SP30 | M4 | 📋 Ready（Sprint 42 必修 — Sprint 32 review R3 未處理）|
+| **TD-806** | Defect | Batch delete 缺 TransitionLog + 無 batch size cap | `app/api/crud/[spec]/route.ts` Sprint B3：沒寫 audit log（與 Sprint 31 `cancelEvent` 補法不一致），可一次砍整張表。修正：每筆寫 TransitionLog + max batch ≤ 100 | 1 | SP30 | M4 | ✅ Done（Sprint 41 MAX_BATCH_SIZE=100 + TransitionLog + 3 unit guard）|
+| **TD-807** | Tech Debt | `lib/auth/config.ts` 縮排壞掉 | `:99` `callbacks: {` 少 2 空格，`:134` `if (fresh) {` 少 6 空格 — 繞過 formatter 編輯。修正：跑 prettier 再 commit | 0.1 | SP30 | M2 | 📋 Ready（Sprint 42 必修 — Sprint 32 review R5 未處理）|
 
 ### P2（一般 / 改進）
 
@@ -616,10 +617,10 @@
 | **TD-513** | Tech Debt | use-chat-sessions.ts 測試 | TD-508 重構未涵蓋 hook 整合測試 | 1 | SP6 | M5 | ✅ Done（盤點 2026-08-24，16 個測試 case 已實作）|
 | **US-S6-2** | User Story | 平板 RWD 優化 | 768-1024px sidebar 太擠 | 1 | SP6 | M6 | 📋 Ready |
 | **TD-515** | Tech Debt | Extension State 持久化用 Prisma | `.extension-state.json` 寫 filesystem，多實例部署狀態不一致（舊 TD-405，已重新編號）| 2 | SP6 | M7 | ✅ Done（Prisma Extension.isEnabled，盤點 2026-08-24） |
-| **TD-808** | Tech Debt | 手機 sidebar 缺 Escape 鍵關閉 | `app/admin/admin-sidebar.tsx`：開啟後只能用 close button 或 backdrop 關，keyboard user 不友善。修正：加 `useEffect` listener | 0.5 | SP30 | M7 | 📋 Ready（Sprint 32 review U1） |
-| **TD-809** | Tech Debt | 手機 sidebar 缺 body scroll lock + route-change auto-close | sidebar 開啟時內容仍可滾動；programmatic navigation 後 sidebar 維持開啟。修正：`document.body.style.overflow='hidden'` + `usePathname` 監聽 | 0.5 | SP30 | M7 | 📋 Ready（Sprint 32 review U2） |
-| **TD-810** | Tech Debt | 手機 sidebar backdrop 用 `<button>` 違反 keyboard 慣例 | backdrop 是 `<button>`，鍵盤 user 必須 Tab 才能關。修正：用 `<div role="presentation">` 或加鍵盤 listener | 0.3 | SP30 | M7 | 📋 Ready（Sprint 32 review U3） |
-| **TD-811** | Tech Debt | Working tree 50+ 檔案未提交需拆 commit | Sprint A/B3/C/D + 29-3 + TD-802 + users/roles page-client 刪除 refactor 全在 working tree，未進任何 commit。風險：`git checkout .` 會全部遺失。修正：拆成 4-5 個獨立 commit，每個跑 Gate 1-4 | 1 | SP30 | M0 | 📋 Ready（Sprint 32 review U4） |
+| **TD-808** | Tech Debt | 手機 sidebar 缺 Escape 鍵關閉 | `app/admin/admin-sidebar.tsx`：開啟後只能用 close button 或 backdrop 關，keyboard user 不友善。修正：加 `useEffect` listener | 0.5 | SP30 | M7 | 📋 Ready（Sprint 42 必修 — Sprint 41 E2E 偽守護揭露功能未實作）|
+| **TD-809** | Tech Debt | 手機 sidebar 缺 body scroll lock + route-change auto-close | sidebar 開啟時內容仍可滾動；programmatic navigation 後 sidebar 維持開啟。修正：`document.body.style.overflow='hidden'` + `usePathname` 監聽 | 0.5 | SP30 | M7 | 📋 Ready（Sprint 42 必修）|
+| **TD-810** | Tech Debt | 手機 sidebar backdrop 用 `<button>` 違反 keyboard 慣例 | backdrop 是 `<button>`，鍵盤 user 必須 Tab 才能關。修正：用 `<div role="presentation">` 或加鍵盤 listener | 0.3 | SP30 | M7 | 📋 Ready（Sprint 42 必修）|
+| **TD-811** | Tech Debt | Working tree 50+ 檔案未提交需拆 commit | Sprint A/B3/C/D + 29-3 + TD-802 + users/roles page-client 刪除 refactor 全在 working tree，未進任何 commit。風險：`git checkout .` 會全部遺失。修正：拆成 4-5 個獨立 commit，每個跑 Gate 1-4 | 1 | SP30 | M0 | ✅ Done（自動滿足 — working tree 已 clean，Sprint 33-40 已正確 commit）|
 
 ### P3（細節 / 可選）
 
@@ -645,17 +646,17 @@
 | **US-802** | User Story | Role 矩陣頁 RWD 健檢 | /admin/roles/:id/permissions 頁面在 mobile 下檢查 | 1 | SP30 | M2 | 📋 Ready |
 | **US-803** | User Story | 批次刪除 undo 機制 | toast 內加 undo button，防止誤刪（從 Sprint 27 延續）| 2 | SP30 | M4 | 📋 Ready |
 | **US-804** | User Story | Toolbar 鍵盤快捷鍵 | Cmd+A 全選 / Delete 開批次刪除 dialog / Esc 關 dialog | 1 | SP30 | M4 | 📋 Ready |
-| **TD-812** | Tech Debt | Batch delete RBAC + TransitionLog 守護測試 | 補 unit + integration test：RBAC 邊界 + 每筆刪除有 TransitionLog 紀錄 | 0.5 | SP30 | M4 | 📋 Ready（Sprint 32 review T1） |
-| **TD-813** | Tech Debt | `?filters=` parse 邊界測試 | 補 integration test：malformed JSON、無效欄位、injection 防護、Sprint 32 review R2 守護 | 0.5 | SP30 | M1 | 📋 Ready（Sprint 32 review T2） |
-| **TD-814** | Tech Debt | Infinite scroll trigger + 累積 render 測試 | 補 unit test：max page guard、`useTransition`、cumulative render 正確性 | 0.5 | SP30 | M4 | 📋 Ready（Sprint 32 review T3） |
-| **TD-815** | Tech Debt | Sidebar Escape / route-change / backdrop 三種關閉路徑 E2E | Playwright 補 3 個情境測試（目前 `admin-mobile-rwd.spec.ts` 只測漢堡 toggle） | 0.5 | SP30 | M7 | 📋 Ready（Sprint 32 review T4） |
-| **TD-816** | Tech Debt | JWT name/image cache miss vs hit 路徑測試 | 補 unit test：cache miss 查 DB、cache hit 不查；防止 R1 再犯 | 0.5 | SP30 | M2 | 📋 Ready（Sprint 32 review T5） |
-| **TD-817** | Tech Debt | `lib/runtime/batch-delete.ts` 檔案健檢 | 被 `route.ts` 引用但不在 working tree 改動清單。確認檔案存在、有 unit test、respects permission checks、寫 TransitionLog | 0.5 | SP30 | M4 | 📋 Ready（Sprint 32 review T6） |
-| **TD-818** | Tech Debt | Lockfile 雙軌整理 | `bun.lock` + `pnpm-lock.yaml` 都改動，CI 一邊裝一邊不裝。修正：挑一個（推薦 pnpm，CI 已用 `--frozen-lockfile`）並 `.gitignore` 另一個 | 0.3 | SP30 | M0 | 📋 Ready（Sprint 32 review F1） |
-| **TD-901** | Tech Debt | 其他 CRUD 頁面 RWD 健檢 (todo/event) | Sprint 27 只修 blog，其他 CRUD 頁面需要同樣健檢 | 1 | SP31 | M4 | 📋 Ready |
+| **TD-812** | Tech Debt | Batch delete RBAC + TransitionLog 守護測試 | 補 unit + integration test：RBAC 邊界 + 每筆刪除有 TransitionLog 紀錄 | 0.5 | SP30 | M4 | ✅ Done（Sprint 41 admin RBAC + source-code guard）|
+| **TD-813** | Tech Debt | `?filters=` parse 邊界測試 | 補 integration test：malformed JSON、無效欄位、injection 防護、Sprint 32 review R2 守護 | 0.5 | SP30 | M1 | 📋 Ready（Sprint 42+ partial：source-code guard 已有，behavior test 缺）|
+| **TD-814** | Tech Debt | Infinite scroll trigger + 累積 render 測試 | 補 unit test：max page guard、`useTransition`、cumulative render 正確性 | 0.5 | SP30 | M4 | 📋 Ready（Sprint 42 必修）|
+| **TD-815** | Tech Debt | Sidebar Escape / route-change / backdrop 三種關閉路徑 E2E | Playwright 補 3 個情境測試（目前 `admin-mobile-rwd.spec.ts` 只測漢堡 toggle） | 0.5 | SP30 | M7 | ⚠️ Partial（Sprint 41 寫了 E2E 但斷言弱 + 底層功能 TD-808 未實作 → 測試通過不代表功能存在；Sprint 42 必修改寫）|
+| **TD-816** | Tech Debt | JWT name/image cache miss vs hit 路徑測試 | 補 unit test：cache miss 查 DB、cache hit 不查；防止 R1 再犯 | 0.5 | SP30 | M2 | ⚠️ Partial（source-code guard 已有；Sprint 42+ 可加 behavior test）|
+| **TD-817** | Tech Debt | `lib/runtime/batch-delete.ts` 檔案健檢 | 被 `route.ts` 引用但不在 working tree 改動清單。確認檔案存在、有 unit test、respects permission checks、寫 TransitionLog | 0.5 | SP30 | M4 | ✅ Done（Sprint 41 source-code guard + RBAC 測試覆蓋）|
+| **TD-818** | Tech Debt | Lockfile 雙軌整理 | `bun.lock` + `pnpm-lock.yaml` 都改動，CI 一邊裝一邊不裝。修正：挑一個（推薦 pnpm，CI 已用 `--frozen-lockfile`）並 `.gitignore` 另一個 | 0.3 | SP30 | M0 | 📋 Ready（Sprint 42 必修）|
+| **TD-901** | Tech Debt | 其他 CRUD 頁面 RWD 健檢 (todo/event) | Sprint 27 只修 blog，其他 CRUD 頁面需要同樣健檢 | 1 | SP31 | M4 | ✅ Done（Sprint 41 spec loader mtime cache + admin 4 頁 RWD 健檢）|
 | **TD-902** | Tech Debt | 批次刪除 undo 機制 | toast 內加 undo button，防止誤刪 | 2 | SP31 | M4 | 📋 Ready |
 | **TD-903** | Tech Debt | Toolbar 鍵盤快捷鍵 | Cmd+A 全選 / Delete 開批次刪除 dialog | 1 | SP31 | M4 | 📋 Ready |
-| **TD-904** | Tech Debt | admin dashboard RWD 健檢 | dashboard 頁面在 mobile 下檢查 | 1 | SP31 | M4 | 📋 Ready |
+| **TD-904** | Tech Debt | admin dashboard RWD 健檢 | dashboard 頁面在 mobile 下檢查 | 1 | SP31 | M4 | ✅ Done（Sprint 41 admin RWD audit 已涵蓋 dashboard）|
 | **TD-905** | Tech Debt | 移除 hook-sdk.ts 的 deprecated HookFunction | TD-523 完整清理（破壞性變更：所有 hook 必須改用 StrictHookFunction）| 2 | SP31 | M1 | 📋 Ready |
 | **TD-906** | Tech Debt | 移除 app-error.ts 的 regex fallback | TD-524 完整清理（破壞性變更：所有 throw 必須改用 AppError）| 3 | SP31 | M1 | 📋 Ready |
 
@@ -704,6 +705,7 @@
 | Sprint 27-A | Module: CRUD 列表頁增強 v1.1 | ✅ Done（28/28 SP）| [module-crud-list-enhancements-reflection.md](reflection/module-crud-list-enhancements-reflection.md) |
 | Sprint 28-29 | Module: Admin Sidebar & Profile | ✅ Done（23/23 SP）| [module-sprint28-29-reflection.md](reflection/module-sprint28-29-reflection.md) |
 | Sprint 30+ | 下一個 P0 | 📋 待 Plan Gate（先修 TD-803..818 必修項）| [sprint-32-review.md](reflection/sprint-32-review.md) |
+| Sprint 41 | 4 P1 fixes + RWD audit + VIEW_REGISTRY + batch 安全 | ✅ Done（~4 SP；commit `bf53301`）| [sprint-41](reflection/module-sprint41-reflection.md)（反向補寫）|
 
 ## 📝 規範文檔目錄（核心交付物）
 
