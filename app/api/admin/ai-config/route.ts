@@ -49,9 +49,10 @@ export async function PUT(request: Request) {
       ? rawEndpointUrl
       : undefined;
 
-  // 驗證 type
+  // 驗證 type (接受 dash 與 underscore 兩種格式)
   const validTypes = ['openai', 'claude', 'openai_compatible', 'anthropic_compatible'];
-  if (!validTypes.includes(type)) {
+  const normalizedType = type?.replace?.(/-/g, '_') ?? type;
+  if (!validTypes.includes(normalizedType)) {
     return NextResponse.json({ error: `Invalid type: ${type}` }, { status: 400 });
   }
   // 驗證 model
@@ -59,7 +60,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'model 必填' }, { status: 400 });
   }
   // 驗證 compatible type 必須有 endpointUrl
-  if ((type === 'openai_compatible' || type === 'anthropic_compatible') && !endpointUrl) {
+  if ((normalizedType === 'openai_compatible' || normalizedType === 'anthropic_compatible') && !endpointUrl) {
     return NextResponse.json({ error: 'Custom URL 必填' }, { status: 400 });
   }
 
@@ -67,7 +68,7 @@ export async function PUT(request: Request) {
   const apiKeyEnc = apiKey ? encrypt(apiKey) : undefined;
 
   // provider 欄位邏輯: openai / openai_compatible 都用 'openai' (ProviderConfig)
-  const provider = type === 'claude' || type === 'anthropic_compatible' ? 'anthropic' : 'openai';
+  const provider = normalizedType === 'claude' || normalizedType === 'anthropic_compatible' ? 'anthropic' : 'openai';
 
   // Find existing Global URL config (userId=null)
   const existing = await db.aIConfig.findFirst({
@@ -79,7 +80,7 @@ export async function PUT(request: Request) {
     ? await db.aIConfig.update({
         where: { id: existing.id },
         data: {
-          type,
+          type: normalizedType,
           provider,
           ...(endpointUrl !== undefined ? { endpointUrl } : {}),
           ...(apiKeyEnc ? { apiKeyEnc } : {}),
@@ -89,7 +90,7 @@ export async function PUT(request: Request) {
     : await db.aIConfig.create({
         data: {
           userId: null,
-          type,
+          type: normalizedType,
           provider,
           endpointUrl: endpointUrl ?? null,
           apiKeyEnc: apiKeyEnc ?? null,

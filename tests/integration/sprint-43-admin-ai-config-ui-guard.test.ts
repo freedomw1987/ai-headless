@@ -127,4 +127,12 @@ describe('Sprint 43 Commit D — API endpoint 守護', () => {
     const source = readFileSync(apiPath, 'utf-8');
     expect(source, '缺 PUT/POST handler').toMatch(/export\s+(async\s+)?function\s+(PUT|POST)/);
   });
+
+  it('API 應接受 form 送的 dash 格式 type (openai-compatible) 而不只是 underscore', () => {
+    const apiPath = 'app/api/admin/ai-config/route.ts';
+    if (!existsSync(apiPath)) return;
+    const source = readFileSync(apiPath, 'utf-8');
+    // 應有 normalizedType 變數 (取代 type)
+    expect(source, '沒處理 dash format (缺 normalizedType)').toMatch(/normalizedType/);
+  });
 });
