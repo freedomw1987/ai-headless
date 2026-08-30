@@ -24,6 +24,16 @@ import { createStateMachine } from '@/lib/state-machine/state-machine';
 import type { JsonSpec, Model, Field } from '@/lib/specs/json-spec.types';
 
 // ==============================================
+// 常數
+// ==============================================
+
+/** TD-805: 分頁 page 上限, 防止 self-DoS (user 不斷 scroll 觸發 page 變大)
+ * 50 pages × max 100 pageSize = 5000 筆, 足夠大部分使用場景
+ * 超過時 handler 會 clamp 到這個值, 不會 query 第 51 頁之後的資料
+ */
+export const MAX_PAGE = 50;
+
+// ==============================================
 // 型別
 // ==============================================
 
@@ -213,7 +223,11 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
     // 從 ctx.query 讀取 page / pageSize（URL ?page= ?pageSize=）
     const rawPage = Number(ctx.query?.page ?? 1);
     const rawPageSize = Number(ctx.query?.pageSize ?? 10);
-    const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+    let page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+    // TD-805: page 上限守護, 防止 self-DoS (user 不斷 scroll)
+    // 50 pages × 100 pageSize = 5000 筆, 足夠大部分使用場景
+    // 超過時 clamp 到 MAX_PAGE (不 return empty, 讓 user 仍能看到分頁 UI)
+    page = Math.min(page, MAX_PAGE);
     const pageSize =
       Number.isFinite(rawPageSize) && rawPageSize > 0 && rawPageSize <= 100
         ? Math.floor(rawPageSize)

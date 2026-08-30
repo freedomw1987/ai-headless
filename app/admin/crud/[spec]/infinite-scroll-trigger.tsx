@@ -24,9 +24,13 @@ type Props = {
   page: number;
   hasMore: boolean;
   total: number;
+  /** TD-805: 頁面上限, 超過時不再觸發載入並提示 user */
+  maxPageCap?: number;
 };
 
-export function InfiniteScrollTrigger({ page, hasMore, total }: Props) {
+export function InfiniteScrollTrigger({ page, hasMore, total, maxPageCap = 50 }: Props) {
+  // TD-805: 已達頁面上限 → 視同 hasMore = false (不觸發 IntersectionObserver)
+  const reachedCap = maxPageCap > 0 && page >= maxPageCap;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -36,6 +40,8 @@ export function InfiniteScrollTrigger({ page, hasMore, total }: Props) {
 
   useEffect(() => {
     if (!hasMore) return;
+    // TD-805: 已達頁面上限 → 不再觸發載入
+    if (reachedCap) return;
     if (!sentinelRef.current) return;
 
     const observer = new IntersectionObserver(
@@ -59,12 +65,26 @@ export function InfiniteScrollTrigger({ page, hasMore, total }: Props) {
     return () => {
       observer.disconnect();
     };
-  }, [hasMore, page, pathname, router, searchParams]);
+  }, [hasMore, page, pathname, router, searchParams, reachedCap]);
 
   // URL 變了 (push 完成後) → 重置 loadingRef
   useEffect(() => {
     loadingRef.current = false;
   }, [searchParams]);
+
+  // TD-805: 已達頁面上限, 顯示提示並鼓勵 user 用篩選縮小範圍
+  // 只有「hasMore 仍為 true 但 page 已達 cap」這個組合才需要提示
+  // (hasMore=false 時原本就已顯示「已顯示全部 N 筆」)
+  if (reachedCap && hasMore) {
+    return (
+      <div
+        data-testid="infinite-scroll-cap-reached"
+        className="text-center py-4 text-sm text-muted-foreground"
+      >
+        已載入前 {maxPageCap} 頁（{total} 筆中）, 請用搜尋或篩選縮小範圍查看更多資料
+      </div>
+    );
+  }
 
   if (!hasMore) {
     return (

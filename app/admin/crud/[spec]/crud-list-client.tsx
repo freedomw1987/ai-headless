@@ -495,6 +495,8 @@ export function CrudListClient({
         page={page}
         hasMore={page < totalPages}
         total={total}
+        /** TD-805: 頁面上限守護, 防 self-DoS */
+        maxPageCap={50}
       />
 
       {/* Dialog */}
