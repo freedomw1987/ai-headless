@@ -3,6 +3,7 @@
  *  AI Providers — 真實串接 (S4.4)
  * Sprint 43 v2.0 (S43-A Commit A): 加入 4-type Provider 介面重構
  * Sprint 43 v2.0 (S43-B Commit B): 測試連線 utility + Factory Custom URL 支援
+ * Sprint 43 v2.0 (S43-C Commit C): createProviderFromDB factory + decrypt utility placeholder
  * ==============================================
  *
  * 對應：docs/prd/05-ai-config.md
@@ -750,5 +751,88 @@ export function createProvider(env: EnvConfig): AIProvider {
   console.warn(
     `[ai-headless] Unknown AI_DEFAULT_PROVIDER='${provider}'. Falling back to MockProvider.`,
   );
+  return new MockProvider();
+}
+
+// ==============================================
+// 6. DB-based Factory (S43-C)
+// ==============================================
+
+/** S43-C: API Key 解密 (Commit E 會換成 AES-256-GCM, 現為 placeholder)
+ *
+ * 設計原則: 先有 interface, Commit E 才接真正 crypto
+ * 目前是簡單反轉 (避免明文存, 僅供 development)
+ */
+export function decrypt(ciphertext: string): string {
+  // S43-E TODO: 改用 AES-256-GCM
+  return ciphertext.split('').reverse().join('');
+}
+
+/** S43-C: 從 Prisma AIConfig 建立 Provider
+ *
+ * 查找順序:
+ * 1. userId 指定的 config (per-user 設定)
+ * 2. userId = null 的 config (Global URL, 所有 user 共用)
+ * 3. 都没有 → throw
+ *
+ * 設計: 使用 dynamic import 避免 PrismaClient 在不需要 DB 的測試中冷啟動加載
+ */
+export async function createProviderFromDB(params: {
+  userId?: string;
+}): Promise<AIProvider> {
+  // dynamic import 避免 Pull PrismaClient (只在使用 DB factory 時才加載)
+  const { db } = await import('@/lib/db');
+
+  // 優先讀 user-specific, 沒有就讀 Global URL (userId=null)
+  const config = await db.aIConfig.findFirst({
+    where: params.userId ? { userId: params.userId } : { userId: null },
+  });
+
+  if (!config) {
+    throw new Error(
+      'No AI config found. Please configure AI provider at /admin/ai-config',
+    );
+  }
+
+  // 解密 API Key (S43-E 換成真 AES)
+  const apiKey = config.apiKeyEnc ? decrypt(config.apiKeyEnc) : '';
+
+  const type = config.type;
+  const endpointUrl = config.endpointUrl ?? undefined;
+
+  // 根據 type 決定 class
+  if (type === 'openai_compatible') {
+    return new OpenAIProvider({
+      apiKey,
+      model: config.model,
+      baseUrl: endpointUrl,
+      type: 'openai-compatible',
+    });
+  }
+  if (type === 'anthropic_compatible') {
+    return new AnthropicProvider({
+      apiKey,
+      model: config.model,
+      baseUrl: endpointUrl,
+      type: 'anthropic-compatible',
+    });
+  }
+  if (type === 'openai') {
+    return new OpenAIProvider({
+      apiKey,
+      model: config.model,
+      type: 'openai',
+    });
+  }
+  if (type === 'claude') {
+    return new AnthropicProvider({
+      apiKey,
+      model: config.model,
+      type: 'claude',
+    });
+  }
+
+  // Unknown type → mock
+  console.warn(`[ai-headless] Unknown AI config type='${type}'. Falling back to MockProvider.`);
   return new MockProvider();
 }
