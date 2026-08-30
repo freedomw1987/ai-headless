@@ -26,6 +26,24 @@ import { cn } from '@/lib/utils';
 
 type AIProviderType = 'openai' | 'claude' | 'openai-compatible' | 'anthropic-compatible';
 
+/** Bug Fix: DB 存的 type 是 underscore 格式 (anthropic_compatible) */
+function normalizeDBTypeToUI(dbType: string | null | undefined): AIProviderType {
+  if (!dbType) return 'openai';
+  // anthropic_compatible → anthropic-compatible
+  if (dbType === 'anthropic_compatible') return 'anthropic-compatible';
+  if (dbType === 'openai_compatible') return 'openai-compatible';
+  if (dbType === 'openai') return 'openai';
+  if (dbType === 'claude') return 'claude';
+  return 'openai';
+}
+
+/** 頁面傳入的初始 config (Sprint 46 Bug Fix) */
+type InitialAIConfig = {
+  type: string | null;
+  endpointUrl: string | null;
+  model: string | null;
+} | null;
+
 const PROVIDER_OPTIONS: { value: AIProviderType; label: string; description: string }[] = [
   { value: 'openai', label: 'OpenAI', description: '官方 OpenAI (api.openai.com)' },
   { value: 'claude', label: 'Claude', description: '官方 Anthropic (api.anthropic.com)' },
@@ -53,13 +71,15 @@ const PLACEHOLDER_HINTS: Record<AIProviderType, string> = {
   'anthropic-compatible': '例: https://api.anthropic.com 或 anthropic-compatible vendor',
 };
 
-export function AIConfigForm() {
+export function AIConfigForm({ initialConfig }: { initialConfig?: InitialAIConfig }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [type, setType] = useState<AIProviderType>('openai');
-  const [endpointUrl, setEndpointUrl] = useState('');
+  // Bug Fix: 從 initialConfig 讀 DB 設定, 而不是寫死 'openai'
+  const initialType = normalizeDBTypeToUI(initialConfig?.type);
+  const [type, setType] = useState<AIProviderType>(initialType);
+  const [endpointUrl, setEndpointUrl] = useState(initialConfig?.endpointUrl ?? '');
   const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState(DEFAULT_MODELS.openai);
+  const [model, setModel] = useState(initialConfig?.model ?? DEFAULT_MODELS[initialType]);
 
   // 測試連線 state
   const [testResult, setTestResult] = useState<

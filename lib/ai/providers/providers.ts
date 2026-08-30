@@ -244,7 +244,12 @@ export class OpenAIProvider implements AIProvider {
     }
     this.apiKey = config.apiKey;
     this.model = config.model ?? DEFAULT_OPENAI_MODEL;
-    this.baseUrl = config.baseUrl ?? OPENAI_API_URL;
+    // Bug Fix (Sprint 46): Custom URL 自動附加 /v1/chat/completions, 與 PRD §4.0.3 + testEndpoint 一致
+    if (config.baseUrl && !config.baseUrl.includes('/v1/chat/completions')) {
+      this.baseUrl = config.baseUrl.replace(/\/$/, '') + '/v1/chat/completions';
+    } else {
+      this.baseUrl = config.baseUrl ?? OPENAI_API_URL;
+    }
   }
 
   async generateText(messages: AIMessage[]): Promise<string> {
@@ -431,7 +436,12 @@ export class AnthropicProvider implements AIProvider {
     }
     this.apiKey = config.apiKey;
     this.model = config.model ?? DEFAULT_ANTHROPIC_MODEL;
-    this.baseUrl = config.baseUrl ?? ANTHROPIC_API_URL;
+    // Bug Fix (Sprint 46): Custom URL 自動附加 /v1/messages, 與 PRD §4.0.3 + testEndpoint 一致
+    if (config.baseUrl && !config.baseUrl.includes('/v1/messages')) {
+      this.baseUrl = config.baseUrl.replace(/\/$/, '') + '/v1/messages';
+    } else {
+      this.baseUrl = config.baseUrl ?? ANTHROPIC_API_URL;
+    }
   }
 
   async generateText(messages: AIMessage[]): Promise<string> {
@@ -910,10 +920,27 @@ export async function createProviderFromDB(params: {
   // dynamic import 避免 Pull PrismaClient (只在使用 DB factory 時才加載)
   const { db } = await import('@/lib/db');
 
-  // 優先讀 user-specific, 沒有就讀 Global URL (userId=null)
-  const config = await db.aIConfig.findFirst({
-    where: params.userId ? { userId: params.userId } : { userId: null },
-  });
+  // Bug Fix (Sprint 46 Commit 2 前發現的 Sprint 43 歷史 bug):
+  // 正確順序應為 user-specific 優先, 找不到 fallback 到 Global URL (userId=null)。
+  // 原程式碼 where: params.userId ? { userId: params.userId } : { userId: null }
+  // 會導致 admin user 只有 Global URL config 時 throw 503。
+  let config = null;
+  if (params.userId) {
+    config = await db.aIConfig.findFirst({
+      where: { userId: params.userId },
+    });
+    // 找不到時 fallback 到 Global URL
+    if (!config) {
+      config = await db.aIConfig.findFirst({
+        where: { userId: null },
+      });
+    }
+  } else {
+    // 無 userId 參數, 只查 Global URL
+    config = await db.aIConfig.findFirst({
+      where: { userId: null },
+    });
+  }
 
   if (!config) {
     throw new AIProviderError({

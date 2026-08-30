@@ -103,10 +103,18 @@ export function AdminChatDialog({ open, onOpenChange, userId }: Props) {
                 <ul className="py-1">
                   {sessions.map((s: SessionSummary) => (
                     <li key={s.id}>
-                      <button
-                        type="button"
+                      {/* Bug Fix (Sprint 46): 外層改 div + role=button, 避免嵌套 button 造成 hydration error */}
+                      <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => handleSelectSession(s.id)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between gap-1 ${
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            void handleSelectSession(s.id);
+                          }
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between gap-1 cursor-pointer ${
                           activeId === s.id ? 'bg-accent' : ''
                         }`}
                         data-testid={`session-item-${s.id}`}
@@ -124,7 +132,7 @@ export function AdminChatDialog({ open, onOpenChange, userId }: Props) {
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>
-                      </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
