@@ -17,6 +17,7 @@
 import { NextRequest } from 'next/server';
 import { requireUser, isAdmin } from '@/lib/auth/auth';
 import { createProviderFromDB } from '@/lib/ai/providers/providers';
+import { db } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   // 1. Auth + Admin check
@@ -35,8 +36,9 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. 解析 request
-  const { messages } = (await req.json()) as {
+  const { messages, sessionId } = (await req.json()) as {
     messages: { role: 'user' | 'assistant' | 'system'; content: string }[];
+    sessionId?: string;
   };
 
   // 3. 取 Provider (Sprint 43 createProviderFromDB + Custom URL 支援)
@@ -57,12 +59,40 @@ export async function POST(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
+        // 4a. 持久化 user message (如有 sessionId)
+        if (sessionId && messages.length > 0) {
+          const lastMsg = messages[messages.length - 1]!;
+          if (lastMsg.role === 'user') {
+            await db.chatMessage.create({
+              data: {
+                sessionId,
+                role: 'user',
+                content: lastMsg.content,
+              },
+            });
+          }
+        }
+
         let fullResponse = '';
         for await (const chunk of provider.streamText(messages)) {
           fullResponse += chunk;
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`),
           );
+        }
+        // 4b. 持久化 assistant 回應 + 更新 session updatedAt
+        if (sessionId && fullResponse) {
+          await db.chatMessage.create({
+            data: {
+              sessionId,
+              role: 'assistant',
+              content: fullResponse,
+            },
+          });
+          await db.chatSession.update({
+            where: { id: sessionId },
+            data: { updatedAt: new Date() },
+          });
         }
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
