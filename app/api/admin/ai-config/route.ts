@@ -42,7 +42,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await request.json();
+  try {
+    const body = await request.json();
   const { type, endpointUrl: rawEndpointUrl, apiKey, model } = body;
   const endpointUrl: string | undefined =
     typeof rawEndpointUrl === 'string' && rawEndpointUrl.length > 0
@@ -99,4 +100,15 @@ export async function PUT(request: Request) {
       });
 
   return NextResponse.json({ success: true, id: config.id });
+  } catch (error) {
+    console.error('[AI Config PUT] error:', error);
+    return NextResponse.json(
+      {
+        error: 'Internal Server Error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5).join('\n') : undefined,
+      },
+      { status: 500 }
+    );
+  }
 }

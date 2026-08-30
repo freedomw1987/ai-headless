@@ -135,4 +135,13 @@ describe('Sprint 43 Commit D — API endpoint 守護', () => {
     // 應有 normalizedType 變數 (取代 type)
     expect(source, '沒處理 dash format (缺 normalizedType)').toMatch(/normalizedType/);
   });
+
+  it('Form DEFAULT_MODELS 4 種 type 都應有預設值 (避免存空 model 造成 API 400)', () => {
+    const formPath = 'app/admin/settings/ai-config/ai-config-form.tsx';
+    if (!existsSync(formPath)) return;
+    const source = readFileSync(formPath, 'utf-8');
+    // Compatible 模式 DEFAULT_MODELS 不能是空字串 (會造成 400)
+    expect(source, 'DEFAULT_MODELS 不該有空預設').toMatch(/'openai-compatible':\s*'[^']+'/);
+    expect(source, 'DEFAULT_MODELS 不該有空預設').toMatch(/'anthropic-compatible':\s*'[^']+'/);
+  });
 });

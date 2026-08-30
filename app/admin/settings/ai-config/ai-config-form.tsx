@@ -36,8 +36,15 @@ const PROVIDER_OPTIONS: { value: AIProviderType; label: string; description: str
 const DEFAULT_MODELS: Record<AIProviderType, string> = {
   openai: 'gpt-4o',
   claude: 'claude-3-5-sonnet-20241022',
-  'openai-compatible': '',
-  'anthropic-compatible': '',
+  'openai-compatible': 'gpt-4o',
+  'anthropic-compatible': 'claude-3-5-sonnet-20241022',
+};
+
+const PLACEHOLDER_HINTS: Record<AIProviderType, string> = {
+  openai: '預設: gpt-4o',
+  claude: '預設: claude-3-5-sonnet-20241022',
+  'openai-compatible': '例: gpt-4o / claude-3.5-sonnet / 自訂模型 ID',
+  'anthropic-compatible': '例: claude-3-5-sonnet-20241022 / 自訂模型 ID',
 };
 
 export function AIConfigForm() {
@@ -186,7 +193,7 @@ export function AIConfigForm() {
             id="model"
             name="model"
             type="text"
-            placeholder={DEFAULT_MODELS[type]}
+            placeholder={PLACEHOLDER_HINTS[type]}
             value={model}
             onChange={(e) => setModel(e.target.value)}
           />
