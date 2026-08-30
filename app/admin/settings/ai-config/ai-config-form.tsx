@@ -40,11 +40,17 @@ const DEFAULT_MODELS: Record<AIProviderType, string> = {
   'anthropic-compatible': 'claude-3-5-sonnet-20241022',
 };
 
+/** Sprint 43 v2.0: 選 compatible type 時自動填入預設 base URL (僅 input 為空時) */
+const DEFAULT_ENDPOINTS: Partial<Record<AIProviderType, string>> = {
+  'openai-compatible': 'https://api.openai.com',
+  'anthropic-compatible': 'https://api.anthropic.com',
+};
+
 const PLACEHOLDER_HINTS: Record<AIProviderType, string> = {
   openai: '預設: gpt-4o',
   claude: '預設: claude-3-5-sonnet-20241022',
-  'openai-compatible': '例: gpt-4o / claude-3.5-sonnet / 自訂模型 ID',
-  'anthropic-compatible': '例: claude-3-5-sonnet-20241022 / 自訂模型 ID',
+  'openai-compatible': '例: https://api.openai.com 或自架 proxy URL',
+  'anthropic-compatible': '例: https://api.anthropic.com 或 anthropic-compatible vendor',
 };
 
 export function AIConfigForm() {
@@ -68,6 +74,11 @@ export function AIConfigForm() {
   function handleTypeChange(newType: AIProviderType) {
     setType(newType);
     setModel(DEFAULT_MODELS[newType]);
+    // Sprint 43 v2.0: 切到 compatible type 且 endpointUrl 為空時, 自動填入預設 base URL
+    const defaultEndpoint = DEFAULT_ENDPOINTS[newType];
+    if (defaultEndpoint && !endpointUrl.trim()) {
+      setEndpointUrl(defaultEndpoint);
+    }
     setTestResult(null);
   }
 

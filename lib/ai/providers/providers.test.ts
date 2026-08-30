@@ -684,25 +684,25 @@ describe('S43-B testEndpoint URL 構造 (驗證所有 4 種 type 都運作)', ()
       expect.objectContaining({ method: 'POST' }),
     );
     // body 應含 model/max_tokens/messages
-    const callArgs = mockFetch.mock.calls[0];
+    const callArgs = mockFetch.mock.calls[0]!;
     expect(callArgs[1].body).toContain('"model":"test"');
     expect(callArgs[1].headers.Authorization).toBe('Bearer sk-test');
   });
 
-  it('anthropic-compatible: POST /anthropic/messages 帶 minimal payload', async () => {
+  it('anthropic-compatible: POST /anthropic/v1/messages 帶 minimal payload', async () => {
     const { testEndpoint } = await import('@/lib/ai/providers/providers');
     await testEndpoint({
       type: 'anthropic-compatible',
       endpointUrl: 'https://api.minimaxi.com',
       apiKey: 'sk-test',
     });
-    // 期望 testEndpoint 加 /anthropic/messages (不是 /v1/messages)
+    // 期望 testEndpoint 加 /anthropic/v1/messages (vendor prefix + v1 標準路徑)
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://api.minimaxi.com/anthropic/messages',
+      'https://api.minimaxi.com/anthropic/v1/messages',
       expect.objectContaining({ method: 'POST' }),
     );
     // headers 應含 x-api-key + anthropic-version
-    const callArgs = mockFetch.mock.calls[0];
+    const callArgs = mockFetch.mock.calls[0]!;
     expect(callArgs[1].headers['x-api-key']).toBe('sk-test');
     expect(callArgs[1].headers['anthropic-version']).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });

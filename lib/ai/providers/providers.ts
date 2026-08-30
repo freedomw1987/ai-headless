@@ -691,8 +691,8 @@ export async function testEndpoint(params: {
       return { success: true, latencyMs };
     }
 
-    // anthropic-compatible: POST {base}/anthropic/messages (用戶明確路徑)
-    const testUrl = new URL('anthropic/messages', url).toString();
+    // anthropic-compatible: POST {base}/anthropic/v1/messages (vendor prefix + v1 path)
+    const testUrl = new URL('anthropic/v1/messages', url).toString();
     const response = await fetch(testUrl, {
       method: 'POST',
       headers: {

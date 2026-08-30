@@ -144,4 +144,22 @@ describe('Sprint 43 Commit D — API endpoint 守護', () => {
     expect(source, 'DEFAULT_MODELS 不該有空預設').toMatch(/'openai-compatible':\s*'[^']+'/);
     expect(source, 'DEFAULT_MODELS 不該有空預設').toMatch(/'anthropic-compatible':\s*'[^']+'/);
   });
+
+  it('Form 應有 DEFAULT_ENDPOINTS (自動補全 endpoint URL)', () => {
+    const formPath = 'app/admin/settings/ai-config/ai-config-form.tsx';
+    if (!existsSync(formPath)) return;
+    const source = readFileSync(formPath, 'utf-8');
+    // DEFAULT_ENDPOINTS 應該有 openai-compatible + anthropic-compatible 預設
+    expect(source, '缺 DEFAULT_ENDPOINTS 物件').toMatch(/DEFAULT_ENDPOINTS/);
+    expect(source, '缺 openai-compatible 預設 endpoint').toMatch(/'openai-compatible':\s*'https:\/\/[^']+'/);
+    expect(source, '缺 anthropic-compatible 預設 endpoint').toMatch(/'anthropic-compatible':\s*'https:\/\/[^']+'/);
+  });
+
+  it('handleTypeChange 應檢查 endpointUrl 為空才填入預設 endpoint', () => {
+    const formPath = 'app/admin/settings/ai-config/ai-config-form.tsx';
+    if (!existsSync(formPath)) return;
+    const source = readFileSync(formPath, 'utf-8');
+    // 不該靜默覆蓋用戶已輸入的 endpointUrl
+    expect(source, 'handleTypeChange 應檢查 endpointUrl 為空才填預設').toMatch(/defaultEndpoint[\s\S]{0,100}!endpointUrl\.trim\(\)/);
+  });
 });
