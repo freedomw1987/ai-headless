@@ -176,6 +176,21 @@ export function AdminSidebar({
                 角色管理
               </Link>
             )}
+            {isAdmin && (
+              <Link
+                href="/admin/settings/ai-config"
+                onClick={() => onMobileOpenChange(false)}
+                data-testid="sidebar-link-ai-config"
+                className={cn(
+                  'block px-3 py-2 rounded text-sm transition-colors',
+                  pathname.startsWith('/admin/settings/ai-config')
+                    ? 'bg-primary text-primary-foreground font-medium'
+                    : 'hover:bg-muted',
+                )}
+              >
+                AI 模型配置
+              </Link>
+            )}
           </div>
         </nav>
 

@@ -768,6 +768,13 @@ export function decrypt(ciphertext: string): string {
   return ciphertext.split('').reverse().join('');
 }
 
+/** S43-D: API Key 加密 (Commit E 會換成 AES-256-GCM, 現為 placeholder) */
+export function encrypt(plaintext: string): string {
+  // S43-E TODO: 改用 AES-256-GCM
+  // placeholder: 簡單反轉 (跟 decrypt 互逆)
+  return plaintext.split('').reverse().join('');
+}
+
 /** S43-C: 從 Prisma AIConfig 建立 Provider
  *
  * 查找順序:
