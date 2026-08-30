@@ -654,3 +654,69 @@ describe('TD-504 Mock Stream 延遲優化', () => {
     expect(elapsed).toBeLessThan(50);
   });
 });
+
+describe('S43-B testEndpoint URL 構造 (驗證所有 4 種 type 都運作)', () => {
+  let mockFetch: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ content: [{ text: 'ok' }] }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('openai-compatible: POST /v1/chat/completions 帶 minimal payload', async () => {
+    const { testEndpoint } = await import('@/lib/ai/providers/providers');
+    await testEndpoint({
+      type: 'openai-compatible',
+      endpointUrl: 'https://api.openrouter.ai/api/v1',
+      apiKey: 'sk-test',
+    });
+    // 期望 testEndpoint 在 base 後加 /v1/chat/completions (不是 /v1/models)
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.openrouter.ai/api/v1/chat/completions',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    // body 應含 model/max_tokens/messages
+    const callArgs = mockFetch.mock.calls[0];
+    expect(callArgs[1].body).toContain('"model":"test"');
+    expect(callArgs[1].headers.Authorization).toBe('Bearer sk-test');
+  });
+
+  it('anthropic-compatible: POST /anthropic/messages 帶 minimal payload', async () => {
+    const { testEndpoint } = await import('@/lib/ai/providers/providers');
+    await testEndpoint({
+      type: 'anthropic-compatible',
+      endpointUrl: 'https://api.minimaxi.com',
+      apiKey: 'sk-test',
+    });
+    // 期望 testEndpoint 加 /anthropic/messages (不是 /v1/messages)
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.minimaxi.com/anthropic/messages',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    // headers 應含 x-api-key + anthropic-version
+    const callArgs = mockFetch.mock.calls[0];
+    expect(callArgs[1].headers['x-api-key']).toBe('sk-test');
+    expect(callArgs[1].headers['anthropic-version']).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('openai-compatible: 純根域名 endpoint', async () => {
+    const { testEndpoint } = await import('@/lib/ai/providers/providers');
+    await testEndpoint({
+      type: 'openai-compatible',
+      endpointUrl: 'https://api.openai.com',
+      apiKey: 'sk-test',
+    });
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.openai.com/v1/chat/completions',
+      expect.anything(),
+    );
+  });
+});

@@ -147,8 +147,8 @@ M4（AI Config）提供 ai-headless 框架的**AI 模型管理**。包含：
 
 Custom URL 設定頁提供「**測試連線**」按鈕，送一個 minimal request 驗證：
 
-- OpenAI-compatible：`POST {baseUrl}/v1/models` 帶 `Authorization: Bearer {apiKey}`
-- Anthropic-compatible：`POST {baseUrl}/v1/messages` 帶 minimal payload + `x-api-key: {apiKey}`
+- OpenAI-compatible：`POST {baseUrl}/v1/chat/completions` 帶 minimal payload + `Authorization: Bearer {apiKey}` （用真 chat path 驗證連線）
+- Anthropic-compatible：`POST {baseUrl}/anthropic/messages` 帶 minimal payload + `x-api-key: {apiKey}`
 
 **UX 設計**：
 - 連線成功：顯示 `✅ 連線成功（延遲 123ms，可用模型: gpt-4o, claude-3.5-sonnet）`

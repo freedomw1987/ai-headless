@@ -663,31 +663,36 @@ export async function testEndpoint(params: {
 
   try {
     if (type === 'openai-compatible') {
-      // OpenAI-compatible: GET /v1/models (最 lightweight 驗證)
-      const testUrl = new URL('/v1/models', url).toString();
+      // OpenAI-compatible: POST {base}/v1/chat/completions (含 minimal payload)
+      // 跟原生成同樣 protocol path 才能真正驗證用戶 chat 路徑是否連通
+      const testUrl = new URL('v1/chat/completions', url).toString();
       const response = await fetch(testUrl, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${apiKey}` },
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'test',
+          max_tokens: 1,
+          messages: [{ role: 'user', content: 'hi' }],
+        }),
         signal: controller.signal,
       });
       const latencyMs = Date.now() - start;
-      if (!response.ok) {
+      if (!response.ok && response.status !== 400) {
+        // 400 = request 格式不對但 server 回應 = 連線 OK
         return {
           success: false,
           error: `HTTP ${response.status} ${response.statusText}`,
           statusCode: response.status,
         };
       }
-      // 嘗試解析 models list (若有)
-      const data = await response.json().catch(() => null);
-      const models = Array.isArray(data?.data)
-        ? data.data.slice(0, 5).map((m: { id?: string }) => m.id).filter(Boolean)
-        : undefined;
-      return { success: true, latencyMs, models };
+      return { success: true, latencyMs };
     }
 
-    // anthropic-compatible: POST /v1/messages 帶 minimal payload
-    const testUrl = new URL('/v1/messages', url).toString();
+    // anthropic-compatible: POST {base}/anthropic/messages (用戶明確路徑)
+    const testUrl = new URL('anthropic/messages', url).toString();
     const response = await fetch(testUrl, {
       method: 'POST',
       headers: {
