@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>Sprint 46 PRD — Chat 附件 + Markdown + Sources/Reasoning</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; line-height: 1.7; color: #1a1a1a; }
+  h1 { color: #c026d3; border-bottom: 3px solid #c026d3; padding-bottom: 0.5rem; }
+  h2 { color: #7e22ce; margin-top: 2.5rem; border-left: 4px solid #c026d3; padding-left: 0.75rem; }
+  h3 { color: #a21caf; margin-top: 1.5rem; }
+  .meta { background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); border-radius: 8px; padding: 1rem 1.5rem; margin: 1rem 0 2rem; border: 1px solid #e879f9; }
+  .meta p { margin: 0.25rem 0; }
+  .status-done { color: #15803d; font-weight: bold; }
+  .status-progress { color: #c2410c; font-weight: bold; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th { background: #f5d0fe; padding: 0.5rem; text-align: left; border: 1px solid #e879f9; }
+  td { padding: 0.5rem; border: 1px solid #e9d5ff; vertical-align: top; }
+  tr:nth-child(even) { background: #fdf4ff; }
+  pre { background: #1e1b4b; color: #e0e7ff; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: 0.9rem; }
+  code { background: #f3e8ff; color: #6b21a8; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.9em; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .callout { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+  .success { background: #d1fae5; border-left: 4px solid #10b981; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+  .info { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+  .danger { background: #fee2e2; border-left: 4px solid #ef4444; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+  .toc { background: #f5f3ff; border-radius: 8px; padding: 1rem 1.5rem; margin: 1rem 0; }
+  .toc ul { margin: 0.5rem 0; padding-left: 1.5rem; }
+  .toc a { color: #6d28d9; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .card { background: white; border: 2px solid #e879f9; border-radius: 8px; padding: 1rem; text-align: center; }
+  .card .value { font-size: 2rem; font-weight: bold; color: #c026d3; display: block; }
+  .card .label { color: #6b21a8; font-size: 0.9rem; }
+  .ascii-frame { font-family: monospace; white-space: pre; background: #1f2937; color: #f3f4f6; padding: 1rem; border-radius: 6px; font-size: 0.85rem; overflow-x: auto; }
+</style>
+</head>
+<body>
+
+<h1>📋 Sprint 46 PRD：Chat 附件 + Markdown + Sources/Reasoning</h1>
+
+<div class="meta">
+<p><strong>對應模組</strong>：M5（AI Chat）</p>
+<p><strong>版本</strong>：1.0.0 ｜ <strong>最後更新</strong>：2026-08-31</p>
+<p><strong>狀態</strong>：<span class="status-done">✅ Plan Gate 完成（17/17）</span> + <span class="status-progress">🟡 Design Gate 進行中</span></p>
+<p><strong>規模</strong>：22 SP / 7 Stages / 34 FR / 14 風險</p>
+</div>
+
+<div class="toc">
+<h3>📑 目錄</h3>
+<ul>
+<li><a href="#s1">1. 模組概述</a></li>
+<li><a href="#s2">2. 功能清單（FR）</a></li>
+<li><a href="#s3">3. 資料模型</a></li>
+<li><a href="#s4">4. 介面設計</a></li>
+<li><a href="#s5">5. API 設計</a></li>
+<li><a href="#s6">6. 測試計劃</a></li>
+<li><a href="#s7">7. 開發計劃</a></li>
+<li><a href="#s8">8. 使用者故事</a></li>
+<li><a href="#s9">9. 風險與緩解</a></li>
+<li><a href="#s10">10. 不在範圍</a></li>
+<li><a href="#s12">12. 架構演進</a></li>
+<li><a href="#s13">13. Plan Gate 紀錄</a></li>
+<li><a href="#s14">14. Design Gate 完成證明</a></li>
+</ul>
+</div>
+
+<div class="summary-cards">
+  <div class="card"><span class="value">22</span><span class="label">Story Points</span></div>
+  <div class="card"><span class="value">7</span><span class="label">Stages</span></div>
+  <div class="card"><span class="value">34</span><span class="label">Functional Reqs</span></div>
+  <div class="card"><span class="value">14</span><span class="label">Risks</span></div>
+  <div class="card"><span class="value">17</span><span class="label">Plan Gate 決策</span></div>
+  <div class="card"><span class="value">9</span><span class="label">排除項目</span></div>
+</div>
+
+<h2 id="s1">1. 模組概述</h2>
+
+<div class="info">
+<strong>Sprint 46 目標</strong>：在 Sprint 44-45 已實作的 AI Chat 基礎上，補齊三個「內容擴展」主題：
+<ol>
+<li><strong>真實附件上傳</strong>：從 Sprint 45 純前端 UI 升級為完整 pipeline（route → 解析 → prompt context）</li>
+<li><strong>進階 Markdown</strong>：從「只支援 code block」升級為「完整 GFM Markdown」</li>
+<li><strong>自製 Sources/Reasoning UI</strong>：保留 Sprint 43 Custom URL Provider 架構下自製兩元件</li>
+</ol>
+</div>
+
+<h3>1.4 與 Sprint 45 的差異（核心對比）</h3>
+<table>
+<thead><tr><th>維度</th><th>Sprint 45</th><th>Sprint 46</th></tr></thead>
+<tbody>
+<tr><td>附件 UI</td><td>✅ 純前端</td><td>✅ + 真實上傳 + 進度條 + 錯誤</td></tr>
+<tr><td>上傳 route</td><td>❌</td><td>✅ /api/admin/chat/upload + RBAC + MIME + 10 MB</td></tr>
+<tr><td>解析</td><td>❌</td><td>✅ PDF + DOCX + PPTX + XLSX + 純文字 + 圖片 multipart</td></tr>
+<tr><td>Vision</td><td>❌</td><td>✅ 圖片 multipart 直送 Custom URL Provider</td></tr>
+<tr><td>Markdown</td><td>✅ 只 code block（自製）</td><td>✅ 完整 GFM（react-markdown + remark-gfm）</td></tr>
+<tr><td>Sources</td><td>❌</td><td>✅ 自製 SourcesList 元件</td></tr>
+<tr><td>Reasoning</td><td>❌</td><td>✅ 自製 ReasoningSection 元件</td></tr>
+<tr><td>DB</td><td>❌</td><td>✅ Attachment table + sessionId FK + 永久保留</td></tr>
+</tbody>
+</table>
+
+<h2 id="s2">2. 功能清單（FR）</h2>
+
+<div class="summary-cards">
+  <div class="card"><span class="value">7</span><span class="label">FR 主題</span></div>
+  <div class="card"><span class="value">34</span><span class="label">FR 總數</span></div>
+  <div class="card"><span class="value">22 SP</span><span class="label">對應規模</span></div>
+</div>
+
+<h3>2.1 FR-1：附件上傳 Route（Stage 46-A, 5 SP）</h3>
+<table>
+<thead><tr><th>FR</th><th>描述</th><th>優先級</th><th>SP</th></tr></thead>
+<tbody>
+<tr><td>FR-1.1</td><td>POST /api/admin/chat/upload 接收 multipart/form-data</td><td>P0</td><td>1</td></tr>
+<tr><td>FR-1.2</td><td>RBAC 守衛：僅 admin role（middleware + handler 雙層）</td><td>P0</td><td>1</td></tr>
+<tr><td>FR-1.3</td><td>MIME 白名單：純文字 + Office + HTML/XML/SVG + 圖片</td><td>P0</td><td>1</td></tr>
+<tr><td>FR-1.4</td><td>大小上限：單檔 10 MB（multipart parser 階段拒收）</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-1.5</td><td>多檔：最多 10 個（form field files[]）</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-1.6</td><td>儲存：本機 ./uploads/&lt;sessionId&gt;/&lt;uuid&gt;.&lt;ext&gt;</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-1.7</td><td>回傳：{ attachments: [{ id, filename, mime, size, path }] }</td><td>P0</td><td>0.5</td></tr>
+</tbody>
+</table>
+
+<h3>2.2 FR-2：附件解析 + Prompt Context（Stage 46-B, 4 SP）</h3>
+<table>
+<thead><tr><th>FR</th><th>描述</th><th>優先級</th><th>SP</th></tr></thead>
+<tbody>
+<tr><td>FR-2.1</td><td>純文字檔直接讀 utf-8 進 prompt</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-2.2</td><td>PDF 解析：pdf-parse 套件</td><td>P0</td><td>1</td></tr>
+<tr><td>FR-2.3</td><td>DOCX/PPTX 解析：mammoth + jszip</td><td>P0</td><td>1</td></tr>
+<tr><td>FR-2.4</td><td>XLSX 解析：xlsx 套件，轉 CSV 文字</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-2.5</td><td>圖片：不解析，multipart 直送 Custom URL vision</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-2.6</td><td>Token 預估：超過 50K tokens 警告 user</td><td>P0</td><td>0.5</td></tr>
+</tbody>
+</table>
+
+<h3>2.3 FR-3：前端附件上傳流程（Stage 46-C, 2 SP）</h3>
+<table>
+<thead><tr><th>FR</th><th>描述</th><th>優先級</th><th>SP</th></tr></thead>
+<tbody>
+<tr><td>FR-3.1</td><td>useChatStream 改 multipart fetch</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-3.2</td><td>上傳進度條：XHR + onprogress</td><td>P1</td><td>0.5</td></tr>
+<tr><td>FR-3.3</td><td>錯誤處理：10 MB 超限、MIME 不符、RBAC 失敗</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-3.4</td><td>XHR abort：離開頁面 / 切換 session</td><td>P0</td><td>0.5</td></tr>
+</tbody>
+</table>
+
+<h3>2.4 FR-4：進階 Markdown（Stage 46-D, 3 SP）</h3>
+<table>
+<thead><tr><th>FR</th><th>描述</th><th>優先級</th><th>SP</th></tr></thead>
+<tbody>
+<tr><td>FR-4.1</td><td>裝 react-markdown + remark-gfm 套件</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-4.2</td><td>MarkdownRender 重寫：直接傳 children 給 ReactMarkdown</td><td>P0</td><td>1</td></tr>
+<tr><td>FR-4.3</td><td>components.code slot 接 Sprint 45 CodeBlock（保留 shiki）</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-4.4</td><td>刪 Sprint 45 parseMarkdown + 10 個測試重寫</td><td>P0</td><td>1</td></tr>
+</tbody>
+</table>
+
+<h3>2.5 FR-5：自製 Sources/Reasoning UI（Stage 46-E, 3 SP）</h3>
+<table>
+<thead><tr><th>FR</th><th>描述</th><th>優先級</th><th>SP</th></tr></thead>
+<tbody>
+<tr><td>FR-5.1</td><td>&lt;SourcesList&gt; 元件（檔名、URL、頁碼）</td><td>P0</td><td>1</td></tr>
+<tr><td>FR-5.2</td><td>&lt;ReasoningSection&gt; 元件（reasoning_tokens、推理步驟）</td><td>P0</td><td>1</td></tr>
+<tr><td>FR-5.3</td><td>useChatStream metadata 串接</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-5.4</td><td>預設收合 + 點擊展開 + 鍵盤可達</td><td>P0</td><td>0.5</td></tr>
+</tbody>
+</table>
+
+<h3>2.6 FR-6：DB Schema（Stage 46-F, 2 SP）</h3>
+<table>
+<thead><tr><th>FR</th><th>描述</th><th>優先級</th><th>SP</th></tr></thead>
+<tbody>
+<tr><td>FR-6.1</td><td>Attachment model + sessionId FK + cascade: false（永久保留）</td><td>P0</td><td>1</td></tr>
+<tr><td>FR-6.2</td><td>metadata：mime / size / path / originalName / uploadedAt</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-6.3</td><td>session soft-delete deletedAt（Sprint 47+ cleanup 鋪路）</td><td>P1</td><td>0.5</td></tr>
+</tbody>
+</table>
+
+<h3>2.7 FR-7：E2E + Submit Gate（Stage 46-G, 3 SP）</h3>
+<table>
+<thead><tr><th>FR</th><th>描述</th><th>優先級</th><th>SP</th></tr></thead>
+<tbody>
+<tr><td>FR-7.1</td><td>E2E：純文字上傳 → AI 回應含文件內容</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-7.2</td><td>E2E：PDF 上傳 → AI 引用 PDF 內容</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-7.3</td><td>E2E：Office 上傳 → AI 引用文件內容</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-7.4</td><td>E2E：10 MB 超限 → toast 錯誤</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-7.5</td><td>E2E：RBAC 阻擋（非 admin 不可上傳）</td><td>P0</td><td>0.5</td></tr>
+<tr><td>FR-7.6</td><td>E2E：Markdown 完整渲染</td><td>P0</td><td>0.5</td></tr>
+</tbody>
+</table>
+
+<h2 id="s3">3. 資料模型</h2>
+
+<h3>3.1 Attachment 模型（Prisma Schema）</h3>
+<pre><code>model Attachment {
+  id           String   @id @default(cuid())
+  sessionId    String
+  session      ChatSession @relation(fields: [sessionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  filename     String   // 原始檔名
+  mimeType     String   // e.g. "application/pdf"
+  size         Int      // bytes
+  storagePath  String   // ./uploads/&lt;sessionId&gt;/&lt;uuid&gt;.&lt;ext&gt;
+  uploadedAt   DateTime @default(now())
+  
+  @@index([sessionId])
+  @@index([uploadedAt])
+  @@map("attachments")
+}</code></pre>
+
+<div class="callout">
+<strong>3.3 設計決策</strong>
+<ul>
+<li><code>onDelete: NoAction</code> — 永久保留機制，session 刪除不級聯附件</li>
+<li><code>storagePath</code> 存相對路徑，部署可掛不同磁碟</li>
+<li><code>mimeType</code> + <code>filename</code> 雙欄位防偽造</li>
+<li>無 <code>deletedAt</code> 在 Attachment — session 才軟刪除</li>
+</ul>
+</div>
+
+<h2 id="s4">4. 介面設計</h2>
+
+<h3>4.1 AdminChatPanel 上傳流程</h3>
+<div class="ascii-frame">┌────────────────────────────────────────────────────────┐
+│ AI Chat                              [≡] [清空] [⚙]    │
+├────────────────────────────────────────────────────────┤
+│ [User]                                              │
+│ 這份 PDF 講什麼？                                    │
+│ 📎 quarterly-report.pdf (2.3 MB)                     │
+│                                                        │
+│ [Assistant]                                          │
+│ 這份 PDF 是 Q3 季報，主要講：                          │
+│ - 營收成長 15%                                        │
+│ - 新增 3 個產品線                                      │
+│ - ...                                                 │
+│                                                        │
+│ ▶ Sources (3 個引用)                                 │  ← 預設收合
+│                                                        │
+│ ─────────────────────────────────────────────────    │
+│ 📎 quarterly-report.pdf (2.3 MB) ✓ 已上傳            │
+│ ⏳ 上傳中... 67%                                      │
+│                                                        │
+├────────────────────────────────────────────────────────┤
+│ [📎 附加檔案]  [輸入你的問題...        ] [↑ 送出]    │
+└────────────────────────────────────────────────────────┘</div>
+
+<h3>4.3 完整 Markdown 渲染</h3>
+<div class="ascii-frame">┌────────────────────────────────────────────────────────┐
+│ [Assistant]                                          │
+│ # Q3 季報摘要                                        │  ← H1 渲染
+│                                                        │
+│ ## 重點                                                │  ← H2 渲染
+│                                                        │
+│ - **營收成長 15%**                                    │  ← 粗體 + 列表
+│ - 新增 *3 個產品線*                                    │  ← 斜體 + 列表
+│ - 詳見 [財務報表](page-7)                              │  ← 連結
+│                                                        │
+│ ```typescript                                          │  ← code block (shiki)
+│ const growth = 0.15;                                   │
+│ ```                                                    │
+│                                                        │
+│ | 產品線 | 營收 |                                       │  ← GFM 表格
+│ |--------|------|                                       │
+│ | A      | 100  |                                       │
+│ | B      | 200  |                                       │
+└────────────────────────────────────────────────────────┘</div>
+
+<h3>4.5 上傳後端流程圖</h3>
+<pre><code>[User] 點 [📎 附加檔案] 選檔
+   ↓
+[前端] 檢查 MIME + 大小（client-side guard）
+   ├─ 超 10 MB → toast「檔案過大」
+   ├─ MIME 不符 → toast「不支援的格式」
+   └─ 通過 → 開始上傳
+   ↓
+[前端] POST /api/admin/chat/upload (multipart/form-data)
+   ↓
+[後端 Guard] auth.js 中間件 → hasDynamicPermission('admin')
+   ├─ 非 admin → 回 403 Forbidden
+   └─ admin → 繼續
+   ↓
+[後端 Handler] multipart parser → 逐檔檢查
+   ├─ MIME server-side 驗證（讀 magic bytes）
+   ├─ 大小 server-side 驗證（10 MB 上限）
+   └─ 通過 → 寫檔到 ./uploads/&lt;sessionId&gt;/&lt;uuid&gt;.&lt;ext&gt;
+   ↓
+[後端 Handler] 寫 Attachment table
+   ↓
+[後端 Handler] 回 200 + { attachments: [...] }
+   ↓
+[前端] chips 顯示「✓ 已上傳」</code></pre>
+
+<h2 id="s5">5. API 設計</h2>
+
+<h3>5.1 POST /api/admin/chat/upload</h3>
+<p><strong>Request</strong>: multipart/form-data，含 sessionId + files[]</p>
+<p><strong>Response 200</strong>:</p>
+<pre><code>{
+  "attachments": [
+    {
+      "id": "clxxx1",
+      "filename": "report.pdf",
+      "mimeType": "application/pdf",
+      "size": 2456789,
+      "uploadedAt": "2026-08-31T12:34:56.789Z"
+    }
+  ]
+}</code></pre>
+
+<table>
+<thead><tr><th>HTTP Code</th><th>情境</th><th>Body</th></tr></thead>
+<tbody>
+<tr><td>400</td><td>MIME 不符 / 大小超限</td><td>{ "error": "..." }</td></tr>
+<tr><td>401</td><td>未登入</td><td>{ "error": "Unauthorized" }</td></tr>
+<tr><td>403</td><td>非 admin</td><td>{ "error": "Forbidden" }</td></tr>
+<tr><td>413</td><td>multipart &gt;10 MB</td><td>{ "error": "Payload Too Large" }</td></tr>
+<tr><td>500</td><td>寫檔 / DB 失敗</td><td>{ "error": "Internal Server Error" }</td></tr>
+</tbody>
+</table>
+
+<h3>5.2 POST /api/admin/chat/stream（既有擴充）</h3>
+<p>SSE 串流含 sources / reasoning metadata：</p>
+<pre><code>data: {"type":"sources","data":[{"filename":"report.pdf","page":3,"snippet":"營收成長 15%"}]}
+
+data: {"type":"reasoning","data":"讀取 PDF 第 1-10 頁..."}
+
+data: {"type":"content","data":"這份 PDF 是 Q3 季報..."}
+
+data: {"type":"done","data":null}</code></pre>
+
+<h2 id="s6">6. 測試計劃</h2>
+
+<div class="summary-cards">
+  <div class="card"><span class="value">6</span><span class="label">Unit 測試集</span></div>
+  <div class="card"><span class="value">4</span><span class="label">Integration 測試集</span></div>
+  <div class="card"><span class="value">8</span><span class="label">E2E 場景</span></div>
+  <div class="card"><span class="value">6</span><span class="label">守護測試</span></div>
+</div>
+
+<h3>6.3 E2E 場景</h3>
+<table>
+<thead><tr><th>測試 ID</th><th>場景</th></tr></thead>
+<tbody>
+<tr><td>tech-061-plain-text-upload</td><td>純文字上傳 → AI 回應含文件內容</td></tr>
+<tr><td>tech-062-pdf-upload</td><td>PDF 上傳 → AI 引用 PDF 內容</td></tr>
+<tr><td>tech-063-office-upload</td><td>Office 上傳 → AI 引用文件內容</td></tr>
+<tr><td>tech-064-size-limit-toast</td><td>10 MB 超限 → toast 錯誤訊息</td></tr>
+<tr><td>tech-065-rbac-upload-block</td><td>RBAC 阻擋（非 admin 不可上傳）</td></tr>
+<tr><td>tech-066-markdown-full-render</td><td>Markdown 完整渲染</td></tr>
+<tr><td>tech-067-sources-toggle</td><td>Sources 收合 / 展開</td></tr>
+<tr><td>tech-068-reasoning-toggle</td><td>Reasoning 收合 / 展開</td></tr>
+</tbody>
+</table>
+
+<h2 id="s7">7. 開發計劃</h2>
+
+<h3>7.1 Stage 順序與依賴</h3>
+<table>
+<thead><tr><th>Stage</th><th>主題</th><th>SP</th><th>依賴</th><th>預估天數</th></tr></thead>
+<tbody>
+<tr><td><strong>46-F</strong></td><td>DB schema: Attachment table</td><td>2</td><td>Sprint 45 ChatSession</td><td>Day 1（先做 schema）</td></tr>
+<tr><td><strong>46-A</strong></td><td>Backend: 附件上傳 route + 安全</td><td>5</td><td>46-F schema</td><td>Day 1-2</td></tr>
+<tr><td><strong>46-B</strong></td><td>Backend: 附件解析 + prompt context</td><td>4</td><td>46-A upload</td><td>Day 2-3</td></tr>
+<tr><td><strong>46-C</strong></td><td>Frontend: 附件上傳流程接 server</td><td>2</td><td>46-A upload</td><td>Day 3</td></tr>
+<tr><td><strong>46-D</strong></td><td>Frontend: 取代自製 parser → react-markdown</td><td>3</td><td>Sprint 45 CodeBlock</td><td>Day 4</td></tr>
+<tr><td><strong>46-E</strong></td><td>Frontend: 自製 Sources / Reasoning UI</td><td>3</td><td>46-B metadata 串接</td><td>Day 5</td></tr>
+<tr><td><strong>46-G</strong></td><td>E2E + Submit Gate</td><td>3</td><td>所有 Stage</td><td>Day 6</td></tr>
+</tbody>
+</table>
+
+<h3>7.4 Commit 規劃（7 個 commit）</h3>
+<table>
+<thead><tr><th>Commit</th><th>範圍</th><th>Stage</th><th>SP</th><th>Gate</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Prisma migration + Attachment model</td><td>46-F</td><td>2</td><td>G1 → G2</td></tr>
+<tr><td>2</td><td>/upload route + RBAC + MIME + 大小上限</td><td>46-A</td><td>5</td><td>G1 → G2 → G3</td></tr>
+<tr><td>3</td><td>attachment-parser + token-estimator + mime-validator</td><td>46-B</td><td>4</td><td>G1 → G2</td></tr>
+<tr><td>4</td><td>useChatStream multipart + 進度條 + XHR abort</td><td>46-C</td><td>2</td><td>G1 → G2 → G4</td></tr>
+<tr><td>5</td><td>react-markdown + MarkdownRender 重寫 + 刪自製 parser</td><td>46-D</td><td>3</td><td>G1 → G2 → G3</td></tr>
+<tr><td>6</td><td>SourcesList + ReasoningSection + metadata 串接</td><td>46-E</td><td>3</td><td>G1 → G2 → G4</td></tr>
+<tr><td>7</td><td>E2E (8 場景) + Submit Gate + reflection</td><td>46-G</td><td>3</td><td>G4 + Submit</td></tr>
+</tbody>
+</table>
+
+<h2 id="s8">8. 使用者故事</h2>
+
+<h3>8.1 US-46-01：admin 上傳 PDF 並問問題</h3>
+<div class="info">
+<p><strong>作為</strong> admin</p>
+<p><strong>我想要</strong> 上傳 PDF 檔案並問 AI「這份報告的重點」</p>
+<p><strong>以便</strong> AI 讀取 PDF 內容並摘要</p>
+<p><strong>驗收標準</strong>：</p>
+<ul>
+<li>點 📎 選 PDF（≤10 MB）</li>
+<li>chips 顯示「📎 report.pdf (2.3 MB) ✓ 已上傳」</li>
+<li>輸入「這份報告的重點？」並送出</li>
+<li>AI 回應引用 PDF 內容（具體文字 / 段落）</li>
+<li>Sources 區顯示「report.pdf - 第 3 頁『營收分析』」</li>
+</ul>
+</div>
+
+<h3>8.2 US-46-02：admin 上傳圖片並請 AI 識別</h3>
+<div class="info">
+<p><strong>驗收標準</strong>：</p>
+<ul>
+<li>上傳 PNG / JPG（≤10 MB）</li>
+<li>AI 回應：「這張截圖顯示的是 XXX 錯誤訊息...」</li>
+<li>Reasoning 區顯示「識別圖中文字 + 分析錯誤類型」</li>
+</ul>
+</div>
+
+<h2 id="s9">9. 風險與緩解</h2>
+
+<table>
+<thead><tr><th>風險</th><th>影響</th><th>機率</th><th>緩解</th></tr></thead>
+<tbody>
+<tr><td><strong>R1</strong> 大型 PDF 撐爆 AI context</td><td>Token 爆增、回應失敗</td><td style="color:#dc2626">高</td><td>FR-2.6 token 預估 + 50K 警告 + 200K 拒絕</td></tr>
+<tr><td><strong>R2</strong> mammoth/pdf-parse bundle size</td><td>部署 size / 冷啟動變慢</td><td style="color:#ea580c">中</td><td>評估 dynamic import，僅上傳時載入</td></tr>
+<tr><td><strong>R3</strong> react-markdown XSS 風險</td><td>AI 含惡意 HTML 被執行</td><td style="color:#ea580c">中</td><td>react-markdown 預設 XSS 防護 + 整合測試</td></tr>
+<tr><td><strong>R4</strong> Sprint 45 10 個測試失效</td><td>基線 1629 → 1619</td><td style="color:#dc2626">高</td><td>重寫為 react-markdown 整合測試 ≥10 個</td></tr>
+<tr><td><strong>R5</strong> Attachment 無 cleanup</td><td>磁碟滿、上傳失敗</td><td style="color:#ea580c">中</td><td>FR-6.3 session soft-delete + Sprint 47+ cleanup job</td></tr>
+<tr><td><strong>R6</strong> 圖片 vision 沒 prompt context</td><td>AI 回應模糊</td><td style="color:#ea580c">中</td><td>user message 自動加 [Image attached: filename] prefix</td></tr>
+<tr><td><strong>R7</strong> Magic bytes 驗證被繞過</td><td>MIME spoofing</td><td style="color:#65a30d">低</td><td>client + server 雙層驗證</td></tr>
+<tr><td><strong>R8</strong> 多檔部分失敗</td><td>DB / 磁碟不一致</td><td style="color:#ea580c">中</td><td>transaction：先全部寫檔成功才寫 DB</td></tr>
+<tr><td><strong>R9</strong> XHR 在 SSR 不支援</td><td>Next.js SSR 報錯</td><td style="color:#dc2626">高</td><td>只在 'use client' 元件內執行</td></tr>
+<tr><td><strong>R10</strong> Metadata 不在所有 Provider</td><td>元件空白</td><td style="color:#ea580c">中</td><td>conditional render：metadata 存在才顯示</td></tr>
+<tr><td><strong>R11</strong> react-markdown bundle ~60KB</td><td>首屏變慢</td><td style="color:#ea580c">中</td><td>dynamic import 僅 chat 頁載入</td></tr>
+<tr><td><strong>R12</strong> Vercel ephemeral filesystem</td><td>部署後檔案消失</td><td style="color:#dc2626">高</td><td>部署文檔警告 + Sprint 47+ 改 Vercel Blob</td></tr>
+<tr><td><strong>R13</strong> PDF 中文 / CJK 解析亂碼</td><td>pdf-parse 預設 latin-1</td><td style="color:#dc2626">高</td><td>改用 buffer mode + UTF-8 decode</td></tr>
+<tr><td><strong>R14</strong> 訊息編輯時附件處理</td><td>編輯後附件是新舊</td><td style="color:#65a30d">低</td><td>Sprint 46 編輯器未實作、Sprint 47+ 處理</td></tr>
+</tbody>
+</table>
+
+<div class="danger">
+<strong>9.1 風險優先處理順序</strong>：
+<ul>
+<li><strong>Critical（必須）</strong>: R1, R2, R8, R12, R13</li>
+<li><strong>High（應該）</strong>: R3, R4, R6, R9, R11</li>
+<li><strong>Medium（可選）</strong>: R5, R7, R10</li>
+<li><strong>Low（Sprint 47+）</strong>: R14</li>
+</ul>
+</div>
+
+<h2 id="s10">10. 不在 Sprint 46 範圍（明確排除）</h2>
+
+<table>
+<thead><tr><th>項目</th><th>排除理由</th><th>預計 Sprint</th></tr></thead>
+<tbody>
+<tr><td>病毒掃描（ClamAV）</td><td>增加 deploy 複雜度</td><td>47+</td></tr>
+<tr><td>RAG / 向量資料庫</td><td>全文進 context 已足 MVP</td><td>47+</td></tr>
+<tr><td>Token 使用量 UI 顯示</td><td>Sprint 5 已實作 backend</td><td>47+</td></tr>
+<tr><td>Attachment cleanup job</td><td>需先實作 session soft-delete UI</td><td>47+</td></tr>
+<tr><td>訊息編輯 / 重新生成</td><td>不在 Sprint 46 三主題內</td><td>47+</td></tr>
+<tr><td>附件縮圖預覽</td><td>UI 加分項</td><td>47+</td></tr>
+<tr><td>雲端 Storage（S3 / Vercel Blob）</td><td>本機 MVP 已足</td><td>47+（deploy 前）</td></tr>
+<tr><td>OCR / 掃描文件識別</td><td>PDF 內含掃描圖需 OCR</td><td>48+</td></tr>
+<tr><td>Mermaid / LaTeX 渲染</td><td>Markdown 進階擴展</td><td>48+</td></tr>
+</tbody>
+</table>
+
+<h2 id="s12">12. 架構演進</h2>
+
+<h3>12.1 元件層架構（Sprint 44 → 45 → 46）</h3>
+<pre><code>Sprint 46（本 Sprint）
+└── AdminChatPanel
+    ├── Conversation / Message (AI Elements)
+    │     ├── MarkdownRender (react-markdown + remark-gfm)  ← 取代自製
+    │     │     └── components.code slot → CodeBlock (Sprint 45 保留)
+    │     ├── SourcesList (自製, FR-5)                       ← 新增
+    │     └── ReasoningSection (自製, FR-5)                  ← 新增
+    └── PromptInputProvider (AI Elements context)
+          ├── AttachmentsChips (自製, 真實上傳 + 進度條)     ← 升級
+          └── PromptInputTextarea / Submit
+
+useChatStream (Sprint 45 → 46)
+├── 串接 /api/admin/chat/stream (Sprint 43 backend)
+├── SSE parsing (data: {content}\\n\\n)
+├── status state machine
+├── attachments parameter + multipart (S46-C)
+└── metadata parser (sources / reasoning) (S46-E)</code></pre>
+
+<h3>12.4 套件依賴演進（package.json 新增）</h3>
+<pre><code>{
+  "dependencies": {
+    "react-markdown": "^9.0.1",      // FR-4 Markdown
+    "remark-gfm": "^4.0.0",          // FR-4 GFM 表格
+    "pdf-parse": "^1.1.1",           // FR-2 PDF 解析
+    "mammoth": "^1.8.0",             // FR-2 DOCX 解析
+    "xlsx": "^0.18.5",               // FR-2 XLSX 解析
+    "jszip": "^3.10.1"               // FR-2 PPTX 解析
+  }
+}</code></pre>
+
+<h2 id="s13">13. Plan Gate 確認紀錄</h2>
+
+<div class="success">
+<strong>Plan Gate 完成證明</strong>：
+<ul>
+<li>📅 完成日期：2026-08-31</li>
+<li>📊 問題總數：18 個（17 個決策 + 1 個 SP 估算確認）</li>
+<li>✅ 狀態：17/17 全部確認</li>
+<li>📝 對話記錄：<a href="../sprint46-plan-gate.md">docs/sprint46-plan-gate.md</a></li>
+</ul>
+</div>
+
+<h3>13.2 17 個決策一覽</h3>
+<table>
+<thead><tr><th>Q#</th><th>主題</th><th>決策</th></tr></thead>
+<tbody>
+<tr><td>Q1</td><td>附件用途</td><td>上傳文件讓 AI 讀取內容</td></tr>
+<tr><td>Q2</td><td>文件類型</td><td>純文字 + Office + HTML/XML/SVG</td></tr>
+<tr><td>Q3</td><td>圖片範圍</td><td>Sprint 46 同時實作 vision</td></tr>
+<tr><td>Q4</td><td>檔案上限</td><td>10 MB</td></tr>
+<tr><td>Q5</td><td>Storage</td><td>本機 ./uploads/</td></tr>
+<tr><td>Q6</td><td>生命週期</td><td>永久保留（綁定 session）</td></tr>
+<tr><td>Q7</td><td>多附件上限</td><td>最多 10 個</td></tr>
+<tr><td>Q8</td><td>AI 讀取方式</td><td>全文進 context（無 RAG）</td></tr>
+<tr><td>Q9</td><td>Vision 整合</td><td>走 Custom URL Provider</td></tr>
+<tr><td>Q10</td><td>安全策略</td><td>MIME 白名單 + 大小上限 + RBAC</td></tr>
+<tr><td>Q11</td><td>Markdown 元素</td><td>code + inline + 標題段落 + 列表引言連結</td></tr>
+<tr><td>Q12</td><td>Markdown 套件</td><td>react-markdown + remark-gfm</td></tr>
+<tr><td>Q13</td><td>自製 parser 取捨</td><td>完全取代</td></tr>
+<tr><td>Q14</td><td>Code block 處理</td><td>components.code slot 接 Sprint 45 CodeBlock</td></tr>
+<tr><td>Q15</td><td>Sources/Reasoning 架構</td><td>保留 Custom URL + 自製 UI</td></tr>
+<tr><td>Q16</td><td>Metadata 類型</td><td>Sources + Reasoning</td></tr>
+<tr><td>Q17</td><td>Sources/Reasoning UX</td><td>Message 下方預設收合</td></tr>
+<tr><td>Q18</td><td>SP 估算</td><td>22 SP 接受（全包不拆）</td></tr>
+</tbody>
+</table>
+
+<h2 id="s14">14. Design Gate 完成證明</h2>
+
+<div class="success">
+<strong>6 個待辦全部 ✅</strong>
+<ul>
+<li>✅ <strong>Task 1</strong>：PRD 大綱（14 章節骨架）</li>
+<li>✅ <strong>Task 2</strong>：FR 章節（7 主題、34 FR、22 SP）</li>
+<li>✅ <strong>Task 3</strong>：介面設計（4 ASCII wireframes + 3 Mermaid 流程圖 + 1 sequence diagram）</li>
+<li>✅ <strong>Task 4</strong>：Task 依賴 + 7 commit 規劃</li>
+<li>✅ <strong>Task 5</strong>：14 個風險列出 + 優先處理順序</li>
+<li>✅ <strong>Task 6</strong>：Plan Gate 17 個決策完整保留</li>
+</ul>
+</div>
+
+<h3>14.2 Design Gate 完成證明</h3>
+<ul>
+<li>✅ PRD 結構完整：14 主章節 + 多個子章節</li>
+<li>✅ FR 完整：34 個 FR、22 SP 對應明確</li>
+<li>✅ 介面設計：4 個 ASCII wireframe + 3 個 Mermaid 流程圖 + 1 個 sequence diagram</li>
+<li>✅ API 設計：2 個 endpoint 完整（request/response/error）+ 程式碼路徑</li>
+<li>✅ 測試計劃：unit + integration + E2E + 守護測試 4 層完整</li>
+<li>✅ 開發計劃：7 個 Stage 順序 + Task 依賴圖 + 7 個 commit 規劃</li>
+<li>✅ 風險管理：14 個風險列出 + 優先處理順序</li>
+<li>✅ 架構演進：Sprint 44 → 45 → 46 元件 + 後端 + DB 三層演進圖</li>
+<li>✅ Plan Gate 對話：17 個決策完整保留</li>
+<li>✅ 不在範圍項目：9 個明確排除（含預計 Sprint）</li>
+</ul>
+
+<h3>14.3 下一步：Execution Gate</h3>
+<div class="info">
+<p><strong>依序 Commit 1-7，每 commit 跑完整 4 Gate 迴圈：</strong></p>
+<ol>
+<li>Commit 1（Prisma Schema + Attachment model，2 SP）</li>
+<li>Commit 2（/upload route + RBAC + MIME + 大小上限，5 SP）</li>
+<li>Commit 3（attachment-parser + token-estimator + mime-validator，4 SP）</li>
+<li>Commit 4（useChatStream multipart + 進度條 + XHR abort，2 SP）</li>
+<li>Commit 5（react-markdown + MarkdownRender 重寫 + 刪自製 parser，3 SP）</li>
+<li>Commit 6（SourcesList + ReasoningSection + metadata 串接，3 SP）</li>
+<li>Commit 7（E2E 8 場景 + Submit Gate + reflection，3 SP）</li>
+</ol>
+</div>
+
+<p style="text-align:center; margin-top:3rem; color:#6b7280; font-size:0.9rem;">
+PRD 版本 1.0.0 ｜ 2026-08-31 ｜ Sprint 46 Plan Gate ✅ + Design Gate ✅<br>
+對應 <a href="../sprint46-plan-gate.md">sprint46-plan-gate.md</a> + <a href="../backlog.md">backlog.md</a>
+</p>
+
+</body>
+</html>

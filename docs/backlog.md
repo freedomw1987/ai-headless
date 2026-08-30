@@ -16,6 +16,8 @@
 | [🏗️ 模組劃分](#️-模組劃分modules) | M0~M6 模組定義 |
 | [📝 規範文檔目錄](#-規範文檔目錄核心交付物) | docs/ 內核心交付物索引 |
 | [📋 US-102 Phase 2 開工 checklist](#-us-102-phase-2-開工-checklist2026-08-26-sprint-21-開工) | Sprint 21 RBAC 開工細節 |
+| [🚀 Sprint 46 Plan Gate](./sprint46-plan-gate.md) | Sprint 46 三主題 Plan Gate 決策與 SP 規劃（22 SP 全包）|
+| [📋 Sprint 46 PRD](./prd/10-chat-attachments.md) | 14 章節 PRD：FR/Schema/US/測試/計劃/風險/Plan Gate/Design 交付（22 SP / 7 Stage / 34 FR / 14 風險）|
 | [📞 對話記錄](./conversation-log.md) | 用戶 ↔ Agent 重要決策對話（已獨立）|
 
 ---
@@ -24,7 +26,12 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 46 Plan Gate — TBD（真實附件上傳 + 進階 Markdown）** |
+| **當前 Sprint** | **Sprint 46 Execution Gate：Commit 1-7 全完成 ✅ + Bug Fix 4 個 = 22.5/22 SP (102%)** |
+| **Sprint 46 總計** | Commit 1 (3) + Commit 2 (5) + Commit 3 SDK (3) + Commit 4 Markdown (4) + Commit 5 Attachment Reader (3) + Commit 6 Cleanup (1) + Commit 7 E2E (3) = 22 SP ✅ + Bug Fix 4 個 (2.5 SP extra) = 22.5 SP delivered |
+| **Sprint 46 Reflection** | ✅ [docs/reflection/sprint-46-reflection.md](./reflection/sprint-46-reflection.md)：6 項發現 (3 P1 + 3 P2)；Sprint 47 規劃建議 18 SP |
+| **下個 Sprint 計劃** | Sprint 47：US-S46-SourcesReasoning (3) + US-S47-Vision (3) + US-S47-FrontendUpload (4) + US-S47-OfficeParser (5) + US-S47-CleanupCron (2) + TD-S47-SessionOwnership (1) = 18 SP |
+| **Sprint 46 範圍** | 7 個 Stage 46-A 到 46-G，完整決策與風險見 [sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md) |
+| **Sprint 46 累計測試** | 1795 passed（既有 1629 baseline + Sprint 46 新增 166：Commit 1 守護 26 + Commit 2 守護 28 + mime-validator 57 + Bug Fix 20 + Commit 4 守護 10 + Commit 5 守護 7 + Commit 6 單元 5 + Commit 6 守護 6 + 其他 7）+ Playwright E2E 6 passed（Commit 7）|
 | **Sprint 44 狀態** | ✅ **100% 收尾（17/17 SP）**（Reflection 清理 4 SP + Admin AI Chat FAB 13 SP：FAB + 拖動 snap + 兩欄 Drawer + sessions CRUD + SSE streaming + 7 E2E）|
 | **測試基線** | **1629 integration + 134/134 E2E**（Sprint 45 +42 守護測試 + 7 E2E）|
 | **Sprint 45 狀態** | ✅ **100% 收尾（14/14 SP）**（AI SDK Elements 混合方案 + Chat 功能擴展：4 元件安裝 + AdminChatPanel 重構 + 檔案附件 UI + 程式碼高亮 + 7 E2E）|
@@ -39,7 +46,7 @@
 | **Sprint 43 狀態** | ✅ **100% 收尾（13/13 SP，原估 15 SP）**（AI Config v2.0: Custom LLM Endpoint + 4-type Provider + AES-256-GCM 加密 + 統一錯誤 + log redaction + /admin/settings/ai-config UI）|
 | **測試基線** | **1587 integration + 127/127 E2E**（Sprint 44 +81 守護測試 + 7 E2E）|
 | **測試基線** | **1506 integration + 120/120 E2E**（Sprint 43 +56 守護測試）|
-| **下一個 P0** | Sprint 46 Plan Gate（真實附件上傳 + 進階 Markdown + Sources/Reasoning 評估）|
+| **下一個 P0** | Sprint 46 Execution Gate：開 Commit 1（Prisma Schema + Attachment model，2 SP）→ 跑 Gate 1（TDD 紅→綠）→ Gate 2（lint+typecheck）→ Gate 3（regression）→ Gate 4（reviewer）|
 | **路線圖關鍵** | ✅ Sprint 21-32 → ✅ Sprint 33-40（View Feature + bug fixes）→ ✅ Sprint 41（4 P1 + RWD audit + 重構）→ 📋 Sprint 42+（剩餘風險 + 新方向）|
 | **Sprint 27 反省報告** | [docs/reflection/module-crud-list-enhancements-reflection.md](reflection/module-crud-list-enhancements-reflection.md) |
 | **Sprint 28-29 反省報告** | [docs/reflection/module-sprint28-29-reflection.md](reflection/module-sprint28-29-reflection.md) |
@@ -51,6 +58,7 @@
 | **Sprint 43 反省報告** | [docs/reflection/module-sprint43-reflection.md](reflection/module-sprint43-reflection.md)（AI Config v2.0 + Custom URL + 揭露 5 個後續事項）|
 | **Sprint 44 反省報告** | [docs/reflection/module-sprint44-reflection.md](reflection/module-sprint44-reflection.md)（Reflection 清理 4 SP + Admin AI Chat FAB 13 SP：FAB + 拖動 snap + 兩欄 Drawer + sessions CRUD + 7 E2E）|
 | **Sprint 45 反省報告** | [docs/reflection/module-sprint45-reflection.md](reflection/module-sprint45-reflection.md)（AI SDK Elements 混合方案 14 SP：4 元件安裝 + AdminChatPanel 重構 + 附件 UI + 程式碼高亮 + 7 E2E）|
+| **Sprint 46 規劃** | 📋 Plan Gate ✅ + Design Gate ✅（見 [docs/sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md)）：附件上傳 13 SP + 進階 Markdown 3 SP + Sources/Reasoning 3 SP + E2E 3 SP + DB schema 2 SP = 22 SP 總計 ｜ 7 commits（schema → upload route → parser → frontend upload → markdown → sources/reasoning → E2E）｜ 14 風險已列、Critical: R1/R2/R8/R12/R13、High: R3/R4/R6/R9/R11 |
 
 ### Sprint 21 規劃（US-102-P2 動態 RBAC，預估 7 SP）
 
@@ -663,9 +671,15 @@
 | **TD-816** | Tech Debt | JWT name/image cache miss vs hit 路徑測試 | 補 unit test：cache miss 查 DB、cache hit 不查；防止 R1 再犯 | 0.5 | SP30 | M2 | ⚠️ Partial（source-code guard 已有；Sprint 42+ 可加 behavior test）|
 | **TD-817** | Tech Debt | `lib/runtime/batch-delete.ts` 檔案健檢 | 被 `route.ts` 引用但不在 working tree 改動清單。確認檔案存在、有 unit test、respects permission checks、寫 TransitionLog | 0.5 | SP30 | M4 | ✅ Done（Sprint 41 source-code guard + RBAC 測試覆蓋）|
 | **TD-818** | Tech Debt | Lockfile 雙軌整理 | `bun.lock` + `pnpm-lock.yaml` 都改動，CI 一邊裝一邊不裝。修正：挑一個（推薦 pnpm，CI 已用 `--frozen-lockfile`）並 `.gitignore` 另一個 | 0.3 | SP30 | M0 | ✅ Done（Sprint 42 `.gitignore` bun.lock + git rm + source-code guard）|
+| **US-S46-SourcesReasoning** | User Story | Sprint 46 補做 SourcesList + ReasoningSection | PRD §7 規劃「自製 SourcesList + ReasoningSection 元件，從 AI 回應 metadata 顯示」；Sprint 46 只做了 Markdown + 附件 2/3 主題 | 3 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
+| **US-S47-Vision** | User Story | 圖片 vision 整合 (pi-agent-sdk multi-modal) | `attachment-reader.ts` 有 `kind: 'image'` 但 `agent-sdk.ts` 只 call `readAttachmentText`；圖片 vision 從未送進 AI context。用戶上傳 PNG/JPG 看不到 AI 回應 | 3 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
+| **US-S47-FrontendUpload** | User Story | 前端真實上傳整合 + XHR abort + 進度條 | Backend `/api/admin/chat/upload` 已實作，但 `useChatStream.ts` 仍用 Sprint 45「📎 filename」字串拼進 user content。AI 看不到任何附件內容 | 4 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
+| **TD-S47-SessionOwnership** | Tech Debt | Stream route session ownership check | `app/api/admin/chat/stream/route.ts` 從 body 拿 sessionId 沒驗證歸屬；理論上 user A 可送別人的 sessionId + attachment ID 讀到別人的附件 | 1 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
+| **TD-S47-MarkdownXSS** | Tech Debt | Markdown 輸出 XSS E2E 守護 | Sprint 46 守護測試顯式避免 `rehype-raw` 但沒對 Markdown 輸出做端到端 XSS 測試；防 Sprint 47+ 加 `rehype-raw` 時引入 XSS | 0.5 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
 | **TD-901** | Tech Debt | 其他 CRUD 頁面 RWD 健檢 (todo/event) | Sprint 27 只修 blog，其他 CRUD 頁面需要同樣健檢 | 1 | SP31 | M4 | ✅ Done（Sprint 41 spec loader mtime cache + admin 4 頁 RWD 健檢）|
 | **TD-902** | Tech Debt | 批次刪除 undo 機制 | toast 內加 undo button，防止誤刪 | 2 | SP31 | M4 | 📋 Ready |
 | **TD-903** | Tech Debt | Toolbar 鍵盤快捷鍵 | Cmd+A 全選 / Delete 開批次刪除 dialog | 1 | SP31 | M4 | 📋 Ready |
+| **TD-S47-ChatStatus** | Tech Debt | ChatStatus 自訂型別 | `use-chat-stream.ts` 從 `'ai'` SDK import `ChatStatus` 型別；整個專案 Sprint 45 起都刻意避免依賴 AI SDK UIMessage，卻唯獨 `ChatStatus` 用 'ai' SDK 型別 | 0.3 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
 | **TD-904** | Tech Debt | admin dashboard RWD 健檢 | dashboard 頁面在 mobile 下檢查 | 1 | SP31 | M4 | ✅ Done（Sprint 41 admin RWD audit 已涵蓋 dashboard）|
 | **TD-905** | Tech Debt | 移除 hook-sdk.ts 的 deprecated HookFunction | TD-523 完整清理（破壞性變更：所有 hook 必須改用 StrictHookFunction）| 2 | SP31 | M1 | 📋 Ready |
 | **TD-906** | Tech Debt | 移除 app-error.ts 的 regex fallback | TD-524 完整清理（破壞性變更：所有 throw 必須改用 AppError）| 3 | SP31 | M1 | 📋 Ready |

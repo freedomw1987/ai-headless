@@ -28,6 +28,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Sprint 46: 附件本機 storage (不進版控)
+uploads/
+
+
 # TD-818: bun.lock 是 Bun 安裝器留下的, CI 只用 pnpm, 避免雙軌混亂
 bun.lock
 
