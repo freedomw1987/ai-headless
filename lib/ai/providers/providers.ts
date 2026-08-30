@@ -16,7 +16,11 @@
  * - Sprint 43 v2.0 (S43-A): ProviderConfig 加 type 欄位 + baseUrl 保留為 Custom URL 入口
  * - Sprint 43 v2.0 (S43-B): testEndpoint utility + Factory 接受 type + baseUrl
  *   (不需要新增 class — 既有 OpenAIProvider/AnthropicProvider 已用 fetch + baseUrl)
+ * - Sprint 43 v2.0 (S43-C): createProviderFromDB factory + decrypt placeholder
+ * - Sprint 43 v2.0 (S43-E): AES-256-GCM 真加密 + AIProviderError 統一錯誤 + redactApiKey
  */
+
+import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
 // ==============================================
 // 0. 共用類型
@@ -232,7 +236,11 @@ export class OpenAIProvider implements AIProvider {
 
   constructor(config: ProviderConfig) {
     if (!config.apiKey) {
-      throw new Error('OpenAIProvider: apiKey is required');
+      throw new AIProviderError({
+        provider: 'openai',
+        message: 'apiKey is required',
+        statusCode: 500,
+      });
     }
     this.apiKey = config.apiKey;
     this.model = config.model ?? DEFAULT_OPENAI_MODEL;
@@ -254,9 +262,11 @@ export class OpenAIProvider implements AIProvider {
 
     if (!response.ok) {
       const errBody = await response.json().catch(() => ({}));
-      throw new Error(
-        `OpenAI API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
-      );
+      throw new AIProviderError({
+        provider: 'openai',
+        message: `OpenAI API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
+        statusCode: response.status,
+      });
     }
 
     const data = await response.json();
@@ -278,9 +288,11 @@ export class OpenAIProvider implements AIProvider {
 
     if (!response.ok) {
       const errBody = await response.json().catch(() => ({}));
-      throw new Error(
-        `OpenAI API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
-      );
+      throw new AIProviderError({
+        provider: 'openai',
+        message: `OpenAI API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
+        statusCode: response.status,
+      });
     }
 
     const data = await response.json();
@@ -312,13 +324,19 @@ export class OpenAIProvider implements AIProvider {
 
     if (!response.ok) {
       const errBody = await response.json().catch(() => ({}));
-      throw new Error(
-        `OpenAI API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
-      );
+      throw new AIProviderError({
+        provider: 'openai',
+        message: `OpenAI API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
+        statusCode: response.status,
+      });
     }
 
     if (!response.body) {
-      throw new Error('OpenAI response has no body');
+      throw new AIProviderError({
+        provider: 'openai',
+        message: 'response has no body',
+        statusCode: 502,
+      });
     }
 
     yield* parseOpenAISSE(response.body);
@@ -405,7 +423,11 @@ export class AnthropicProvider implements AIProvider {
 
   constructor(config: ProviderConfig) {
     if (!config.apiKey) {
-      throw new Error('AnthropicProvider: apiKey is required');
+      throw new AIProviderError({
+        provider: 'anthropic',
+        message: 'apiKey is required',
+        statusCode: 500,
+      });
     }
     this.apiKey = config.apiKey;
     this.model = config.model ?? DEFAULT_ANTHROPIC_MODEL;
@@ -429,9 +451,11 @@ export class AnthropicProvider implements AIProvider {
 
     if (!response.ok) {
       const errBody = await response.json().catch(() => ({}));
-      throw new Error(
-        `Anthropic API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
-      );
+      throw new AIProviderError({
+        provider: 'anthropic',
+        message: `Anthropic API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
+        statusCode: response.status,
+      });
     }
 
     const data = await response.json();
@@ -455,9 +479,11 @@ export class AnthropicProvider implements AIProvider {
 
     if (!response.ok) {
       const errBody = await response.json().catch(() => ({}));
-      throw new Error(
-        `Anthropic API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
-      );
+      throw new AIProviderError({
+        provider: 'anthropic',
+        message: `Anthropic API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
+        statusCode: response.status,
+      });
     }
 
     const data = await response.json();
@@ -500,13 +526,19 @@ export class AnthropicProvider implements AIProvider {
 
     if (!response.ok) {
       const errBody = await response.json().catch(() => ({}));
-      throw new Error(
-        `Anthropic API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
-      );
+      throw new AIProviderError({
+        provider: 'anthropic',
+        message: `Anthropic API error ${response.status}: ${errBody?.error?.message ?? response.statusText}`,
+        statusCode: response.status,
+      });
     }
 
     if (!response.body) {
-      throw new Error('Anthropic response has no body');
+      throw new AIProviderError({
+        provider: 'anthropic',
+        message: 'response has no body',
+        statusCode: 502,
+      });
     }
 
     return response.body;
@@ -758,21 +790,98 @@ export function createProvider(env: EnvConfig): AIProvider {
 // 6. DB-based Factory (S43-C)
 // ==============================================
 
-/** S43-C: API Key 解密 (Commit E 會換成 AES-256-GCM, 現為 placeholder)
+/** S43-E: 從環境變數取得 AES-256 金鐘 (32 bytes hex = 64 chars)
  *
- * 設計原則: 先有 interface, Commit E 才接真正 crypto
- * 目前是簡單反轉 (避免明文存, 僅供 development)
+ * 嚴格約束: 未設時 throw, 避免使用預設 key (安全性)
  */
-export function decrypt(ciphertext: string): string {
-  // S43-E TODO: 改用 AES-256-GCM
-  return ciphertext.split('').reverse().join('');
+function getEncryptionKey(): Buffer {
+  const hex = process.env.AI_ENCRYPTION_KEY;
+  if (!hex || hex.length !== 64) {
+    throw new Error(
+      'AI_ENCRYPTION_KEY is required (64 hex chars = 32 bytes). Generate via: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
+    );
+  }
+  return Buffer.from(hex, 'hex');
 }
 
-/** S43-D: API Key 加密 (Commit E 會換成 AES-256-GCM, 現為 placeholder) */
+/** S43-E: 統一錯誤處理 class (取代 plain Error)
+ *
+ * 設計:
+ * - provider: 哪個 provider 出錯
+ * - statusCode: HTTP 狀態碼 (404/401/500 等)
+ * - 統一讓 UI / log 可以結構化處理
+ */
+export class AIProviderError extends Error {
+  readonly provider: string;
+  readonly statusCode?: number;
+
+  constructor(params: {
+    provider: string;
+    message: string;
+    statusCode?: number;
+    cause?: unknown;
+  }) {
+    super(params.message);
+    this.name = 'AIProviderError';
+    this.provider = params.provider;
+    this.statusCode = params.statusCode;
+    if (params.cause) {
+      this.cause = params.cause;
+    }
+  }
+}
+
+/** S43-E: API Key 遮罩 (給 log / UI 使用)
+ *
+ * - 保留前綴 (sk- / sk-ant-) 跟末 4 碼 (方便識別)
+ * - 中間全部替換為 *
+ * - 例: sk-proj-abc1234567890ef → sk-proj-********ef
+ */
+export function redactApiKey(apiKey: string): string {
+  if (apiKey.length <= 8) return '***';
+  const prefix = apiKey.startsWith('sk-ant-')
+    ? 'sk-ant-'
+    : apiKey.startsWith('sk-')
+      ? 'sk-'
+      : apiKey.slice(0, 4);
+  const suffix = apiKey.slice(-4);
+  const stars = '*'.repeat(Math.max(4, apiKey.length - prefix.length - 4));
+  return `${prefix}${stars}${suffix}`;
+}
+
+/** S43-E: API Key 加密 (AES-256-GCM)
+ *
+ * 格式: <ivHex>:<ciphertextHex>:<authTagHex>
+ * - IV: 隨機 12 bytes (GCM 推薦)
+ * - authTag: GCM 認證標籤 (防篡改)
+ */
 export function encrypt(plaintext: string): string {
-  // S43-E TODO: 改用 AES-256-GCM
-  // placeholder: 簡單反轉 (跟 decrypt 互逆)
-  return plaintext.split('').reverse().join('');
+  const key = getEncryptionKey();
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return `${iv.toString('hex')}:${ciphertext.toString('hex')}:${authTag.toString('hex')}`;
+}
+
+/** S43-E: API Key 解密 (AES-256-GCM)
+ *
+ * 逆加密: 拆 IV + ciphertext + authTag 三段, verify authTag
+ */
+export function decrypt(payload: string): string {
+  const parts = payload.split(':');
+  if (parts.length !== 3) {
+    throw new Error('Invalid encrypted payload format (expected iv:ciphertext:authTag)');
+  }
+  const [ivHex, ciphertextHex, authTagHex] = parts as [string, string, string];
+  const key = getEncryptionKey();
+  const iv = Buffer.from(ivHex, 'hex');
+  const ciphertext = Buffer.from(ciphertextHex, 'hex');
+  const authTag = Buffer.from(authTagHex, 'hex');
+  const decipher = createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(authTag);
+  const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  return plaintext.toString('utf8');
 }
 
 /** S43-C: 從 Prisma AIConfig 建立 Provider
@@ -796,9 +905,11 @@ export async function createProviderFromDB(params: {
   });
 
   if (!config) {
-    throw new Error(
-      'No AI config found. Please configure AI provider at /admin/ai-config',
-    );
+    throw new AIProviderError({
+      provider: 'database',
+      message: 'No AI config found. Please configure AI provider at /admin/ai-config',
+      statusCode: 503,
+    });
   }
 
   // 解密 API Key (S43-E 換成真 AES)
