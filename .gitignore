@@ -28,6 +28,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# TD-818: bun.lock 是 Bun 安裝器留下的, CI 只用 pnpm, 避免雙軌混亂
+bun.lock
+
 # env files
 .env
 .env*.local

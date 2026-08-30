@@ -32,10 +32,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import { db } from '@/lib/db';
 import type { Role } from './auth';
 import { verifyPassword } from './password';
-import {
-  getCachedPermissions,
-  setCachedPermissions,
-} from './session-cache';
+import { getCachedPermissions, setCachedPermissions } from './session-cache';
 
 // ==============================================
 // 模組類型增強：把 role + permissions 加到 Session.user
@@ -84,10 +81,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!user || !user.isActive) return null;
         // US-102：bcrypt 驗證密碼
         if (!user.passwordHash) return null;
-        const valid = await verifyPassword(
-          String(credentials.password),
-          user.passwordHash,
-        );
+        const valid = await verifyPassword(String(credentials.password), user.passwordHash);
         if (!valid) return null;
         return {
           id: user.id,
@@ -99,7 +93,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-callbacks: {
+  callbacks: {
     async jwt({ token, user }) {
       // 第一次登入: user object 存在,設定 token.role + token.image + token.name
       if (user) {
@@ -131,11 +125,9 @@ callbacks: {
               },
             },
           });
-if (fresh) {
+          if (fresh) {
             // Sprint 21 向後相容:即使 roleRef 為 null (TD-2 未 backfill) 也不崩潰
-            const codes = new Set(
-              fresh.roleRef?.permissions.map((p) => p.code) ?? [],
-            );
+            const codes = new Set(fresh.roleRef?.permissions.map((p) => p.code) ?? []);
             const roleId = fresh.roleRef?.id ?? '';
             setCachedPermissions(token.sub, codes, roleId);
             token.role = (fresh.role as Role) ?? token.role;
@@ -160,9 +152,7 @@ if (fresh) {
         session.user.id = token.sub ?? '';
         session.user.role = (token.role as Role) ?? 'viewer';
         // Sprint 23: 注入 permissions 到 session.user
-        session.user.permissions = Array.isArray(token.permissions)
-          ? token.permissions
-          : [];
+        session.user.permissions = Array.isArray(token.permissions) ? token.permissions : [];
         // Sprint 29-3: 帶上 image (頭像 URL)
         session.user.image = (token.image as string | null | undefined) ?? null;
         // TD-802: 帶上 name (用戶改名即時生效)
