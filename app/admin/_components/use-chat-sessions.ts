@@ -101,7 +101,7 @@ export function useChatSessions(userId: string) {
 
   // 初次載入
   useEffect(() => {
-    if (userId) refresh();
+    if (userId) void refresh();
   }, [userId, refresh]);
 
   return {

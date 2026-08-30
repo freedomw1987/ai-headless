@@ -17,7 +17,7 @@ import { MessageSquare } from 'lucide-react';
 import type { AuthUser } from '@/lib/auth/auth';
 
 const FAB_SIZE = 56; // px (Tailwind h-14 w-14)
-const SNAP_THRESHOLD = 0.5; // 離邊緣 50% 為中線
+
 
 /** Snap 到離螢幕邊緣最近的位置 (S44-D: snap 邏輯) */
 export function snapToEdge(

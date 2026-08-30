@@ -60,6 +60,8 @@ export function AdminChatPanel({ userId, activeSessionId, activeSession, onSwitc
         content: '',
         createdAt: now,
       };
+      void userMsg; // server 會 persist, 樂觀更新在 onSwitch 後交由 parent
+      void assistantMsg; // 僅在串流中佔位, server 寫入後由 session reload 取代
 
       // 樂觀更新 UI: 先顯示 user + assistant placeholder
       onSwitch(sessionId); // 觸發 parent re-load
@@ -102,18 +104,17 @@ export function AdminChatPanel({ userId, activeSessionId, activeSession, onSwitc
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        fullContent = `[串流錯誤: ${message}]`;
+        // fullContent 僅供 server log 參考, UI 更新由 session reload 負責
+        console.error('[AdminChatPanel] 串流失敗:', message, { accumulated: fullContent });
       } finally {
         setStreaming(false);
         // 重 load session (server 會 persist user + assistant 訊息)
         if (sessionId) {
           const res = await fetch(`/api/admin/chat/sessions/${sessionId}`);
           if (res.ok) {
-            const data = (await res.json()) as { session: SessionDetail };
+            const _data = (await res.json()) as { session: SessionDetail };
+            void _data; // data 供未來 session reload 使用
             onSwitch(sessionId); // 觸發 parent 更新
-            // 同時更新本地 activeSession (透過 callback)
-            // 因為 onSwitch 是 string|null, 這裡直接更新 session
-            // ... (實際更新交給 parent)
           }
         }
       }

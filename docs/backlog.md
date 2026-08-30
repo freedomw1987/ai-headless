@@ -24,7 +24,8 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 44 Plan Gate — TBD** |
+| **當前 Sprint** | **Sprint 45 Plan Gate — TBD（AI SDK Elements 整合評估）** |
+| **Sprint 44 狀態** | ✅ **100% 收尾（17/17 SP）**（Reflection 清理 4 SP + Admin AI Chat FAB 13 SP：FAB + 拖動 snap + 兩欄 Drawer + sessions CRUD + SSE streaming + 7 E2E）|
 | **Sprint 26 狀態** | ✅ **100% 收尾（2.5/2.5 SP）**（Sprint 20 P2 技術債 5/5 全清）|
 | **Sprint 27 狀態** | ✅ **100% 收尾（28/28 SP）**（CRUD 列表頁 5 大功能 + 8 個 bug 修補）|
 | **Sprint 28-29 狀態** | ✅ **100% 收尾（23/23 SP）**（users/roles 統一 CRUD + sidebar 重組 + profile 美化 + settings page）|
@@ -34,8 +35,9 @@
 | **Sprint 41 狀態** | ✅ **100% 收尾（~4 SP）**（4 P1 fixes：TD-803/804/806/812 + RWD audit 4 頁 + VIEW_REGISTRY 重構 + sidebar 3 關閉路徑 E2E；reflection 由 Sprint 42 開工時反向補寫）|
 | **Sprint 42 狀態** | ✅ **100% 收尾（3/3 SP）**（清完 Sprint 32 review 全部 7 個未處理項目：TD-805/807/808/809/810/815/818）|
 | **Sprint 43 狀態** | ✅ **100% 收尾（13/13 SP，原估 15 SP）**（AI Config v2.0: Custom LLM Endpoint + 4-type Provider + AES-256-GCM 加密 + 統一錯誤 + log redaction + /admin/settings/ai-config UI）|
+| **測試基線** | **1587 integration + 127/127 E2E**（Sprint 44 +81 守護測試 + 7 E2E）|
 | **測試基線** | **1506 integration + 120/120 E2E**（Sprint 43 +56 守護測試）|
-| **下一個 P0** | Sprint 44 Plan Gate（處理 Sprint 43 reflection 揭露事項：AI_ENCRYPTION_KEY 生產部署 + 既有 data migration + 可能 AI Chat 串接）|
+| **下一個 P0** | Sprint 45 Plan Gate（AI SDK Elements 整合評估：取代自製 chat UI / 僅前端元件 / 不整合）|
 | **路線圖關鍵** | ✅ Sprint 21-32 → ✅ Sprint 33-40（View Feature + bug fixes）→ ✅ Sprint 41（4 P1 + RWD audit + 重構）→ 📋 Sprint 42+（剩餘風險 + 新方向）|
 | **Sprint 27 反省報告** | [docs/reflection/module-crud-list-enhancements-reflection.md](reflection/module-crud-list-enhancements-reflection.md) |
 | **Sprint 28-29 反省報告** | [docs/reflection/module-sprint28-29-reflection.md](reflection/module-sprint28-29-reflection.md) |
@@ -45,6 +47,7 @@
 | **Sprint 41 反省報告** | [docs/reflection/module-sprint41-reflection.md](reflection/module-sprint41-reflection.md)（反向補寫：4 P1 + RWD + VIEW_REGISTRY + batch 安全）|
 | **Sprint 42 反省報告** | [docs/reflection/module-sprint42-reflection.md](reflection/module-sprint42-reflection.md)（清完 Sprint 32 review 7 個項目 + TD-815 偽守護修復）|
 | **Sprint 43 反省報告** | [docs/reflection/module-sprint43-reflection.md](reflection/module-sprint43-reflection.md)（AI Config v2.0 + Custom URL + 揭露 5 個後續事項）|
+| **Sprint 44 反省報告** | [docs/reflection/module-sprint44-reflection.md](reflection/module-sprint44-reflection.md)（Reflection 清理 4 SP + Admin AI Chat FAB 13 SP：FAB + 拖動 snap + 兩欄 Drawer + sessions CRUD + 7 E2E）|
 
 ### Sprint 21 規劃（US-102-P2 動態 RBAC，預估 7 SP）
 
