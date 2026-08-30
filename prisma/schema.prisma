@@ -239,6 +239,7 @@ model ChatSession {
   updatedAt DateTime      @updatedAt
 
   @@index([userId])
+  @@index([userId, updatedAt(sort: Desc)]) // Sprint 44 G: 歷史對話列表排序
   @@map("chat_sessions")
 }
 
@@ -254,6 +255,7 @@ model ChatMessage {
   createdAt DateTime    @default(now())
 
   @@index([sessionId])
+  @@index([sessionId, createdAt]) // Sprint 44 G: session 內訊息按時間排序
   @@map("chat_messages")
 }
 
@@ -355,3 +357,16 @@ model Order {
   @@index([customer])
   @@map("orders")
 }
+
+// ==============================================
+// Sprint 44: Admin AI Chat Sessions (Commit G)
+// ==============================================
+//
+// 設計動機:
+// - Admin 用 FAB chat 需保留對話歷史 (S44 Plan Gate 確認)
+// - 每個 admin user 有自己的 sessions (userId 隔離)
+// - Session 內存 messages (一對多)
+// - 跟 lib/ai/chat/chat-utils.ts 的 ChatSession/ChatMessage type 兼容
+//
+// ChatSession / ChatMessage 已存在於上方 (M2 section)。
+// 本次 Sprint 44 Commit G 只加索引 [userId, updatedAt] 給歷史對話列表排序。
