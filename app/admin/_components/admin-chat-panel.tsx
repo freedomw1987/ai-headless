@@ -17,7 +17,7 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation';
-import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message';
+import { Message, MessageContent } from '@/components/ai-elements/message';
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -34,6 +34,8 @@ import {
   usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input';
 import { Loader2, Paperclip, X } from 'lucide-react';
+import { CodeBlock, CodeBlockContent } from '@/components/ai-elements/code-block';
+import { parseMarkdown, renderInlineMarkdown } from './markdown-parser';
 import { useChatStream } from './use-chat-stream';
 import type { ChatMessage } from '@/lib/ai/chat/chat-utils';
 import type { SessionDetail } from './use-chat-sessions';
@@ -104,7 +106,7 @@ export function AdminChatPanel({ userId, sessionId, session, onSessionCreated }:
               >
                 <MessageContent>
                   {msg.role === 'assistant' ? (
-                    <MessageResponse>{msg.content}</MessageResponse>
+                    <MarkdownRender content={msg.content} />
                   ) : (
                     <div className="whitespace-pre-wrap">{msg.content}</div>
                   )}
@@ -230,6 +232,40 @@ function AttachmentsChips() {
           </button>
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * MarkdownRender — AI 回應 markdown 渲染 (S45-D)
+ *
+ * 設計:
+ * - 用自製 parseMarkdown 拆 text + code blocks
+ * - code block 走 AI Elements CodeBlockContent (含 shiki syntax highlight)
+ * - text block 走 renderInlineMarkdown (處理 ** * `inline`)
+ */
+function MarkdownRender({ content }: { content: string }) {
+  const blocks = parseMarkdown(content);
+
+  return (
+    <div className="flex flex-col gap-2" data-testid="markdown-render">
+      {blocks.map((block, idx) => {
+        if (block.type === 'code') {
+          return (
+            <CodeBlock key={idx} code={block.code} language={block.lang as Parameters<typeof CodeBlockContent>[0]['language']}>
+              <CodeBlockContent code={block.code} language={block.lang as Parameters<typeof CodeBlockContent>[0]['language']} />
+            </CodeBlock>
+          );
+        }
+        // text block: 行內 markdown 處理
+        return (
+          <div
+            key={idx}
+            className="whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(block.content) }}
+          />
+        );
+      })}
     </div>
   );
 }
