@@ -13,6 +13,7 @@ import { ReactNode, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { AdminSidebar } from './admin-sidebar';
 import { AdminFab } from './_components/admin-fab';
+import { AdminChatDialog } from './_components/admin-chat-dialog';
 import type { AuthUser } from '@/lib/auth/auth';
 import type { ExtensionNavItem } from '@/lib/extensions/extension-nav';
 
@@ -28,6 +29,7 @@ export function AdminShell({
   children: ReactNode;
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false); // Sprint 44 Commit E
 
   return (
     <div className="min-h-screen bg-muted/30 flex min-w-0">
@@ -57,7 +59,13 @@ export function AdminShell({
         </div>
       </main>
       {/* Sprint 44 Commit D: Admin AI Chat FAB (admin-only, 可拖動) */}
-      <AdminFab user={user} />
+      <AdminFab user={user} onClick={() => setIsChatOpen(true)} />
+      {/* Sprint 44 Commit E: Admin AI Chat Dialog (admin-only) */}
+      <AdminChatDialog
+        open={isChatOpen}
+        onOpenChange={setIsChatOpen}
+        userId={user.id}
+      />
     </div>
   );
 }
