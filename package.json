@@ -11,6 +11,8 @@
     "build": "next build",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "validate": "pnpm typecheck && pnpm lint && pnpm test -- --run",
+    "precommit": "echo '⚠️  提醒: 如果改了 prisma/schema.prisma, 請跑 pnpm db:migrate'",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
