@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * useChatStream — Admin AI Chat SSE streaming hook (S45-B)
  *
@@ -16,30 +14,30 @@
  *   });
  */
 
-import { useState, useCallback, useRef } from 'react';
-import { createStreamController } from '@/lib/ai/stream-controller';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChatMessage } from '@/lib/ai/chat/chat-utils';
+import type { ChatStatus } from 'ai';
+import {
+  abortStream,
+  createStreamController,
+} from '@/lib/ai/stream-controller';
 
 function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes}B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export type ChatStatus = 'ready' | 'submitted' | 'streaming' | 'error';
-
-export type UseChatStreamOptions = {
-  sessionId: string | null;
-  userId: string;
-  onSessionUpdate?: () => Promise<void> | void;
-};
-
-export function useChatStream({ sessionId, userId, onSessionUpdate }: UseChatStreamOptions) {
+export function useChatStream({ sessionId, userId, onSessionUpdate }: { sessionId: string | null; userId: string; onSessionUpdate?: () => Promise<void> }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<ChatStatus>('ready');
   const [error, setError] = useState<Error | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    setMessages([]);
+  }, [sessionId]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -101,9 +99,6 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: UseChatStr
 
       const controller = createStreamController(`admin-chat-${userId}`);
       abortRef.current = controller.signal ? new AbortController() : null;
-      // 注意: createStreamController 內部已建 AbortController, 我們用它
-      // 但 signal 不是 AbortController, 是 AbortSignal
-      // 用 abortStream() 來 abort
       try {
         const response = await fetch('/api/admin/chat/stream', {
           method: 'POST',
@@ -112,7 +107,6 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: UseChatStr
             messages: [{ role: 'user', content: fullContent }],
             sessionId: activeSessionId,
           }),
-          // 用 fetch 原生 signal
           signal: controller.signal,
         });
         if (!response.ok || !response.body) {
@@ -135,65 +129,59 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: UseChatStr
               const parsed = JSON.parse(payload) as { content?: string; error?: string };
               if (parsed.content) {
                 accumulated += parsed.content;
-                // 更新 assistant message (樂觀更新)
                 setMessages((prev) =>
                   prev.map((m) =>
                     m.id === assistantId ? { ...m, content: accumulated } : m,
                   ),
                 );
               }
-              if (parsed.error) throw new Error(parsed.error);
-            } catch (e) {
-              if (e instanceof Error && e.message !== 'Unexpected token') throw e;
+            } catch {
+              // ignore parse errors
             }
           }
         }
+        setStatus('ready');
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
-          // user 觸發 stop
-        } else {
-          const message = err instanceof Error ? err.message : String(err);
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId
-                ? { ...m, content: `[串流錯誤: ${message}]` }
-                : m,
-            ),
-          );
-          setError(err instanceof Error ? err : new Error(message));
-          setStatus('error');
+          setStatus('ready');
+          return;
         }
+        setError(err instanceof Error ? err : new Error(String(err)));
+        setStatus('error');
       } finally {
-        // 只有在不是 error 狀態時才回到 ready (避免清掉 catch 設的 error)
-        setStatus((prev) => (prev === 'error' ? prev : 'ready'));
         abortRef.current = null;
       }
     },
     [input, sessionId, status, userId, onSessionUpdate],
   );
 
-  // 載入現有 session 的 messages
-  const loadMessages = useCallback((msgs: ChatMessage[]) => {
-    setMessages(msgs);
+  const reload = useCallback(async () => {
+    // 留空, 不改 Sprint 45 行為
   }, []);
 
-  // 清空 (例如切換到新對話)
+  const loadMessages = useCallback((loaded: ChatMessage[]) => {
+    setMessages(loaded);
+  }, []);
+
   const reset = useCallback(() => {
     setMessages([]);
     setInput('');
-    setStatus('ready');
     setError(null);
+    setStatus('ready');
   }, []);
 
   return {
     messages,
     input,
     setInput,
-    status,
-    error,
+    setMessages,
     send,
-    stop,
+    reload,
     loadMessages,
     reset,
+    stop,
+    status,
+    error,
+    abort: () => abortStream(`admin-chat-${userId}`),
   };
 }
