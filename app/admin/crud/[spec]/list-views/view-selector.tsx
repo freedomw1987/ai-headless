@@ -10,7 +10,7 @@
 
 'use client';
 
-import { ChevronDown, LayoutGrid, ListTodo, Table, CalendarDays, ImageIcon } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { VIEW_REGISTRY } from './registry';
 import type { ViewType } from '@/lib/specs/json-spec.types';
 
 type ViewItem = {
@@ -34,17 +35,14 @@ type Props = {
   onChange: (type: ViewType) => void;
 };
 
-const ICON_MAP: Record<ViewType, React.ComponentType<{ className?: string }>> = {
-  table: Table,
-  'todo-list': ListTodo,
-  kanban: LayoutGrid,
-  calendar: CalendarDays,
-  gallery: ImageIcon,
-};
+// TD-904: ICON_MAP 改成讀 VIEW_REGISTRY (不重複定義)
+const ICON_MAP = Object.fromEntries(
+  Object.entries(VIEW_REGISTRY).map(([k, v]) => [k, v.Icon]),
+) as unknown as Record<ViewType, React.ComponentType<{ className?: string }>>;
 
 export function ViewSelector({ views, activeView, onChange }: Props) {
   const activeItem = views.find((v) => v.type === activeView) ?? views[0];
-  const ActiveIcon = activeItem ? ICON_MAP[activeItem.type] : Table;
+  const ActiveIcon = activeItem ? ICON_MAP[activeItem.type] : VIEW_REGISTRY.table.Icon;
 
   return (
     <DropdownMenu>

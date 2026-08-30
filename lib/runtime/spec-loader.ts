@@ -13,19 +13,33 @@ import type { JsonSpec } from '@/lib/specs/json-spec.types';
 const PROJECT_ROOT = process.cwd();
 const EXTENSIONS_DIR = path.join(PROJECT_ROOT, 'extensions');
 
-// 記憶體快取
-const specCache = new Map<string, JsonSpec>();
-let allSpecsCache: Record<string, JsonSpec> | null = null;
+// 記憶體快取（含 mtime 以支援自動 invalidation）
+// TD-901: 用 file mtime 比對 cache，避免改了 spec 檔卻看到舊資料
+type CacheEntry = { spec: JsonSpec; mtime: number };
+const specCache = new Map<string, CacheEntry>();
+let allSpecsCache: { entries: Record<string, JsonSpec>; mtime: Record<string, number> } | null = null;
 
 /**
  * 載入單一 spec（讀檔 + 解析 + 驗證）
  */
 export async function loadSpec(name: string): Promise<JsonSpec> {
-  const cached = specCache.get(name);
-  if (cached) return cached;
-
   // 找 spec 檔：blog-spec.json / order-spec.json / event-spec.json / todo-spec.json
   const specPath = path.join(EXTENSIONS_DIR, name, `${name}-spec.json`);
+
+  // TD-901: cache hit 但 spec 檔已被改 → invalidate 並重讀
+  let currentMtime: number | null = null;
+  try {
+    const stat = await import('node:fs/promises').then((m) => m.stat(specPath));
+    currentMtime = stat.mtimeMs;
+  } catch {
+    // spec 檔不存在，後面 readFile 會丟 ENOENT
+  }
+
+  const cached = specCache.get(name);
+  if (cached && currentMtime !== null && cached.mtime === currentMtime) {
+    return cached.spec;
+  }
+
   let raw: string;
   try {
     raw = await readFile(specPath, 'utf-8');
@@ -36,8 +50,11 @@ export async function loadSpec(name: string): Promise<JsonSpec> {
     throw e;
   }
   const spec = JSON.parse(raw) as JsonSpec;
-
-  specCache.set(name, spec);
+  if (currentMtime !== null) {
+    specCache.set(name, { spec, mtime: currentMtime });
+  } else {
+    specCache.set(name, { spec, mtime: 0 });
+  }
   return spec;
 }
 
@@ -68,15 +85,19 @@ export async function listAvailableSpecs(): Promise<string[]> {
  * 第二次呼叫走快取，回傳同一個 reference
  */
 export async function loadAllSpecs(): Promise<Record<string, JsonSpec>> {
-  if (allSpecsCache) return allSpecsCache;
+  if (allSpecsCache) return allSpecsCache.entries;
 
   const names = await listAvailableSpecs();
   const entries = await Promise.all(
     names.map(async (name) => [name, await loadSpec(name)] as const),
   );
-
-  allSpecsCache = Object.fromEntries(entries);
-  return allSpecsCache;
+  // TD-901: 記 mtime 方便 invalidate
+  const mtimes: Record<string, number> = {};
+  for (const [name, entry] of specCache.entries()) {
+    mtimes[name] = entry.mtime;
+  }
+  allSpecsCache = { entries: Object.fromEntries(entries), mtime: mtimes };
+  return allSpecsCache.entries;
 }
 
 /**

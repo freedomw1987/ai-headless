@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
+import { hasUIPermission } from '@/lib/auth/ui-permissions';
 import { loadSpec } from '@/lib/runtime/spec-loader';
 import { createDynamicHandlers } from '@/lib/runtime/dynamic-handler';
 import { batchDeleteSpecItems } from '@/lib/runtime/batch-delete';
@@ -108,6 +109,13 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   if (batch) {
     if (!r.user) {
       return NextResponse.json({ error: '請先登入' }, { status: 401 });
+    }
+    // TD-812: batch delete 需要 admin 權限 (避免任何登入用戶都刪除整批)
+    // r.user 是精簡型, 用 session.user.permissions 從原 session 取
+    const session = await auth();
+    const userPerms = (session?.user as { permissions?: string[] } | undefined)?.permissions ?? [];
+    if (!hasUIPermission(userPerms, 'roles:write')) {
+      return NextResponse.json({ error: '需要 admin 權限' }, { status: 403 });
     }
     const ids = (body as { ids?: unknown }).ids;
     if (!Array.isArray(ids) || ids.length === 0) {

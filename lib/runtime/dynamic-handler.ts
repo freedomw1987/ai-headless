@@ -275,8 +275,15 @@ export function createDynamicHandlers(spec: JsonSpec): DynamicHandlers {
               : [filterWhere];
           }
         }
-      } catch {
-        // ignore filter parsing errors
+      } catch (e) {
+        // TD-804: 不要 silent swallow 解析錯誤。記錄警告方便 debug,
+        // 隱私風險: 默認行為就是不 filter → 看到全部 rows (本來設計)
+        // 若 filter 解析失敗, 保留這個語意但加 log 提醒開發者
+        console.warn(
+          `[TD-804] ${spec.name} filter parse failed:`,
+          rawFiltersForWhere?.toString().substring(0, 200),
+          e instanceof Error ? e.message : e,
+        );
       }
     }
 

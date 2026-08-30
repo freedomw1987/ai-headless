@@ -140,28 +140,16 @@ if (fresh) {
             setCachedPermissions(token.sub, codes, roleId);
             token.role = (fresh.role as Role) ?? token.role;
             token.permissions = Array.from(codes);
-            // Sprint 29-3: 重新拿 image（讓用戶改頭像後能即時生效）
+            // TD-803: image + name 也只在 cache miss 時讀（接受 cache TTL 內的短暫 staleness）
+            // 跟 role/permissions 一起查（不額外 query）
             token.image = fresh.image ?? null;
-            // TD-802: 重新拿 name（讓用戶改名後能即時生效）
             token.name = fresh.name ?? null;
           }
         } else {
           // cache hit:直接序列化
+          // TD-803: cache hit 時不再額外 query image/name（接受 staleness 到下次 cache miss）
           token.role = token.role ?? 'viewer';
           token.permissions = Array.from(cached.permissions);
-        }
-
-        // Sprint 29-3 + TD-802: image + name 獨立查詢（不依賴 cache 狀態，確保 user-mutable 欄位即時生效）
-        // 為什麼需要：cache hit 時上面的 fresh 不會被叫，這些欄位不會更新。
-        // 這是 lightweight query（PK + 2 columns），成本可接受。
-        // 重要：總是查詢，不設條件 — 用戶修改後需重新登入或 refresh page 才生效
-        const userStateRow = await db.user.findUnique({
-          where: { id: token.sub },
-          select: { name: true, image: true },
-        });
-        if (userStateRow) {
-          token.name = userStateRow.name ?? null;
-          token.image = userStateRow.image ?? null;
         }
       }
 
