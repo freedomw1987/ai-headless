@@ -41,14 +41,14 @@ export function AdminChatDialog({ open, onOpenChange, userId }: Props) {
         onClick={() => onOpenChange(false)}
         data-testid="chat-dialog-backdrop"
       />
-      {/* Dialog 本體 */}
+      {/* 右側 Drawer (用盡右邊, 全高) */}
       <div
-        className="fixed bottom-6 right-6 z-50 w-[380px] h-[560px] max-w-[calc(100vw-3rem)] max-h-[calc(100vh-3rem)] bg-background border rounded-lg shadow-2xl flex flex-col"
+        className="fixed inset-y-0 right-0 z-50 w-[420px] max-w-[100vw] bg-background border-l shadow-2xl flex flex-col"
         role="dialog"
         aria-label="AI 對話"
         data-testid="admin-chat-dialog"
       >
-        <header className="flex items-center justify-between px-4 py-3 border-b">
+        <header className="flex items-center justify-between px-4 py-3 border-b shrink-0">
           <h2 className="text-sm font-semibold">AI 對話</h2>
           <button
             type="button"

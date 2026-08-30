@@ -19,7 +19,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageBubble } from '@/components/chat/message-bubble';
 import { ChatInput } from '@/components/chat/chat-input';
-import { streamChatWithRetry } from '@/lib/ai/stream-client';
 import { createStreamController } from '@/lib/ai/stream-controller';
 import type { ChatMessage } from '@/lib/ai/chat/chat-utils';
 
@@ -62,10 +61,34 @@ export function AdminChatPanel({ userId: _userId }: Props) {
       }));
       let fullContent = '';
       try {
-        for await (const chunk of streamChatWithRetry(allMessages, {
+        const response = await fetch('/api/admin/chat/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: allMessages }),
           signal: controller.signal,
-        })) {
-          fullContent += chunk;
+        });
+        if (!response.ok || !response.body) {
+          throw new Error(`Stream API error: ${response.status}`);
+        }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          // Parse SSE data: lines
+          for (const line of chunk.split('\n')) {
+            if (!line.startsWith('data: ')) continue;
+            const payload = line.slice(6).trim();
+            if (payload === '[DONE]') break;
+            try {
+              const parsed = JSON.parse(payload);
+              if (parsed.content) fullContent += parsed.content;
+              if (parsed.error) throw new Error(parsed.error);
+            } catch {
+              // ignore parse errors
+            }
+          }
         }
       } catch (err) {
         // 串流失敗顯示錯誤

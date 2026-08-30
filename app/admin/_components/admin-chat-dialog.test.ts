@@ -45,6 +45,21 @@ describe('S44-E — Admin AI Chat Dialog UI', () => {
       const source = readFileSync(path, 'utf-8');
       expect(source, '應有 fixed / absolute positioning').toMatch(/fixed|absolute/);
     });
+
+    it('AdminChatDialog 應為右邊 Drawer (用盡右邊 full height)', () => {
+      const candidates = [
+        'app/admin/_components/admin-chat-dialog.tsx',
+        'app/admin/_components/AdminChatDialog.tsx',
+      ];
+      const path = candidates.find((p) => existsSync(p));
+      if (!path) return;
+      const source = readFileSync(path, 'utf-8');
+      // 應有 right-0 + inset-y-0 (全高右側 drawer)
+      expect(source, '應有 right-0 (右側靠齊)').toMatch(/right-0/);
+      expect(source, '應有 inset-y-0 / top-0 bottom-0 (全高)').toMatch(/inset-y-0|top-0[\s\S]*bottom-0/);
+      // 應有寬度樣式 (width 或 w-[])
+      expect(source, '應有 width 樣式').toMatch(/w-\[|width:/);
+    });
   });
 
   describe('markdown 渲染', () => {
