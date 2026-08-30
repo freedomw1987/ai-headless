@@ -1,26 +1,29 @@
 /**
  * POST /api/admin/chat/stream
  *
- * Admin-only SSE streaming AI chat (Sprint 44 Commit F)
+ * Admin-only SSE streaming AI chat (Sprint 44 Commit F + Sprint 46 重構)
  *
- * 與 /api/chat/stream 差異:
- * - admin-only (requireUser + isAdmin 雙重檢查)
- * - 使用 Sprint 43 createProviderFromDB (Custom URL + AES-GCM 加密支援)
- * - 不走一般 user rate limit (admin 內部用, 較寬鬆)
- * - 串流錯誤回 [DONE] 而不是 throw
+ * Sprint 46 重構:
+ * - 從「直接呼叫 Anthropic/OpenAI Provider」改為「走 pi-agent-sdk」
+ * - 對應設計: docs/system-design.md §6.3 (AI Pipeline 用 pi agent 驅動)
+ * - SDK: https://pi.dev/docs/latest/sdk
+ * - Wrapper: lib/ai/agent-sdk/agent-sdk.ts (streamChatMessages)
  *
- * 設計動機 (S44 Plan Gate):
- * - admin 在 /admin 頁用 FAB chat 時, 應該讀 admin user 設定的 AI provider
- * - 若 admin 設 Custom URL (Sprint 43 v2.0), 自動套用
+ * Sprint 46 Commit 5: 接受 attachments 參數 (從 DB 讀 attachment 內容)
  */
 
 import { NextRequest } from 'next/server';
 import { requireUser, isAdmin } from '@/lib/auth/auth';
-import { createProviderFromDB } from '@/lib/ai/providers/providers';
+import { streamChatMessages } from '@/lib/ai/agent-sdk/agent-sdk';
 import { db } from '@/lib/db';
 
+interface RequestBody {
+  messages: { role: 'user' | 'assistant' | 'system'; content: string }[];
+  sessionId?: string;
+  attachments?: { id: string }[];
+}
+
 export async function POST(req: NextRequest) {
-  // 1. Auth + Admin check
   const user = await requireUser().catch(() => null);
   if (!user) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -35,31 +38,30 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 2. 解析 request
-  const { messages, sessionId } = (await req.json()) as {
-    messages: { role: 'user' | 'assistant' | 'system'; content: string }[];
-    sessionId?: string;
-  };
+  const { messages, sessionId, attachments: attachmentIds } =
+    (await req.json()) as RequestBody;
 
-  // 3. 取 Provider (Sprint 43 createProviderFromDB + Custom URL 支援)
-  let provider;
-  try {
-    provider = await createProviderFromDB({ userId: user.id });
-  } catch (err) {
-    // Provider 設定錯誤, 回 503
-    const message = err instanceof Error ? err.message : 'Provider setup failed';
-    return new Response(JSON.stringify({ error: message }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  // Sprint 46 Commit 5: 從 DB 讀 attachment 詳情 (storagePath, filename, mime)
+  const attachments =
+    sessionId && attachmentIds && attachmentIds.length > 0
+      ? await db.attachment.findMany({
+          where: {
+            id: { in: attachmentIds.map((a) => a.id) },
+            sessionId,
+          },
+          select: {
+            id: true,
+            filename: true,
+            mimeType: true,
+            storagePath: true,
+          },
+        })
+      : [];
 
-  // 4. SSE streaming
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // 4a. 持久化 user message (如有 sessionId)
         if (sessionId && messages.length > 0) {
           const lastMsg = messages[messages.length - 1]!;
           if (lastMsg.role === 'user') {
@@ -73,31 +75,48 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        let fullResponse = '';
-        for await (const chunk of provider.streamText(messages)) {
-          fullResponse += chunk;
+        const { fullText } = await streamChatMessages({
+          messages,
+          attachments: attachments.map((a) => ({
+            id: a.id,
+            filename: a.filename,
+            mime: a.mimeType,
+            storagePath: a.storagePath,
+          })),
+          systemPrompt: 'You are a helpful AI assistant.',
+          onDelta: (chunk) => {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`),
+            );
+          },
+          onComplete: async (text) => {
+            if (sessionId && text) {
+              await db.chatMessage.create({
+                data: {
+                  sessionId,
+                  role: 'assistant',
+                  content: text,
+                },
+              });
+              await db.chatSession.update({
+                where: { id: sessionId },
+                data: { updatedAt: new Date() },
+              });
+            }
+          },
+        });
+
+        if (!fullText) {
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`),
+            encoder.encode(
+              `data: ${JSON.stringify({ content: '' })}\n\n`,
+            ),
           );
         }
-        // 4b. 持久化 assistant 回應 + 更新 session updatedAt
-        if (sessionId && fullResponse) {
-          await db.chatMessage.create({
-            data: {
-              sessionId,
-              role: 'assistant',
-              content: fullResponse,
-            },
-          });
-          await db.chatSession.update({
-            where: { id: sessionId },
-            data: { updatedAt: new Date() },
-          });
-        }
+
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
       } catch (err) {
-        // 串流失敗回 error chunk (不 throw)
         const message = err instanceof Error ? err.message : String(err);
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ error: message })}\n\n`),

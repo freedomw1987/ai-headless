@@ -36,9 +36,11 @@ describe('S44-F — /api/admin/chat/stream API', () => {
     expect(hasAdminCheck, '應有 admin-only 權限檢查').toBe(true);
   });
 
-  it('route 應使用 createProviderFromDB (Sprint 43 Custom URL 支援)', () => {
+  it('route 應使用 streamChatMessages (Sprint 46 pi-agent-sdk 重構)', () => {
     const source = readFileSync('app/api/admin/chat/stream/route.ts', 'utf-8');
-    expect(source, '應使用 createProviderFromDB').toMatch(/createProviderFromDB/);
+    expect(source, '應使用 streamChatMessages (pi-agent-sdk wrapper)').toMatch(/streamChatMessages/);
+    // Sprint 46 重構: 不再直接呼叫 createProviderFromDB
+    expect(source, '不應再 import createProviderFromDB (Sprint 46 重構)').not.toMatch(/createProviderFromDB/);
   });
 
   it('route 應回傳 text/event-stream SSE response', () => {
