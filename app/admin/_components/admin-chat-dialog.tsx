@@ -163,11 +163,9 @@ export function AdminChatDialog({ open, onOpenChange, userId }: Props) {
           </header>
           <AdminChatPanel
             userId={userId}
-            activeSessionId={activeId}
-            activeSession={activeSession}
-            onSwitch={(id) => {
-              if (id) void selectSession(id);
-            }}
+            sessionId={activeId}
+            session={activeSession}
+            onSessionCreated={(id) => void selectSession(id)}
           />
         </div>
       </div>

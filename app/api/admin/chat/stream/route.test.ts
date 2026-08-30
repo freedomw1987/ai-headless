@@ -56,8 +56,16 @@ describe('S44-F — /api/admin/chat/stream API', () => {
     expect(source, '應有 [DONE] 結尾訊號').toMatch(/\[DONE\]/);
   });
 
-  it('AdminChatPanel 應呼叫 /api/admin/chat/stream', () => {
-    const source = readFileSync('app/admin/_components/admin-chat-panel.tsx', 'utf-8');
-    expect(source, 'AdminChatPanel 應呼叫 admin endpoint').toMatch(/\/api\/admin\/chat\/stream/);
+  it('useChatStream 應呼叫 /api/admin/chat/stream', () => {
+    // S45-B 重構: fetch 邏輯移入 useChatStream hook
+    const candidates = [
+      'app/admin/_components/use-chat-stream.ts',
+      'app/admin/_components/use-chat-stream.tsx',
+    ];
+    const found = candidates.some((p) => existsSync(p));
+    expect(found, 'useChatStream 應存在').toBe(true);
+    const path = candidates.find((p) => existsSync(p))!;
+    const source = readFileSync(path, 'utf-8');
+    expect(source, '應呼叫 admin endpoint').toMatch(/\/api\/admin\/chat\/stream/);
   });
 });
