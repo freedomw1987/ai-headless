@@ -12,6 +12,7 @@
 import { ReactNode, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { AdminSidebar } from './admin-sidebar';
+import { AdminFab } from './_components/admin-fab';
 import type { AuthUser } from '@/lib/auth/auth';
 import type { ExtensionNavItem } from '@/lib/extensions/extension-nav';
 
@@ -55,6 +56,8 @@ export function AdminShell({
           {children}
         </div>
       </main>
+      {/* Sprint 44 Commit D: Admin AI Chat FAB (admin-only, 可拖動) */}
+      <AdminFab user={user} />
     </div>
   );
 }
