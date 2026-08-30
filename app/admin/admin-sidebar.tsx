@@ -13,6 +13,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AuthUser } from '@/lib/auth/auth';
@@ -37,6 +38,38 @@ export function AdminSidebar({
 }: Props) {
   const pathname = usePathname();
   const isAdmin = hasUIPermission(user.permissions, 'roles:write');
+
+  // TD-808: Escape 鍵關閉 mobile sidebar (keyboard user 友善)
+  useEffect(() => {
+    if (!isMobileOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onMobileOpenChange(false);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isMobileOpen, onMobileOpenChange]);
+
+  // TD-809: body scroll lock - sidebar 開啟時鎖住背景 scroll
+  useEffect(() => {
+    if (isMobileOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+    return undefined;
+  }, [isMobileOpen]);
+
+  // TD-809: route-change auto-close - pathname 變化時自動關 sidebar
+  useEffect(() => {
+    if (isMobileOpen) {
+      onMobileOpenChange(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   // Top section: enabled extensions（過濾 disabled）
   const visibleExtensionItems = extensionNavItems.filter((item) =>
@@ -167,13 +200,15 @@ export function AdminSidebar({
         </div>
       </aside>
 
-      {/* Sprint 32: 手機 RWD — backdrop (點擊關閉) */}
+      {/* Sprint 32: 手機 RWD — backdrop (點擊關閉)
+          TD-810: 改為 <div role="presentation"> 而非 <button>
+          原因: backdrop 不是 action button, keyboard user 已被 Escape 鍵 + close button 覆蓋,
+          改為 div 避免 Tab 順序多一個無意義的 button */}
       {isMobileOpen && (
-        <button
-          type="button"
+        <div
+          role="presentation"
           onClick={() => onMobileOpenChange(false)}
           className="fixed inset-0 z-30 bg-black/50 sm:hidden"
-          aria-label="關閉選單"
           data-testid="mobile-backdrop"
         />
       )}

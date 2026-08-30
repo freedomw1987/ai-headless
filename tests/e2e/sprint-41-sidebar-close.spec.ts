@@ -27,17 +27,13 @@ test.describe('Sprint 41-4 (D) — TD-815 Sidebar close paths', () => {
     // 開漢堡選單
     await page.click('[data-testid=mobile-menu-button]');
     await page.waitForTimeout(500);
-    await expect(page.locator('[data-testid=admin-sidebar]')).toBeVisible();
+    await expect(page.locator('[data-testid=mobile-backdrop]')).toBeVisible();
 
     // 按 Esc 應該關閉
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
-    // sidebar 應該在 mobile 上 translate 出去
-    const transform = await page.locator('[data-testid=admin-sidebar]').evaluate(
-      (el) => window.getComputedStyle(el).transform,
-    );
-    // translate-x-full 或類似的 transform 表示已關閉
-    expect(transform).not.toBe('none');
+    // 強斷言 (TD-815 改寫): backdrop 應該消失 = sidebar 真實關閉
+    await expect(page.locator('[data-testid=mobile-backdrop]')).not.toBeVisible();
   });
 
   test('點擊 backdrop 可以關閉 sidebar (mobile)', async ({ page }) => {
@@ -46,14 +42,15 @@ test.describe('Sprint 41-4 (D) — TD-815 Sidebar close paths', () => {
 
     await page.click('[data-testid=mobile-menu-button]');
     await page.waitForTimeout(500);
-    await expect(page.locator('[data-testid=mobile-menu-button]')).toBeVisible();
     await expect(page.locator('[data-testid=mobile-backdrop]')).toBeVisible();
 
-    // 點擊 backdrop (用 force 避免被 sidebar 遮住)
-    await page.locator('[data-testid=mobile-backdrop]').click({ force: true });
+    // TD-815 強斷言: 用 dispatchEvent 送 click, 然後檢查 backdrop 真的從 DOM 移除
+    // (避免 Playwright .click({force}) 在 z-index 重疊時的不可預期行為)
+    await page.locator('[data-testid=mobile-backdrop]').evaluate((el) => {
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
     await page.waitForTimeout(500);
-    // backdrop 應該消失
-    await expect(page.locator('[data-testid=mobile-backdrop]')).not.toBeVisible();
+    await expect(page.locator('[data-testid=mobile-backdrop]')).toHaveCount(0);
   });
 
   test('Route change 後 sidebar 自動關閉 (mobile)', async ({ page }) => {
