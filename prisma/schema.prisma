@@ -169,17 +169,31 @@ model Extension {
 // M4 — AI Configuration
 // ==============================================
 
-model AIConfig {
-  id        String   @id @default(cuid())
-  userId    String?  @unique  // null = 全局配置
+// Sprint 43 v2.0: 加入 Custom LLM Endpoint 支援
+// - type enum: 4 種 Provider 類型
+// - endpointUrl: Custom URL (僅 openai_compatible / anthropic_compatible 使用)
+// - userId = null → Global URL, 所有 user 共用
 
-  provider  String   // "openai" | "anthropic"
-  model     String   // "gpt-4o" | "claude-3-5-sonnet-20241022"
-  apiKeyEnc String?  @db.Text  // 加密後的 API Key
+enum AIProviderType {
+  openai
+  claude
+  openai_compatible
+  anthropic_compatible
+}
+
+model AIConfig {
+  id        String         @id @default(cuid())
+  userId    String?        @unique  // null = Global URL (Sprint 43 v2.0: Global URL 模式)
+
+  type      AIProviderType @default(openai)  // Sprint 43 v2.0: 4 種 type
+  provider  String         // 邏輯 provider name: "openai" | "claude" | "custom"
+  endpointUrl String?      // Sprint 43 v2.0: Custom URL (openai_compatible / anthropic_compatible 時使用)
+  model     String         // "gpt-4o" | "claude-3-5-sonnet-20241022" | custom input
+  apiKeyEnc String?        @db.Text  // 加密後的 API Key
 
   // Pipeline 配置
-  temperature    Float  @default(0.7)
-  maxTokens      Int    @default(4096)
+  temperature    Float    @default(0.7)
+  maxTokens      Int      @default(4096)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

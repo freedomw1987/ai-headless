@@ -1,6 +1,7 @@
 /**
  * ==============================================
  *  AI Providers — 真實串接 (S4.4)
+ * Sprint 43 v2.0 (S43-A Commit A): 加入 4-type Provider 介面重構
  * ==============================================
  *
  * 對應：docs/prd/05-ai-config.md
@@ -10,6 +11,8 @@
  * - 4 種實作：OpenAI / Anthropic / Mock / Factory
  * - 切換邏輯：依環境變數 AI_DEFAULT_PROVIDER
  * - Fallback：無 API key 時自動用 MockProvider
+ * - Sprint 43 v2.0 (S43-A): ProviderConfig 加 type 欄位 + baseUrl 保留為 Custom URL 入口
+ * - Sprint 43 v2.0 (S43-B): 真正實作 openai-compatible / anthropic-compatible class
  */
 
 // ==============================================
@@ -24,7 +27,10 @@ export type AIMessage = {
 export type ProviderConfig = {
   apiKey: string;
   model?: string;
+  /** Sprint 43 v2.0 (S43-A): Custom URL endpoint (openai-compatible / anthropic-compatible 用) */
   baseUrl?: string;
+  /** Sprint 43 v2.0 (S43-A): Provider 類型判定, 影響 factory class 選擇 */
+  type?: 'openai' | 'claude' | 'openai-compatible' | 'anthropic-compatible';
 };
 
 export type EnvConfig = {
@@ -590,6 +596,11 @@ function parseAnthropicUsage(usage: unknown): TokenUsage | undefined {
 // ==============================================
 
 export function createProvider(env: EnvConfig): AIProvider {
+  // Sprint 43 v2.0 (S43-A): 讀取 type 參數 (決定 factory class)
+  // v2.0: factory 介面支援 4 種 type
+  // - openai / claude: 走原生 class
+  // - openai-compatible / anthropic-compatible: 走 OpenAIProvider with baseUrl (S43-B 才實作)
+  const type = (env as EnvConfig & { AI_PROVIDER_TYPE?: string }).AI_PROVIDER_TYPE?.toLowerCase() ?? 'openai';
   const provider = env.AI_DEFAULT_PROVIDER?.toLowerCase() ?? 'mock';
 
   // 明確 mock

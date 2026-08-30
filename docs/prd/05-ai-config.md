@@ -2,9 +2,16 @@
 
 > **模組代號**：M4
 > **模組名稱**：AI Config（AI 模型配置）
-> **版本**：1.0.0
-> **最後更新**：2026-08-24
-> **狀態**：Ready for Sprint 1
+> **版本**：2.0.0
+> **最後更新**：2026-08-30
+> **狀態**：Sprint 43 開工中（v2.0 — 加 Custom LLM Endpoint 支援）
+
+## 版本歷史
+
+| 版本 | 日期 | 變更 |
+|---|---|---|
+| 1.0.0 | 2026-08-24 | 初版（OpenAI / Claude 二選一）|
+| **2.0.0** | **2026-08-30** | **加入 Custom LLM Endpoint 支援（openai-compatible / anthropic-compatible）** |
 
 ---
 
@@ -14,10 +21,15 @@
 
 M4（AI Config）提供 ai-headless 框架的**AI 模型管理**。包含：
 
-1. **多 Provider 支援**：OpenAI、Anthropic Claude（可擴充）
+1. **多 Provider 支援**：4 種 Provider 類型
+   - `openai` — OpenAI 原生（api.openai.com）
+   - `claude` — Anthropic 原生（api.anthropic.com）
+   - `openai-compatible` — 任意 OpenAI-compatible endpoint（OpenRouter / Azure / Groq / Together / Ollama / 自架 proxy）
+   - `anthropic-compatible` — Anthropic-compatible endpoint（保留彈性）
 2. **API Key 管理**：加密存儲用戶 API Key
 3. **模型切換**：用戶可在不同 Provider / 模型間切換
 4. **抽象層**：統一介面，方便未來加新 Provider
+5. **Custom URL 支援**：用戶可設定任意 LLM endpoint URL（**Global URL 模式**，系統全域共用，所有 user 適用）
 
 ### 1.2 為什麼需要 AI Config？
 
@@ -107,6 +119,51 @@ M4（AI Config）提供 ai-headless 框架的**AI 模型管理**。包含：
 ---
 
 ## 4. 介面設計
+
+### 4.0 Custom LLM Endpoint (v2.0 新增)
+
+#### 4.0.1 設計動機
+
+用戶需求（2026-08-30）：「除了 OpenAI / Claude，使用者可以自己設定 LLM API URL」。原因：
+
+| 場景 | 需求 |
+|---|---|
+| 公司內部 LLM gateway | 用公司 proxy URL，所有員工連同一個 endpoint |
+| OpenRouter / Azure / Groq | 一個 URL 連接多家 provider |
+| 本地 LLM（Ollama / LM Studio） | 自架 URL，不需 API Key |
+| 隱私合規 | 資料不能出公司，需走內部 endpoint |
+
+#### 4.0.2 Global URL 設計
+
+**重要約束**：Custom URL 是 **Global URL（系統全域共用）**，不是 per-user：
+
+- 所有 admin user 共用同一個 Custom URL 設定
+- 儲存在 `AIConfig` model 的 `userId = null` 那筆
+- UI 隱藏 per-user Custom URL 設定（v2.0 不開放）
+
+未來如需 per-user Custom URL，需重複複雜度評估。
+
+#### 4.0.3 測試連線
+
+Custom URL 設定頁提供「**測試連線**」按鈕，送一個 minimal request 驗證：
+
+- OpenAI-compatible：`POST {baseUrl}/v1/models` 帶 `Authorization: Bearer {apiKey}`
+- Anthropic-compatible：`POST {baseUrl}/v1/messages` 帶 minimal payload + `x-api-key: {apiKey}`
+
+**UX 設計**：
+- 連線成功：顯示 `✅ 連線成功（延遲 123ms，可用模型: gpt-4o, claude-3.5-sonnet）`
+- 連線失敗：顯示具體原因（401 / 404 / timeout / DNS 失敗），不顯示 API Key 明文
+
+#### 4.0.4 FR-4.5～4.10 新增 FR
+
+| FR | 功能 | 優先級 | SP |
+|---|---|---|---|
+| FR-4.5 | Provider type 選擇（4 選 1 radio）| P0 | 0.5 |
+| FR-4.6 | Custom URL 輸入欄位（顯示為 protocol + URL）| P0 | 1 |
+| FR-4.7 | 「測試連線」按鈕（Custom URL 也適用）| P0 | 1 |
+| FR-4.8 | OpenAI-compatible Provider 實作（Vercel AI SDK）| P0 | 2 |
+| FR-4.9 | Anthropic-compatible Provider 實作 | P0 | 2 |
+| FR-4.10 | 自動偵測可用模型（從 /models endpoint）| P1 | 1 |
 
 ### 4.1 Provider 抽象
 
@@ -321,21 +378,32 @@ export function decrypt(ciphertext: string): string {
 ## 5. 資料模型
 
 ```prisma
+enum AIProviderType {
+  openai
+  claude
+  openai_compatible
+  anthropic_compatible
+}
+
 model AIConfig {
-  id          String   @id @default(cuid())
-  provider    String   // "openai" | "claude"
-  apiKey      String   // 加密
-  model       String   // "gpt-4o" | "claude-3-5-sonnet"
-  isDefault   Boolean  @default(false)
+  id          String         @id @default(cuid())
+  userId      String?        @unique  // null = Global URL (所有 user 共用)
+  
+  type        AIProviderType @default(openai)  // v2.0 新增
+  provider    String         // 邏輯 provider name: "openai" | "claude" | "custom"
+  endpointUrl String?        // v2.0 新增: Custom URL (僅 type 為 openai_compatible / anthropic_compatible 時使用)
+  apiKey      String         // 加密
+  model       String         // "gpt-4o" | "claude-3-5-sonnet" 或 custom 輸入的 model
+  isDefault   Boolean        @default(false)
   
   // 模型參數
-  temperature Float    @default(0.7)
-  maxTokens   Int      @default(4096)
+  temperature Float          @default(0.7)
+  maxTokens   Int            @default(4096)
   
   // 元數據
-  label       String?  // 用戶給這個配置的名字，例如 "公司 OpenAI"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  label       String?        // 用戶給這個配置的名字，例如 "公司 OpenAI"
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   lastUsedAt  DateTime?
   
   @@unique([provider, label])
@@ -421,7 +489,20 @@ model AIUsageLog {
 
 ## 8. 開發計劃
 
-### Sprint 1
+### Sprint 43（v2.0 — 從零實作 + Custom URL）
+
+**重要揭露（2026-08-30）**: PRD v1.0 雖然列了 `prisma.aIConfig`，但 Sprint 32 review 之前從未被使用。Sprint 43 是 **v2.0 全面重新實作** + 新增 Custom URL 支援。
+
+| Commit | Task | FR | SP |
+|---|---|---|---|
+| A | PRD 05 改版 + Provider 介面重構 + Prisma schema 升級 | — | 3 |
+| B | OpenAICompatibleProvider + AnthropicCompatibleProvider (Vercel AI SDK) | FR-4.8, FR-4.9 | 4 |
+| C | Prisma migration + ProviderFactory 升級（type 判定） | — | 2 |
+| D | `/admin/ai-config` UI（4-type radio + URL input + 「測試連線」）| FR-4.5, FR-4.6, FR-4.7 | 3 |
+| E | 加密 / 錯誤處理 / log redaction 適配 + 守護測試 | — | 3 |
+| **總計** | | | **15 SP** |
+
+### Sprint 1（原 v1.0 計劃，保留供對照）
 
 | Task | FR | SP |
 |---|---|---|
