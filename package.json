@@ -4,7 +4,10 @@
   "private": true,
   "description": "AI Headless CRUD Framework - JSON Spec + Extension Code (Hybrid Mode)",
   "scripts": {
+    "predev": "prisma generate",
     "dev": "next dev --turbopack",
+    "postinstall": "prisma generate",
+    "prebuild": "prisma generate",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
