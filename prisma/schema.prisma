@@ -235,11 +235,16 @@ model ChatSession {
   title     String        @default("新對話")
   messages  ChatMessage[]
 
+  // Sprint 46 F: 附件關聯 + session 軟刪除欄位 (Sprint 47+ cleanup job 鋪路)
+  attachments Attachment[]
+
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
+  deletedAt DateTime?     // Sprint 47+ cleanup job: 軟刪除 session 連附件一併清
 
   @@index([userId])
   @@index([userId, updatedAt(sort: Desc)]) // Sprint 44 G: 歷史對話列表排序
+  @@index([deletedAt])                    // Sprint 47+ cleanup job: 掃 soft-deleted sessions
   @@map("chat_sessions")
 }
 
@@ -257,6 +262,34 @@ model ChatMessage {
   @@index([sessionId])
   @@index([sessionId, createdAt]) // Sprint 44 G: session 內訊息按時間排序
   @@map("chat_messages")
+}
+
+// ==============================================
+// M5 — Chat 附件 (Sprint 46-F)
+// ==============================================
+//
+// 設計 (Sprint 46 Plan Gate Q6):
+// - 永久保留機制: onDelete: NoAction — 即使 session 刪除 (未來支援), attachment 不級聯刪除
+// - storagePath 存相對路徑 (./uploads/<sessionId>/<uuid>.<ext>), 部署可掛不同磁碟
+// - mimeType + filename 雙欄位防偽造 (magic bytes server-side 驗證)
+// - 無 deletedAt 欄位 — Attachment 本身不軟刪, session 才軟刪除 (避免複雜 join)
+// - sprint 47+ cleanup job 透過 session.deletedAt 掃描, 級聯刪除該 session 的 attachments
+//
+// 對應 PRD: docs/prd/10-chat-attachments.md §3.1
+
+model Attachment {
+  id          String   @id @default(cuid())
+  sessionId   String
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  filename    String   // 原始檔名
+  mimeType    String   // e.g. "application/pdf"
+  size        Int      // bytes
+  storagePath String   // ./uploads/<sessionId>/<uuid>.<ext>
+  uploadedAt  DateTime @default(now())
+
+  @@index([sessionId])    // 主要查詢: 列某 session 的所有附件
+  @@index([uploadedAt])   // 次要查詢: Sprint 47+ cleanup job 按時間掃
+  @@map("attachments")
 }
 
 // ==============================================
