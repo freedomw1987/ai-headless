@@ -34,8 +34,7 @@ import {
   usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input';
 import { Loader2, Paperclip, X } from 'lucide-react';
-import { CodeBlock, CodeBlockContent } from '@/components/ai-elements/code-block';
-import { parseMarkdown, renderInlineMarkdown } from './markdown-parser';
+import { Markdown } from '@/lib/ai/chat/markdown-renderer';
 import { useChatStream } from './use-chat-stream';
 import type { ChatMessage } from '@/lib/ai/chat/chat-utils';
 import type { SessionDetail } from './use-chat-sessions';
@@ -237,35 +236,17 @@ function AttachmentsChips() {
 }
 
 /**
- * MarkdownRender — AI 回應 markdown 渲染 (S45-D)
+ * MarkdownRender — AI 回應 markdown 渲染 (S45-D + Sprint 46 重構)
  *
- * 設計:
- * - 用自製 parseMarkdown 拆 text + code blocks
- * - code block 走 AI Elements CodeBlockContent (含 shiki syntax highlight)
- * - text block 走 renderInlineMarkdown (處理 ** * `inline`)
+ * Sprint 46 重構: 改用 react-markdown + remark-gfm 取代自製 parseMarkdown
+ * - 支援 headings, links, lists, tables, blockquote, strikethrough, tasklists
+ * - Code block 仍走 AI Elements CodeBlockContent (含 shiki syntax highlight)
  */
 function MarkdownRender({ content }: { content: string }) {
-  const blocks = parseMarkdown(content);
-
   return (
-    <div className="flex flex-col gap-2" data-testid="markdown-render">
-      {blocks.map((block, idx) => {
-        if (block.type === 'code') {
-          return (
-            <CodeBlock key={idx} code={block.code} language={block.lang as Parameters<typeof CodeBlockContent>[0]['language']}>
-              <CodeBlockContent code={block.code} language={block.lang as Parameters<typeof CodeBlockContent>[0]['language']} />
-            </CodeBlock>
-          );
-        }
-        // text block: 行內 markdown 處理
-        return (
-          <div
-            key={idx}
-            className="whitespace-pre-wrap"
-            dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(block.content) }}
-          />
-        );
-      })}
-    </div>
+    <Markdown
+      content={content}
+      className="flex flex-col gap-2"
+    />
   );
 }

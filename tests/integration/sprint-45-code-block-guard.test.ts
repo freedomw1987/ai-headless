@@ -5,6 +5,9 @@
  * - 把 AI Elements CodeBlock 元件整合進 MessageResponse 渲染
  * - Markdown ```code blocks``` 自動用 CodeBlock 渲染 (含 syntax highlighting)
  * - 保留 MessageResponse 既有 markdown 渲染能力
+ *
+ * Sprint 46 重構: CodeBlock 從 AdminChatPanel 移到 markdown-renderer.tsx
+ *   (透過 react-markdown components.code slot 接)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -12,16 +15,19 @@ import { readFileSync } from 'fs';
 
 describe('S45-D — 程式碼區塊高亮', () => {
   describe('元件整合', () => {
-    it('AdminChatPanel 應 import CodeBlock 元件', () => {
-      const source = readFileSync('app/admin/_components/admin-chat-panel.tsx', 'utf-8');
+    it('Markdown renderer 應 import CodeBlock 元件 (Sprint 46 重構)', () => {
+      const source = readFileSync('lib/ai/chat/markdown-renderer.tsx', 'utf-8');
       expect(source, '應 import CodeBlock').toMatch(
         /import\s*\{[^}]*\bCodeBlock\b[^}]*\}\s*from\s*['"]@\/components\/ai-elements\/code-block['"]/,
       );
     });
 
-    it('AdminChatPanel 應 import CodeBlockContent 元件', () => {
+    it('AdminChatPanel 應 import Markdown 元件 (Sprint 46 重構)', () => {
       const source = readFileSync('app/admin/_components/admin-chat-panel.tsx', 'utf-8');
-      expect(source, '應 import CodeBlockContent').toMatch(/CodeBlockContent/);
+      // Sprint 46 重構: AdminChatPanel 不再直接用 CodeBlock, 改用 Markdown
+      expect(source, '應 import Markdown from markdown-renderer').toMatch(
+        /import\s*\{[^}]*\bMarkdown\b[^}]*\}\s*from\s*['"]@\/lib\/ai\/chat\/markdown-renderer['"]/,
+      );
     });
 
     it('AdminChatPanel 應有自製 markdown 渲染函式 (含 code block 處理)', () => {
