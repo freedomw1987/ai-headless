@@ -2,6 +2,7 @@
  * ==============================================
  *  AI Providers — 真實串接 (S4.4)
  * Sprint 43 v2.0 (S43-A Commit A): 加入 4-type Provider 介面重構
+ * Sprint 43 v2.0 (S43-B Commit B): 測試連線 utility + Factory Custom URL 支援
  * ==============================================
  *
  * 對應：docs/prd/05-ai-config.md
@@ -12,7 +13,8 @@
  * - 切換邏輯：依環境變數 AI_DEFAULT_PROVIDER
  * - Fallback：無 API key 時自動用 MockProvider
  * - Sprint 43 v2.0 (S43-A): ProviderConfig 加 type 欄位 + baseUrl 保留為 Custom URL 入口
- * - Sprint 43 v2.0 (S43-B): 真正實作 openai-compatible / anthropic-compatible class
+ * - Sprint 43 v2.0 (S43-B): testEndpoint utility + Factory 接受 type + baseUrl
+ *   (不需要新增 class — 既有 OpenAIProvider/AnthropicProvider 已用 fetch + baseUrl)
  */
 
 // ==============================================
@@ -592,15 +594,119 @@ function parseAnthropicUsage(usage: unknown): TokenUsage | undefined {
 }
 
 // ==============================================
+// 4.5 測試連線 utility (S43-B)
+// ==============================================
+
+/** Sprint 43 v2.0 (S43-B): 測試 Custom endpoint 連線結果 */
+export type TestEndpointResult =
+  | { success: true; latencyMs: number; models?: string[] }
+  | { success: false; error: string; statusCode?: number };
+
+/** Sprint 43 v2.0 (S43-B): 測試 Custom endpoint 連線
+ *
+ * 用途: 用戶設 Custom URL 後點「測試連線」按鈕驗證 URL + API Key 可用
+ * 安全性: error message 絕不內插 apiKey 明文 (防 log 洩漏)
+ */
+export async function testEndpoint(params: {
+  type: 'openai-compatible' | 'anthropic-compatible';
+  endpointUrl: string;
+  apiKey: string;
+  /** Timeout in ms (default: 10000) */
+  timeoutMs?: number;
+}): Promise<TestEndpointResult> {
+  const { type, endpointUrl, apiKey, timeoutMs = 10000 } = params;
+  const start = Date.now();
+
+  // 驗證 URL 格式
+  let url: URL;
+  try {
+    url = new URL(endpointUrl);
+  } catch {
+    return { success: false, error: '無效的 URL 格式' };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    if (type === 'openai-compatible') {
+      // OpenAI-compatible: GET /v1/models (最 lightweight 驗證)
+      const testUrl = new URL('/v1/models', url).toString();
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: controller.signal,
+      });
+      const latencyMs = Date.now() - start;
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `HTTP ${response.status} ${response.statusText}`,
+          statusCode: response.status,
+        };
+      }
+      // 嘗試解析 models list (若有)
+      const data = await response.json().catch(() => null);
+      const models = Array.isArray(data?.data)
+        ? data.data.slice(0, 5).map((m: { id?: string }) => m.id).filter(Boolean)
+        : undefined;
+      return { success: true, latencyMs, models };
+    }
+
+    // anthropic-compatible: POST /v1/messages 帶 minimal payload
+    const testUrl = new URL('/v1/messages', url).toString();
+    const response = await fetch(testUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': ANTHROPIC_VERSION,
+      },
+      body: JSON.stringify({
+        model: 'test',
+        max_tokens: 1,
+        messages: [{ role: 'user', content: 'hi' }],
+      }),
+      signal: controller.signal,
+    });
+    const latencyMs = Date.now() - start;
+    if (!response.ok && response.status !== 400) {
+      // 400 = request 格式不對但 server 回應 = 連線 OK
+      return {
+        success: false,
+        error: `HTTP ${response.status} ${response.statusText}`,
+        statusCode: response.status,
+      };
+    }
+    return { success: true, latencyMs };
+  } catch (err) {
+    // 安全處理: 不內插 apiKey 明文到 error message
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    const safeMessage = message.includes(apiKey) ? message.replace(apiKey, '[REDACTED]') : message;
+    return {
+      success: false,
+      error: err instanceof Error && err.name === 'AbortError' ? '連線逾時' : safeMessage,
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+// ==============================================
 // 5. Provider 工廠
 // ==============================================
 
 export function createProvider(env: EnvConfig): AIProvider {
-  // Sprint 43 v2.0 (S43-A): 讀取 type 參數 (決定 factory class)
+  // Sprint 43 v2.0 (S43-A/S43-B): 讀取 type 參數 (決定 factory class + baseUrl)
   // v2.0: factory 介面支援 4 種 type
   // - openai / claude: 走原生 class
-  // - openai-compatible / anthropic-compatible: 走 OpenAIProvider with baseUrl (S43-B 才實作)
-  const type = (env as EnvConfig & { AI_PROVIDER_TYPE?: string }).AI_PROVIDER_TYPE?.toLowerCase() ?? 'openai';
+  // - openai-compatible / anthropic-compatible: 走 OpenAIProvider/AnthropicProvider with baseUrl
+  const envWithType = env as EnvConfig & {
+    AI_PROVIDER_TYPE?: string;
+    AI_ENDPOINT_URL?: string;
+  };
+  const type = envWithType.AI_PROVIDER_TYPE?.toLowerCase() ?? 'openai';
+  const endpointUrl = envWithType.AI_ENDPOINT_URL;
   const provider = env.AI_DEFAULT_PROVIDER?.toLowerCase() ?? 'mock';
 
   // 明確 mock
@@ -608,8 +714,8 @@ export function createProvider(env: EnvConfig): AIProvider {
     return new MockProvider();
   }
 
-  // OpenAI
-  if (provider === 'openai') {
+  // OpenAI / openai-compatible
+  if (provider === 'openai' || type === 'openai-compatible') {
     if (!env.OPENAI_API_KEY) {
       console.warn(
         '[ai-headless] AI_DEFAULT_PROVIDER=openai but OPENAI_API_KEY is empty. Falling back to MockProvider.',
@@ -619,11 +725,13 @@ export function createProvider(env: EnvConfig): AIProvider {
     return new OpenAIProvider({
       apiKey: env.OPENAI_API_KEY,
       model: env.OPENAI_MODEL,
+      baseUrl: endpointUrl,
+      type: (type as ProviderConfig['type']),
     });
   }
 
-  // Anthropic
-  if (provider === 'anthropic') {
+  // Anthropic / anthropic-compatible
+  if (provider === 'anthropic' || type === 'anthropic-compatible') {
     if (!env.ANTHROPIC_API_KEY) {
       console.warn(
         '[ai-headless] AI_DEFAULT_PROVIDER=anthropic but ANTHROPIC_API_KEY is empty. Falling back to MockProvider.',
@@ -633,6 +741,8 @@ export function createProvider(env: EnvConfig): AIProvider {
     return new AnthropicProvider({
       apiKey: env.ANTHROPIC_API_KEY,
       model: env.ANTHROPIC_MODEL,
+      baseUrl: endpointUrl,
+      type: (type as ProviderConfig['type']),
     });
   }
 
