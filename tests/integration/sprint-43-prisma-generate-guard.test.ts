@@ -45,6 +45,22 @@ describe('S43 — Prisma generate 防呆 (schema 改完 dev/build 必須 regener
     ).toMatch(/prisma\s+generate/);
   });
 
+  it('package.json 應有 db:migrate script (讓人工跑 migrate 用)', () => {
+    const pkg = JSON.parse(readFileSync('package.json', 'utf-8'));
+    expect(
+      pkg.scripts?.['db:migrate'],
+      'package.json 缺 db:migrate script (改 schema 後需手動跑)'
+    ).toMatch(/prisma\s+migrate/);
+  });
+
+  it('package.json 應有 db:deploy script (生產環境 deploy migration)', () => {
+    const pkg = JSON.parse(readFileSync('package.json', 'utf-8'));
+    expect(
+      pkg.scripts?.['db:deploy'],
+      'package.json 缺 db:deploy script (生產 deploy 需要)'
+    ).toMatch(/prisma\s+migrate\s+deploy/);
+  });
+
   it('生成的 Prisma client 應有 AIProviderType enum (證明 generate 成功)', () => {
     // 找 prisma client index.d.ts (可能在 .prisma/client/ 或 pnpm symlink)
     const candidates = [

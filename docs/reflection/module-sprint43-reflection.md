@@ -122,6 +122,29 @@ Sprint 43 加了 5 個 guard test files（共 56 個守護測試），全部用 
 
 **當前狀態**：⚠️ 既有 `ai_configs` 資料若是 placeholder 加密，**新程式讀取會 throw**。需 Commit F 處理。
 
+### 4.6 Prisma schema 改完後必須跑 migrate (不是只有 generate)
+
+**風險** (用戶實測揭露): 改 prisma/schema.prisma 加 enum + 欄位後, 即使 `prisma generate` 跑了,
+runtime Prisma client 知道新欄位 (TS compile 過), 但 **DB 本身沒套用 migration** → 所有
+create/update 該欄位都會失敗 (PrismaClientKnownRequestError P2022 'column does not exist')。
+
+**根因**:
+- `prisma generate` 只更新 client (in-memory / .prisma/client/), 不更新 DB
+- `prisma migrate deploy` 才套用 migration 到 DB
+- Sprint 43 Commit A 只跑了 generate, 沒跑 migrate
+
+**緩解方案**:
+- package.json 加 db:migrate (dev) + db:deploy (prod) script (Sprint 43 commit 0965c48)
+- predev/prebuild 只跑 generate (因為 generate 安全 + 快速)
+- 改 schema 後 dev 人員必須手動跑 `pnpm db:migrate`
+- 6 個新 guard 提醒 + 防呆 (sprint-43-prisma-generate-guard.test.ts)
+
+**教訓**:
+- '改 schema' 是兩個變更: (a) client 生成 (b) DB schema
+- 不能只驗證 (a), 必須驗證 (b)
+- 'dev server 跑得起來' 不等於 'DB 套用了'
+- 推薦: schema 改動後 Sprint PR description 加 '需跑 pnpm db:migrate' 提醒
+
 ### 4.3 AIConfig model 從未被應用層引用（Plan Gate 揭露）
 
 **風險**：`prisma.aIConfig` model 在 v1.0 PRD 已定義，但**從未被任何 route / lib 引用**。Sprint 43 是第一次實作。
