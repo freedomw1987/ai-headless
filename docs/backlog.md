@@ -24,20 +24,22 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 31 — 用戶報 Bug + Admin RWD 健檢**（3 SP，**100% 收尾**）|
+| **當前 Sprint** | **Sprint 40 — CalendarView renderActions bug fix + mobile actions 修法** |
 | **Sprint 26 狀態** | ✅ **100% 收尾（2.5/2.5 SP）**（Sprint 20 P2 技術債 5/5 全清）|
 | **Sprint 27 狀態** | ✅ **100% 收尾（28/28 SP）**（CRUD 列表頁 5 大功能 + 8 個 bug 修補）|
 | **Sprint 28-29 狀態** | ✅ **100% 收尾（23/23 SP）**（users/roles 統一 CRUD + sidebar 重組 + profile 美化 + settings page）|
 | **Sprint 30 狀態** | ✅ **100% 收尾（5.5/5.5 SP）**（TD-801/802/523/524/519 全部守護測試 + JWT name refresh code 改動）|
 | **Sprint 31 狀態** | ✅ **100% 收尾（3/3 SP）**（TD-911 * wildcard bug 3 層修法 + TD-911b permission code 雙格式 + admin RWD 5 E2E 守護）|
-| **測試基線** | **849 integration + 85/85 E2E**（Sprint 31 累計 +12 守護測試）|
-| **下一個 P0** | Sprint 32 Plan Gate（決定新方向）|
-| **路線圖關鍵** | ✅ Sprint 21-26（Phase 2 RBAC + 技術債）→ ✅ Sprint 27（CRUD 列表頁 v1.1）→ ✅ Sprint 28-29（Admin Sidebar & Profile）→ ✅ Sprint 30（5 個技術債守護）→ ✅ Sprint 31（用戶報 Bug + RWD）→ 📋 Sprint 32+（新方向待定）|
+| **Sprint 33-39 狀態** | ✅ **100% 收尾**（View Feature：5 種 views + 4 CRUD + Kanban DnD + localStorage + calendar/gallery）|
+| **Sprint 40 狀態** | ✅ **100% 收尾**（CalendarView renderActions bug fix + mobile actions 修法 + audit 守護測試）|
+| **測試基線** | **921 integration + 109/109 E2E**（Sprint 33-40 累計 +84 守護測試）|
+| **下一個 P0** | Sprint 41 Plan Gate（決定新方向）|
+| **路線圖關鍵** | ✅ Sprint 21-32 → ✅ Sprint 33-40（View Feature + bug fixes）→ 📋 Sprint 41+（新方向待定）|
 | **Sprint 27 反省報告** | [docs/reflection/module-crud-list-enhancements-reflection.md](reflection/module-crud-list-enhancements-reflection.md) |
 | **Sprint 28-29 反省報告** | [docs/reflection/module-sprint28-29-reflection.md](reflection/module-sprint28-29-reflection.md) |
 | **Sprint 30 反省報告** | [docs/reflection/module-sprint30-reflection.md](reflection/module-sprint30-reflection.md) |
 | **Sprint 31 反省報告** | [docs/reflection/module-sprint31-reflection.md](reflection/module-sprint31-reflection.md) |
-| **Sprint 32 後續 review（2026-08-30）** | [docs/reflection/sprint-32-review.md](reflection/sprint-32-review.md) — 16 個 TD 開立（5 P1 + 6 P2 + 5 P3）|
+| **Sprint 33-40 反省報告** | [docs/reflection/module-sprint33-40-reflection.md](reflection/module-sprint33-40-reflection.md)（跨 8 sprints 反思）|
 
 ### Sprint 21 規劃（US-102-P2 動態 RBAC，預估 7 SP）
 
