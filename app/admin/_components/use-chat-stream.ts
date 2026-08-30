@@ -20,6 +20,12 @@ import { useState, useCallback, useRef } from 'react';
 import { createStreamController } from '@/lib/ai/stream-controller';
 import type { ChatMessage } from '@/lib/ai/chat/chat-utils';
 
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+}
+
 export type ChatStatus = 'ready' | 'submitted' | 'streaming' | 'error';
 
 export type UseChatStreamOptions = {
@@ -42,7 +48,7 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: UseChatStr
   }, []);
 
   const send = useCallback(
-    async (overrideInput?: string) => {
+    async (overrideInput?: string, attachments: ReadonlyArray<{ filename: string; size?: number }> = []) => {
       const text = (overrideInput ?? input).trim();
       if (!text || status === 'submitted' || status === 'streaming') return;
 
@@ -68,10 +74,16 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: UseChatStr
       }
 
       const now = new Date().toISOString();
+      // 把附件檔名拼進 message content (S45-C 純前端, 不上傳)
+      const attachmentPrefix = attachments
+        .map((a) => `📎 ${a.filename}${a.size ? ` (${formatSize(a.size)})` : ''}`)
+        .join('\n');
+      const fullContent = attachmentPrefix ? `${attachmentPrefix}\n\n${text}` : text;
+
       const userMsg: ChatMessage = {
         id: `user-${Date.now()}`,
         role: 'user',
-        content: text,
+        content: fullContent,
         createdAt: now,
       };
       const assistantId = `assistant-${Date.now()}`;
@@ -97,7 +109,7 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: UseChatStr
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            messages: [{ role: 'user', content: text }],
+            messages: [{ role: 'user', content: fullContent }],
             sessionId: activeSessionId,
           }),
           // 用 fetch 原生 signal

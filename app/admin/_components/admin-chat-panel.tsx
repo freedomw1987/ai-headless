@@ -1,12 +1,13 @@
 'use client';
 
 /**
- * AdminChatPanel — Admin AI Chat 對話內容 (S45-B)
+ * AdminChatPanel — Admin AI Chat 對話內容 (S45-B/C)
  *
  * 設計:
  * - 用 AI Elements 元件: Conversation / Message / PromptInput
  * - 自製 SSE parsing hook (useChatStream)
  * - 保留 Sprint 43 createProviderFromDB (Custom URL 支援)
+ * - S45-C: 附件 UI (純前端, 不上傳)
  */
 
 import { useEffect } from 'react';
@@ -19,12 +20,20 @@ import {
 import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message';
 import {
   PromptInput,
+  PromptInputActionAddAttachments,
+  PromptInputActionMenu,
+  PromptInputActionMenuContent,
+  PromptInputActionMenuTrigger,
   PromptInputBody,
   PromptInputFooter,
+  PromptInputHeader,
+  PromptInputProvider,
   PromptInputSubmit,
   PromptInputTextarea,
+  PromptInputTools,
+  usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Paperclip, X } from 'lucide-react';
 import { useChatStream } from './use-chat-stream';
 import type { ChatMessage } from '@/lib/ai/chat/chat-utils';
 import type { SessionDetail } from './use-chat-sessions';
@@ -50,7 +59,6 @@ export function AdminChatPanel({ userId, sessionId, session, onSessionCreated }:
     sessionId,
     userId,
     onSessionUpdate: async () => {
-      // Session 建立後通知 parent reload
       if (onSessionCreated) {
         const res = await fetch('/api/admin/chat/sessions');
         if (res.ok) {
@@ -119,28 +127,109 @@ export function AdminChatPanel({ userId, sessionId, session, onSessionCreated }:
         <ConversationScrollButton />
       </Conversation>
 
-      <PromptInput
-        onSubmit={() => {
-          void send();
-        }}
-        className="border-t"
-      >
-        <PromptInputBody>
-          <PromptInputTextarea
-            value={input}
-            onChange={(e) => setInput(e.currentTarget.value)}
-            placeholder="問 AI..."
-            disabled={isStreaming}
-          />
-        </PromptInputBody>
-        <PromptInputFooter>
-          <div className="flex-1" />
-          <PromptInputSubmit
-            status={isStreaming ? 'streaming' : 'ready'}
-            disabled={!input.trim()}
-          />
-        </PromptInputFooter>
-      </PromptInput>
+      <PromptInputProvider>
+        <PromptInputWrapper
+          input={input}
+          setInput={setInput}
+          isStreaming={isStreaming}
+          send={send}
+        />
+      </PromptInputProvider>
+    </div>
+  );
+}
+
+/**
+ * PromptInputWrapper — 在 PromptInputProvider 內處理 attachments + send (S45-C)
+ *
+ * 設計:
+ * - 在 PromptInputProvider 子樹內才能用 usePromptInputAttachments
+ * - 集中處理附件 + 送出邏輯
+ */
+type WrapperProps = {
+  input: string;
+  setInput: (v: string) => void;
+  isStreaming: boolean;
+  send: (overrideInput?: string, attachments?: ReadonlyArray<{ filename: string; size?: number }>) => Promise<void>;
+};
+
+function PromptInputWrapper({ input, setInput, isStreaming, send }: WrapperProps) {
+  const attachments = usePromptInputAttachments();
+
+  const handleSubmit = () => {
+    const atts = attachments.files.map((f) => ({
+      filename: f.filename ?? 'file',
+      size: undefined,
+    }));
+    void send(input, atts);
+    attachments.clear();
+  };
+
+  return (
+    <PromptInput
+      onSubmit={handleSubmit}
+      className="border-t"
+    >
+      <PromptInputHeader>
+        <AttachmentsChips />
+      </PromptInputHeader>
+      <PromptInputBody>
+        <PromptInputTextarea
+          value={input}
+          onChange={(e) => setInput(e.currentTarget.value)}
+          placeholder="問 AI..."
+          disabled={isStreaming}
+        />
+      </PromptInputBody>
+      <PromptInputFooter>
+        <PromptInputTools>
+          <PromptInputActionMenu>
+            <PromptInputActionMenuTrigger />
+            <PromptInputActionMenuContent>
+              <PromptInputActionAddAttachments label="附加檔案" />
+            </PromptInputActionMenuContent>
+          </PromptInputActionMenu>
+        </PromptInputTools>
+        <div className="flex-1" />
+        <PromptInputSubmit
+          status={isStreaming ? 'streaming' : 'ready'}
+          disabled={!input.trim() && attachments.files.length === 0}
+        />
+      </PromptInputFooter>
+    </PromptInput>
+  );
+}
+
+/**
+ * AttachmentsChips — 顯示已選附件檔名 + 移除按鈕 (S45-C)
+ */
+function AttachmentsChips() {
+  const attachments = usePromptInputAttachments();
+  if (attachments.files.length === 0) return null;
+
+  return (
+    <div
+      className="flex flex-wrap gap-2 px-3 py-2"
+      data-testid="attachments-chips"
+    >
+      {attachments.files.map((file) => (
+        <div
+          key={file.id}
+          className="flex items-center gap-1 rounded-full border bg-muted px-2 py-1 text-xs"
+          data-testid="attachment-chip"
+        >
+          <Paperclip className="h-3 w-3" />
+          <span className="max-w-[120px] truncate">{file.filename ?? 'file'}</span>
+          <button
+            type="button"
+            onClick={() => attachments.remove(file.id)}
+            className="ml-1 rounded-full p-0.5 hover:bg-background"
+            aria-label={`移除 ${file.filename ?? 'file'}`}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

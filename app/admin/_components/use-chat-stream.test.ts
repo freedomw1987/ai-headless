@@ -69,7 +69,7 @@ describe('useChatStream — S45-B', () => {
     });
 
     const streamCall = mockFetch.mock.calls.find(
-      (call) => (call[0] as string).includes('/api/admin/chat/stream'),
+      (call) => (call[0] as string | undefined)?.includes('/api/admin/chat/stream') ?? false,
     );
     expect(streamCall, '應呼叫 /api/admin/chat/stream').toBeDefined();
     const body = JSON.parse((streamCall![1] as RequestInit).body as string);
@@ -129,7 +129,7 @@ describe('useChatStream — S45-B', () => {
 
     // 只應有 1 個 fetch (stream), 沒有 create session
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch.mock.calls[0][0]).toContain('/api/admin/chat/stream');
+    expect(mockFetch.mock.calls[0]?.[0]).toContain('/api/admin/chat/stream');
   });
 
   it('loadMessages 應設定 messages', () => {
@@ -145,6 +145,30 @@ describe('useChatStream — S45-B', () => {
     });
 
     expect(result.current.messages).toHaveLength(2);
-    expect(result.current.messages[0].content).toBe('hi');
+    expect(result.current.messages[0]?.content).toBe('hi');
+  });
+
+  it('send 應把 attachments 檔名拼進 message content (S45-C)', async () => {
+    mockFetch.mockResolvedValueOnce(
+      buildSseResponse([{ content: 'OK' }, 'DONE']),
+    );
+
+    const { result } = renderHook(() =>
+      useChatStream({ sessionId: 's-att', userId: 'u-att' }),
+    );
+
+    await act(async () => {
+      await result.current.send('check this', [
+        { filename: 'report.pdf', size: 2048 },
+        { filename: 'data.csv', size: 5120 },
+      ]);
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const body = JSON.parse((mockFetch.mock.calls[0]?.[1] as RequestInit).body as string);
+    // message content 應包含附件標記
+    expect(body.messages[0].content).toContain('📎 report.pdf');
+    expect(body.messages[0].content).toContain('📎 data.csv');
+    expect(body.messages[0].content).toContain('check this');
   });
 });
