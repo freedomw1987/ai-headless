@@ -1,7 +1,7 @@
 /**
  * POST /api/admin/chat/stream
  *
- * Admin-only SSE streaming AI chat (Sprint 44 Commit F + Sprint 46 重構)
+ * Admin-only SSE streaming AI chat (Sprint 44 Commit F + Sprint 46 重構 + Sprint 47 擴展)
  *
  * Sprint 46 重構:
  * - 從「直接呼叫 Anthropic/OpenAI Provider」改為「走 pi-agent-sdk」
@@ -10,6 +10,10 @@
  * - Wrapper: lib/ai/agent-sdk/agent-sdk.ts (streamChatMessages)
  *
  * Sprint 46 Commit 5: 接受 attachments 參數 (從 DB 讀 attachment 內容)
+ *
+ * Sprint 47 Commit 2 (Stage 47-1): SSE protocol 擴展
+ * - 新增 data: { reasoning: '...' } events (AI 思考過程)
+ * - streamChatMessages 加 onReasoningDelta callback
  */
 
 import { NextRequest } from 'next/server';
@@ -87,6 +91,12 @@ export async function POST(req: NextRequest) {
           onDelta: (chunk) => {
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`),
+            );
+          },
+          // Sprint 47 Commit 2 (Stage 47-1): reasoning stream 轉成 SSE event
+          onReasoningDelta: (chunk) => {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ reasoning: chunk })}\n\n`),
             );
           },
           onComplete: async (text) => {

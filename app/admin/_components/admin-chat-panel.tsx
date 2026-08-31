@@ -18,6 +18,8 @@ import {
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation';
 import { Message, MessageContent } from '@/components/ai-elements/message';
+import { ReasoningSection } from '@/components/ai-elements/reasoning-section';
+import { SourcesList } from '@/components/ai-elements/sources-list';
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -103,6 +105,9 @@ export function AdminChatPanel({ userId, sessionId, session, onSessionCreated }:
                 from={msg.role}
                 data-testid={msg.role === 'user' ? 'message-user' : 'message-assistant'}
               >
+                {msg.role === 'assistant' && (
+                  <ReasoningSection reasoning={msg.reasoning} />
+                )}
                 <MessageContent>
                   {msg.role === 'assistant' ? (
                     <MarkdownRender content={msg.content} />
@@ -110,6 +115,7 @@ export function AdminChatPanel({ userId, sessionId, session, onSessionCreated }:
                     <div className="whitespace-pre-wrap">{msg.content}</div>
                   )}
                 </MessageContent>
+                <SourcesList attachments={msg.attachments} />
               </Message>
             ))
           )}

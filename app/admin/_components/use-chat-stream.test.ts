@@ -22,7 +22,7 @@ import { renderHook, act } from '@testing-library/react';
 import { clearAllStreams } from '@/lib/ai/stream-controller';
 import { useChatStream } from './use-chat-stream';
 
-function buildSseResponse(events: Array<{ content?: string; error?: string } | 'DONE'>) {
+function buildSseResponse(events: Array<{ content?: string; reasoning?: string; error?: string } | 'DONE'>) {
   const lines = events
     .map((e) => {
       if (e === 'DONE') return 'data: [DONE]';
@@ -170,5 +170,93 @@ describe('useChatStream — S45-B', () => {
     expect(body.messages[0].content).toContain('📎 report.pdf');
     expect(body.messages[0].content).toContain('📎 data.csv');
     expect(body.messages[0].content).toContain('check this');
+  });
+});
+
+/**
+ * Sprint 47 Commit 2 (Stage 47-1) — useChatStream reasoning SSE 整合測試
+ *
+ * 對應 PRD: docs/prd/11-chat-v2-completions.md §2.2 (FR-2.3, FR-2.4)
+ *
+ * 驗證:
+ * - SSE parser 同時處理 content + reasoning 雙 stream
+ * - reasoning 累積在 last message 的 reasoning 欄位（不跟 content 混）
+ * - 不影響現有 content stream 邏輯
+ */
+describe('useChatStream — Sprint 47-1 reasoning SSE', () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+    clearAllStreams();
+  });
+
+  it('SSE parser 同時累積 reasoning + content 在 message 上', async () => {
+    mockFetch.mockResolvedValueOnce(
+      buildSseResponse([
+        { reasoning: '讓我先分析' },
+        { reasoning: '這個問題...' },
+        { content: '我回應：' },
+        { reasoning: '再想想' },
+        { content: '你好' },
+        'DONE',
+      ]),
+    );
+
+    const { result } = renderHook(() =>
+      useChatStream({ sessionId: 's-r1', userId: 'u-r1' }),
+    );
+
+    await act(async () => {
+      await result.current.send('test');
+    });
+
+    const assistantMsg = result.current.messages.find((m) => m.role === 'assistant');
+    expect(assistantMsg).toBeDefined();
+    // content 為 '我回應：你好'
+    expect(assistantMsg!.content).toBe('我回應：你好');
+    // reasoning 為 '讓我先分析這個問題...再想想'
+    expect(assistantMsg!.reasoning).toBe('讓我先分析這個問題...再想想');
+  });
+
+  it('reasoning 為空時 message 不應有 reasoning 欄位（或為空字串）', async () => {
+    mockFetch.mockResolvedValueOnce(
+      buildSseResponse([{ content: 'only content' }, 'DONE']),
+    );
+
+    const { result } = renderHook(() =>
+      useChatStream({ sessionId: 's-r2', userId: 'u-r2' }),
+    );
+
+    await act(async () => {
+      await result.current.send('test');
+    });
+
+    const assistantMsg = result.current.messages.find((m) => m.role === 'assistant');
+    expect(assistantMsg).toBeDefined();
+    expect(assistantMsg!.content).toBe('only content');
+    expect(assistantMsg!.reasoning ?? '').toBe('');
+  });
+
+  it('content 與 reasoning 順序無關（可交錯）', async () => {
+    mockFetch.mockResolvedValueOnce(
+      buildSseResponse([
+        { reasoning: 'r1' },
+        { content: 'c1' },
+        { reasoning: 'r2' },
+        { content: 'c2' },
+        'DONE',
+      ]),
+    );
+
+    const { result } = renderHook(() =>
+      useChatStream({ sessionId: 's-r3', userId: 'u-r3' }),
+    );
+
+    await act(async () => {
+      await result.current.send('test');
+    });
+
+    const assistantMsg = result.current.messages.find((m) => m.role === 'assistant');
+    expect(assistantMsg!.content).toBe('c1c2');
+    expect(assistantMsg!.reasoning).toBe('r1r2');
   });
 });

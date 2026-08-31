@@ -22,6 +22,7 @@
  *   因為 pi-agent-sdk 自己管 session.messages)
  *
  * Sprint 46 Commit 5: 加入 attachments 支援 (讀文字附件附加到 prompt)
+ * Sprint 47 Commit 2 (Stage 47-1): 加入 thinking_delta 處理 (ReasoningSection)
  */
 
 import {
@@ -141,8 +142,9 @@ export async function streamChatMessages(params: {
   attachments?: AttachmentRef[];
   systemPrompt?: string;
   onDelta: (chunk: string) => void;
+  onReasoningDelta?: (chunk: string) => void;
   onComplete: (fullText: string) => void | Promise<void>;
-}): Promise<{ fullText: string; aborted: boolean }> {
+}): Promise<{ fullText: string; reasoning: string; aborted: boolean }> {
   const { modelRuntime, modelId } = await createChatModelRuntime();
   const session = await createChatSession({
     modelRuntime,
@@ -151,6 +153,7 @@ export async function streamChatMessages(params: {
   });
 
   let fullText = '';
+  let reasoningContent = '';
   let aborted = false;
   const unsub = session.subscribe((event) => {
     if (event.type === 'message_update') {
@@ -159,6 +162,11 @@ export async function streamChatMessages(params: {
         const delta = sub.delta;
         fullText += delta;
         params.onDelta(delta);
+      } else if (sub.type === 'thinking_delta') {
+        // Sprint 47 Commit 2 (Stage 47-1): thinking_delta → onReasoningDelta
+        const delta = sub.delta;
+        reasoningContent += delta;
+        params.onReasoningDelta?.(delta);
       }
     }
   });
@@ -199,5 +207,5 @@ export async function streamChatMessages(params: {
     session.dispose();
   }
 
-  return { fullText, aborted };
+  return { fullText, reasoning: reasoningContent, aborted };
 }

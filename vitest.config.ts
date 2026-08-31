@@ -9,6 +9,7 @@ export default defineConfig({
     watch: false, // Completely disables watch mode by default
     environment: 'jsdom',
     globals: true,
+    setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', '.next', 'dist', 'tests/e2e/**'],
     coverage: {

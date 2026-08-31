@@ -117,6 +117,7 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: { sessionI
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let accumulated = '';
+        let accumulatedReasoning = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -126,12 +127,28 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: { sessionI
             const payload = line.slice(6).trim();
             if (payload === '[DONE]') break;
             try {
-              const parsed = JSON.parse(payload) as { content?: string; error?: string };
+              const parsed = JSON.parse(payload) as {
+                content?: string;
+                reasoning?: string;
+                error?: string;
+              };
               if (parsed.content) {
                 accumulated += parsed.content;
+              }
+              if (parsed.reasoning) {
+                accumulatedReasoning += parsed.reasoning;
+              }
+              // Sprint 47 Commit 2 (Stage 47-1): 同時更新 content + reasoning
+              if (parsed.content || parsed.reasoning) {
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === assistantId ? { ...m, content: accumulated } : m,
+                    m.id === assistantId
+                      ? {
+                          ...m,
+                          content: accumulated,
+                          reasoning: accumulatedReasoning || undefined,
+                        }
+                      : m,
                   ),
                 );
               }

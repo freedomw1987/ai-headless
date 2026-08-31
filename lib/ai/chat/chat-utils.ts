@@ -33,6 +33,16 @@ export type ChatMessage = {
   id: string;
   role: ChatMessageRole;
   content: string;
+  /**
+   * Sprint 47 Commit 2 (Stage 47-1): AI 思考過程 / reasoning
+   * 從 pi-agent-sdk thinking_delta events 累積，不持久化到 DB
+   */
+  reasoning?: string;
+  /**
+   * Sprint 47 Commit 3 (Stage 47-3): 真實前端上傳 attachment 引用
+   * 用於 SourcesList 降階方案（顯示本次對話附件）
+   */
+  attachments?: Array<{ id: string; filename: string; size?: number }>;
   metadata?: ChatMessageMetadata;
   createdAt: string;
 };
