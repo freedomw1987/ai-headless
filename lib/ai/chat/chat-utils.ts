@@ -20,6 +20,20 @@ import type { JsonSpec } from '@/lib/specs/json-spec.types';
 
 export type ChatMessageRole = 'user' | 'assistant' | 'system';
 
+/**
+ * Sprint 48 Commit 2 (Stage 48-2): 自訂 ChatStatus 型別 (FR-10.1)
+ *
+ * 取代從 'ai' SDK import ChatStatus, 切斷全專案對 'ai' SDK 型別的依賴
+ * (Sprint 45 起不依賴 AI SDK UIMessage, 但 ChatStatus 仍從 'ai' import)
+ *
+ * 4 個值對齊 'ai' SDK ChatStatus 語意:
+ * - ready: 空閒, 可發送新訊息
+ * - submitted: 已送出, 等待 AI 開始回應
+ * - streaming: AI 正在 streaming 回應
+ * - error: 發生錯誤
+ */
+export type ChatStatus = 'ready' | 'submitted' | 'streaming' | 'error';
+
 export type ChatMessageMetadata = {
   jsonSpec?: JsonSpec;
   pipelineProgress?: {

@@ -18,8 +18,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChatMessage } from '@/lib/ai/chat/chat-utils';
-import type { ChatStatus } from 'ai';
+import type { ChatMessage, ChatStatus } from '@/lib/ai/chat/chat-utils';
 import {
   abortStream,
   createStreamController,
