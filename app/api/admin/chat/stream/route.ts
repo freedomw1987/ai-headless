@@ -24,6 +24,7 @@ import { NextRequest } from 'next/server';
 import { requireUser, isAdmin } from '@/lib/auth/auth';
 import { streamChatMessages } from '@/lib/ai/agent-sdk/agent-sdk';
 import { db } from '@/lib/db';
+import { requireSessionOwnership, SessionOwnershipError } from '@/lib/auth/session-ownership';
 
 interface RequestBody {
   messages: { role: 'user' | 'assistant' | 'system'; content: string }[];
@@ -54,6 +55,22 @@ export async function POST(req: NextRequest) {
 
   const { messages, sessionId, attachments: attachmentIds, images } =
     (await req.json()) as RequestBody;
+
+  // Sprint 47 Commit 7 (Stage 47-6): 驗證 session 歸屬 (FR-7.2)
+  // 防止 user A 透過 body 傳 user B 的 sessionId 取得附件
+  if (sessionId) {
+    try {
+      await requireSessionOwnership(sessionId, user.id);
+    } catch (err) {
+      if (err instanceof SessionOwnershipError) {
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: err.status,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw err;
+    }
+  }
 
   // Sprint 46 Commit 5: 從 DB 讀 attachment 詳情 (storagePath, filename, mime)
   const attachments =

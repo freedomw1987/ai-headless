@@ -100,3 +100,60 @@ describe('S47-2 — /api/admin/chat/stream Vision images', () => {
     expect(source, '不應再 base64+prompt 自組').not.toMatch(/base64.*data:.*image|prompt.*images\.join/i);
   });
 });
+
+/**
+ * Sprint 47 Commit 7 (Stage 47-6) — Session Ownership 守護測試 (FR-7.2, FR-7.3)
+ *
+ * 驗證 stream route 接收 sessionId 後會 call requireSessionOwnership
+ * 防止 user A 透過 body 傳 user B 的 sessionId 取得附件
+ *
+ * 安全背景: Sprint 46 reflection P2 風險揭露
+ */
+describe('S47-6 — /api/admin/chat/stream Session Ownership', () => {
+  const source = readFileSync('app/api/admin/chat/stream/route.ts', 'utf-8');
+
+  it('route 應 import requireSessionOwnership', () => {
+    expect(source, '應 import requireSessionOwnership').toMatch(/requireSessionOwnership/);
+  });
+
+  it('route 應 import SessionOwnershipError', () => {
+    expect(source, '應 import SessionOwnershipError').toMatch(/SessionOwnershipError/);
+  });
+
+  it('route 應在 sessionId 存在時呼叫 requireSessionOwnership', () => {
+    // 驗證程式碼邏輯: if (sessionId) { await requireSessionOwnership(...) }
+    expect(
+      source,
+      '應有 sessionId 存在時呼叫 ownership check',
+    ).toMatch(/if\s*\(\s*sessionId\s*\)\s*\{[\s\S]*?requireSessionOwnership/);
+  });
+
+  it('route 應捕獲 SessionOwnershipError 並回傳 status', () => {
+    // 驗證: catch (err) { if (err instanceof SessionOwnershipError) { return status: err.status } }
+    expect(
+      source,
+      '應捕獲 SessionOwnershipError 並回對應 status',
+    ).toMatch(/instanceof\s+SessionOwnershipError[\s\S]*?err\.status/);
+  });
+
+  it('session-ownership helper 檔案應存在', () => {
+    expect(
+      existsSync('lib/auth/session-ownership.ts'),
+      'lib/auth/session-ownership.ts 應存在',
+    ).toBe(true);
+  });
+
+  it('session-ownership helper 應 export SessionOwnershipError class', () => {
+    const helperSource = readFileSync('lib/auth/session-ownership.ts', 'utf-8');
+    expect(helperSource, '應 export class SessionOwnershipError').toMatch(
+      /export\s+class\s+SessionOwnershipError/,
+    );
+  });
+
+  it('session-ownership helper 應 export requireSessionOwnership function', () => {
+    const helperSource = readFileSync('lib/auth/session-ownership.ts', 'utf-8');
+    expect(helperSource, '應 export function requireSessionOwnership').toMatch(
+      /export\s+async\s+function\s+requireSessionOwnership/,
+    );
+  });
+});
