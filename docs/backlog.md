@@ -26,10 +26,12 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 47 Plan Gate ✅ + Design Gate ✅（PRD 14 章節完成 = 17.3 SP / 40 FR / 8 commits）** |
+| **當前 Sprint** | **Sprint 47 Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅ + Submit Gate ✅（14 SP / 8 commits 100% 完成，1795 → 1881 tests）** |
 | **Sprint 46 總計** | Commit 1 (3) + Commit 2 (5) + Commit 3 SDK (3) + Commit 4 Markdown (4) + Commit 5 Attachment Reader (3) + Commit 6 Cleanup (1) + Commit 7 E2E (3) = 22 SP ✅ + Bug Fix 4 個 (2.5 SP extra) = 22.5 SP delivered |
-| **Sprint 46 Reflection** | ✅ [docs/reflection/sprint-46-reflection.md](./reflection/sprint-46-reflection.md)：6 項發現 (3 P1 + 3 P2)；Sprint 47 規劃建議 18 SP |
-| **下個 Sprint 計劃** | Sprint 47：US-S46-SourcesReasoning (3) + US-S47-Vision (3) + US-S47-FrontendUpload (4) + US-S47-OfficeParser (5) + US-S47-CleanupCron (2) + TD-S47-SessionOwnership (1) = 18 SP |
+| **Sprint 46 Reflection** | ✅ [docs/reflection/sprint-46-reflection.md](./reflection/sprint-46-reflection.md)：6 項發現 (3 P1 + 3 P2)；Sprint 47 全數回應 5/6 |
+| **Sprint 47 總計** | Commit 1 (47-0 Spike 2) + Commit 2 (47-1 2) + Commit 3 (47-2 2) + Commit 4 (47-3 2) + Commit 5 (47-4 2) + Commit 6 (47-5 2) + Commit 7 (47-6 1) + Commit 8 (47-7 0.5) = 13.5 SP ✅ |
+| **Sprint 47 Reflection** | ✅ [docs/reflection/sprint-47-reflection.md](./reflection/sprint-47-reflection.md)：5 項發現 (2 P1 + 3 P2)；Sprint 46 揭露 5/6 回應 |
+| **下個 Sprint 計劃** | Sprint 48：TD-S48-LintCleanup (0.5) + TD-S47-ChatStatus (0.3) + TD-S48-UploadOwnershipRefactor (0.5) + US-S48-OfficeParserRest (3, 條件) + CRUD List 增強 (5, 既有) |
 | **Sprint 46 範圍** | 7 個 Stage 46-A 到 46-G，完整決策與風險見 [sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md) |
 | **Sprint 46 累計測試** | 1795 passed（既有 1629 baseline + Sprint 46 新增 166：Commit 1 守護 26 + Commit 2 守護 28 + mime-validator 57 + Bug Fix 20 + Commit 4 守護 10 + Commit 5 守護 7 + Commit 6 單元 5 + Commit 6 守護 6 + 其他 7）+ Playwright E2E 6 passed（Commit 7）|
 | **Sprint 44 狀態** | ✅ **100% 收尾（17/17 SP）**（Reflection 清理 4 SP + Admin AI Chat FAB 13 SP：FAB + 拖動 snap + 兩欄 Drawer + sessions CRUD + SSE streaming + 7 E2E）|
@@ -59,7 +61,7 @@
 | **Sprint 44 反省報告** | [docs/reflection/module-sprint44-reflection.md](reflection/module-sprint44-reflection.md)（Reflection 清理 4 SP + Admin AI Chat FAB 13 SP：FAB + 拖動 snap + 兩欄 Drawer + sessions CRUD + 7 E2E）|
 | **Sprint 45 反省報告** | [docs/reflection/module-sprint45-reflection.md](reflection/module-sprint45-reflection.md)（AI SDK Elements 混合方案 14 SP：4 元件安裝 + AdminChatPanel 重構 + 附件 UI + 程式碼高亮 + 7 E2E）|
 | **Sprint 46 規劃** | ✅ Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅（22.5 SP 100% 完成） — 見 [sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md) + [reflection](reflection/sprint-46-reflection.md) |
-| **Sprint 47 規劃** | ✅ Plan Gate ✅ + Design Gate ✅（[docs/sprint47-plan-gate.md](sprint47-plan-gate.md) + [PRD 11-chat-v2-completions.md](prd/11-chat-v2-completions.md)，17.3 SP / 40 FR / 8 commits）：Office Parser Spike 0.5 SP + Sources/Reasoning 2 SP + Vision 2 SP + Frontend Upload 4 SP + Office Parser 5/2/0 SP (條件) + Cleanup Cron 2 SP + Session Ownership 1 SP + Markdown XSS 0.5 SP ｜ 8 風險已列、Critical: R5/R1/R2、High: R3/R7/R8、Medium: R4/R6 ｜ 下一個 P0: Commit 1 (Office Parser Spike, 0.5 SP) |
+| **Sprint 47 規劃** | ✅ Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅ + Submit Gate ✅（[docs/sprint47-plan-gate.md](sprint47-plan-gate.md) + [PRD 11-chat-v2-completions.md](prd/11-chat-v2-completions.md) + [Reflection](reflection/sprint-47-reflection.md)，**13.5 SP / 8 commits 100%**）：Commit 1 (47-0 Office Parser Spike 2 SP) + Commit 2 (47-1 Sources/Reasoning 2 SP) + Commit 3 (47-2 Vision 2 SP) + Commit 4 (47-3 Frontend Upload 2 SP) + Commit 5 (47-4 PDF Parser 2 SP) + Commit 6 (47-5 Cleanup Cron 2 SP) + Commit 7 (47-6 Session Ownership 1 SP) + Commit 8 (47-7 XSS 守護 0.5 SP) ｜ 测试基線 1795 → **1881** (+86 tests, 0 regression) |
 
 ### Sprint 21 規劃（US-102-P2 動態 RBAC，預估 7 SP）
 
@@ -672,11 +674,15 @@
 | **TD-816** | Tech Debt | JWT name/image cache miss vs hit 路徑測試 | 補 unit test：cache miss 查 DB、cache hit 不查；防止 R1 再犯 | 0.5 | SP30 | M2 | ⚠️ Partial（source-code guard 已有；Sprint 42+ 可加 behavior test）|
 | **TD-817** | Tech Debt | `lib/runtime/batch-delete.ts` 檔案健檢 | 被 `route.ts` 引用但不在 working tree 改動清單。確認檔案存在、有 unit test、respects permission checks、寫 TransitionLog | 0.5 | SP30 | M4 | ✅ Done（Sprint 41 source-code guard + RBAC 測試覆蓋）|
 | **TD-818** | Tech Debt | Lockfile 雙軌整理 | `bun.lock` + `pnpm-lock.yaml` 都改動，CI 一邊裝一邊不裝。修正：挑一個（推薦 pnpm，CI 已用 `--frozen-lockfile`）並 `.gitignore` 另一個 | 0.3 | SP30 | M0 | ✅ Done（Sprint 42 `.gitignore` bun.lock + git rm + source-code guard）|
-| **US-S46-SourcesReasoning** | User Story | Sprint 46 補做 SourcesList + ReasoningSection | PRD §7 規劃「自製 SourcesList + ReasoningSection 元件，從 AI 回應 metadata 顯示」；Sprint 46 只做了 Markdown + 附件 2/3 主題 | 3 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
-| **US-S47-Vision** | User Story | 圖片 vision 整合 (pi-agent-sdk multi-modal) | `attachment-reader.ts` 有 `kind: 'image'` 但 `agent-sdk.ts` 只 call `readAttachmentText`；圖片 vision 從未送進 AI context。用戶上傳 PNG/JPG 看不到 AI 回應 | 3 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
-| **US-S47-FrontendUpload** | User Story | 前端真實上傳整合 + XHR abort + 進度條 | Backend `/api/admin/chat/upload` 已實作，但 `useChatStream.ts` 仍用 Sprint 45「📎 filename」字串拼進 user content。AI 看不到任何附件內容 | 4 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
-| **TD-S47-SessionOwnership** | Tech Debt | Stream route session ownership check | `app/api/admin/chat/stream/route.ts` 從 body 拿 sessionId 沒驗證歸屬；理論上 user A 可送別人的 sessionId + attachment ID 讀到別人的附件 | 1 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
-| **TD-S47-MarkdownXSS** | Tech Debt | Markdown 輸出 XSS E2E 守護 | Sprint 46 守護測試顯式避免 `rehype-raw` 但沒對 Markdown 輸出做端到端 XSS 測試；防 Sprint 47+ 加 `rehype-raw` 時引入 XSS | 0.5 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
+| **US-S46-SourcesReasoning** | User Story | Sprint 46 補做 SourcesList + ReasoningSection | PRD §7 規劃「自製 SourcesList + ReasoningSection 元件，從 AI 回應 metadata 顯示」；Sprint 46 只做了 Markdown + 附件 2/3 主題 | 3 | SP47 | M5 | ✅ Done（Sprint 47-1 降階方案：Sources 改附件引用折疊區）|
+| **US-S47-Vision** | User Story | 圖片 vision 整合 (pi-agent-sdk multi-modal) | `attachment-reader.ts` 有 `kind: 'image'` 但 `agent-sdk.ts` 只 call `readAttachmentText`；圖片 vision 從未送進 AI context。用戶上傳 PNG/JPG 看不到 AI 回應 | 3 | SP47 | M5 | ✅ Done（Sprint 47-2 用 SDK PromptOptions.images 原生）|
+| **US-S47-FrontendUpload** | User Story | 前端真實上傳整合 + XHR abort + 進度條 | Backend `/api/admin/chat/upload` 已實作，但 `useChatStream.ts` 仍用 Sprint 45「📎 filename」字串拼進 user content。AI 看不到任何附件內容 | 4 | SP47 | M5 | ✅ Done（Sprint 47-3 multipart + UploadProgressBar）|
+| **TD-S47-SessionOwnership** | Tech Debt | Stream route session ownership check | `app/api/admin/chat/stream/route.ts` 從 body 拿 sessionId 沒驗證歸屬；理論上 user A 可送別人的 sessionId + attachment ID 讀到別人的附件 | 1 | SP47 | M5 | ✅ Done（Sprint 47-6 requireSessionOwnership helper + source-code guard）|
+| **TD-S47-MarkdownXSS** | Tech Debt | Markdown 輸出 XSS E2E 守護 | Sprint 46 守護測試顯式避免 `rehype-raw` 但沒對 Markdown 輸出做端到端 XSS 測試；防 Sprint 47+ 加 `rehype-raw` 時引入 XSS | 0.5 | SP47 | M5 | ✅ Done（Sprint 47-7 7 個 XSS 守護測試全綠）|
+| **US-S48-SourcesList** | User Story | Sources 完整列表（PRD §2.3 FR-1.4） | Sprint 47-1 採降階「附件引用折疊區」，未實作完整 SourcesList 元件。用戶看不到 AI 引用來源列表 | 3 | SP48 | M5 | 📋 Ready（Sprint 47 reflection 揭露）|
+| **US-S48-OfficeParserRest** | User Story | DOCX/XLSX/PPTX 解析 (PRD §2.5 FR-5.2/5.3) | Sprint 47-4 只做 PDF (D-1 方案)，DOCX/XLSX/PPTX 仍 `unsupported`。PDF 動態 import 已證明可行，可延伸 | 3 | SP48 | M5 | 📋 Ready（Sprint 47 reflection 揭露，需重跑 bundle spike）|
+| **TD-S48-LintCleanup** | Tech Debt | 修 6 個 pre-existing lint 錯誤 | `react-hooks/exhaustive-deps` (admin-sidebar, settings/page) + `await-thenable` (roles/page, users/page) + `no-floating-promises` (conversation.tsx) | 0.5 | SP48 | M0 | 📋 Ready（Sprint 47 reflection 揭露）|
+| **TD-S48-UploadOwnershipRefactor** | Tech Debt | Upload route 改用 requireSessionOwnership helper | Sprint 47-6 stream route 改用 helper，但 upload route 仍用內聯 `db.chatSession.findUnique` + userId 比對。風格不一致 | 0.5 | SP48 | M5 | 📋 Ready（Sprint 47 reflection 揭露）|
 | **TD-901** | Tech Debt | 其他 CRUD 頁面 RWD 健檢 (todo/event) | Sprint 27 只修 blog，其他 CRUD 頁面需要同樣健檢 | 1 | SP31 | M4 | ✅ Done（Sprint 41 spec loader mtime cache + admin 4 頁 RWD 健檢）|
 | **TD-902** | Tech Debt | 批次刪除 undo 機制 | toast 內加 undo button，防止誤刪 | 2 | SP31 | M4 | 📋 Ready |
 | **TD-903** | Tech Debt | Toolbar 鍵盤快捷鍵 | Cmd+A 全選 / Delete 開批次刪除 dialog | 1 | SP31 | M4 | 📋 Ready |
