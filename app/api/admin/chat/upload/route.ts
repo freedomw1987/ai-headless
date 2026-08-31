@@ -22,6 +22,7 @@ import { join } from 'path';
 import { randomUUID } from 'crypto';
 import { requireUser, isAdmin } from '@/lib/auth/auth';
 import { db } from '@/lib/db';
+import { requireSessionOwnership, SessionOwnershipError } from '@/lib/auth/session-ownership';
 import {
   validateMimeAndExtension,
   validateFileCount,
@@ -60,22 +61,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. 驗證 session 存在且歸屬此 admin user
-  const session = await db.chatSession.findUnique({
-    where: { id: sessionId },
-    select: { id: true, userId: true },
-  });
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Session not found' },
-      { status: 404 },
-    );
-  }
-  if (session.userId !== user.id) {
-    return NextResponse.json(
-      { error: 'Session does not belong to user' },
-      { status: 403 },
-    );
+  // 4. 驗證 session 存在且歸屬此 admin user (Sprint 48-3 重構)
+  // 使用 requireSessionOwnership helper, 與 stream route 風格一致
+  try {
+    await requireSessionOwnership(sessionId, user.id);
+  } catch (err) {
+    if (err instanceof SessionOwnershipError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    throw err;
   }
 
   // 5. 讀取 files[]

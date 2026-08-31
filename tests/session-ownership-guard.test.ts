@@ -1,21 +1,22 @@
 /**
  * Sprint 47 Commit 7 (Stage 47-6) — Session Ownership Source Code Guard
+ * Sprint 48 Commit 3 (Stage 48-3): 統一風格 - upload route 也改用 helper
  *
- * 對應 PRD: docs/prd/11-chat-v2-completions.md §2.7 (FR-7.4)
+ * 對應 PRD: docs/prd/11-chat-v2-completions.md §2.7 (FR-7.4) + §2.10 (FR-11)
  *
  * 目的:
  * - 確保所有使用 body sessionId 的 admin chat route
- *   都有 session ownership 檢查機制（不管是用 helper 或內聯實作）
+ *   都有 session ownership 檢查機制（不管是 helper 或內聯實作）
+ *
+ * Sprint 48-3 重構後風格統一:
+ * - stream route: requireSessionOwnership helper
+ * - upload route: requireSessionOwnership helper (原內聯，已重構)
  *
  * 規則:
  * - 讀取 app/api/admin/chat 目錄下的 route.ts
  * - 若檔案有從 body 拿取 session id, 必須有下列之一:
- *   1. requireSessionOwnership 呼叫 (helper)
- *   2. 內聯 db.chatSession.findUnique + userId 比對 檢查
- *
- * 注意:
- * - Sprint 47-6 stream route: 用 requireSessionOwnership (helper)
- * - Sprint 46 upload route: 內聯 db.chatSession.findUnique + 比對 (通過)
+ *   1. requireSessionOwnership 呼叫 (helper) ← Sprint 48-3 後為唯一風格
+ *   2. 內聯 db.chatSession.findUnique + userId 比對 (後備, 不推薦)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -75,9 +76,9 @@ describe('S47-6 — Session Ownership Source Code Guard (FR-7.4)', () => {
     expect(source, '應使用 helper').toMatch(/requireSessionOwnership\s*\(/);
   });
 
-  it('upload/route.ts 應有 session ownership 內聯檢查', () => {
+  // Sprint 48-3 (Stage 48-3): upload route 風格統一, 不再是內聯
+  it('upload/route.ts 應使用 requireSessionOwnership helper (Sprint 48-3 重構)', () => {
     const source = readFileSync('app/api/admin/chat/upload/route.ts', 'utf-8');
-    expect(source, '應有 chatSession.findUnique').toMatch(/chatSession\.findUnique/);
-    expect(source, '應比對 session.userId').toMatch(/userId/);
+    expect(source, '應使用 helper').toMatch(/requireSessionOwnership\s*\(/);
   });
 });
