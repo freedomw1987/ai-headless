@@ -26,7 +26,7 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 46 Execution Gate：Commit 1-7 全完成 ✅ + Bug Fix 4 個 = 22.5/22 SP (102%)** |
+| **當前 Sprint** | **Sprint 47 Plan Gate ✅ + Design Gate ✅（PRD 14 章節完成 = 17.3 SP / 40 FR / 8 commits）** |
 | **Sprint 46 總計** | Commit 1 (3) + Commit 2 (5) + Commit 3 SDK (3) + Commit 4 Markdown (4) + Commit 5 Attachment Reader (3) + Commit 6 Cleanup (1) + Commit 7 E2E (3) = 22 SP ✅ + Bug Fix 4 個 (2.5 SP extra) = 22.5 SP delivered |
 | **Sprint 46 Reflection** | ✅ [docs/reflection/sprint-46-reflection.md](./reflection/sprint-46-reflection.md)：6 項發現 (3 P1 + 3 P2)；Sprint 47 規劃建議 18 SP |
 | **下個 Sprint 計劃** | Sprint 47：US-S46-SourcesReasoning (3) + US-S47-Vision (3) + US-S47-FrontendUpload (4) + US-S47-OfficeParser (5) + US-S47-CleanupCron (2) + TD-S47-SessionOwnership (1) = 18 SP |
@@ -46,7 +46,7 @@
 | **Sprint 43 狀態** | ✅ **100% 收尾（13/13 SP，原估 15 SP）**（AI Config v2.0: Custom LLM Endpoint + 4-type Provider + AES-256-GCM 加密 + 統一錯誤 + log redaction + /admin/settings/ai-config UI）|
 | **測試基線** | **1587 integration + 127/127 E2E**（Sprint 44 +81 守護測試 + 7 E2E）|
 | **測試基線** | **1506 integration + 120/120 E2E**（Sprint 43 +56 守護測試）|
-| **下一個 P0** | Sprint 46 Execution Gate：開 Commit 1（Prisma Schema + Attachment model，2 SP）→ 跑 Gate 1（TDD 紅→綠）→ Gate 2（lint+typecheck）→ Gate 3（regression）→ Gate 4（reviewer）|
+| **下一個 P0** | Sprint 47 Execution Gate：開 Commit 1（Office Parser Bundle Spike，0.5 SP）→ 跑 Gate 1（TDD 紅→綠）→ Gate 2（lint+typecheck）→ Gate 3（regression）→ Gate 4（reviewer）|
 | **路線圖關鍵** | ✅ Sprint 21-32 → ✅ Sprint 33-40（View Feature + bug fixes）→ ✅ Sprint 41（4 P1 + RWD audit + 重構）→ 📋 Sprint 42+（剩餘風險 + 新方向）|
 | **Sprint 27 反省報告** | [docs/reflection/module-crud-list-enhancements-reflection.md](reflection/module-crud-list-enhancements-reflection.md) |
 | **Sprint 28-29 反省報告** | [docs/reflection/module-sprint28-29-reflection.md](reflection/module-sprint28-29-reflection.md) |
@@ -58,7 +58,8 @@
 | **Sprint 43 反省報告** | [docs/reflection/module-sprint43-reflection.md](reflection/module-sprint43-reflection.md)（AI Config v2.0 + Custom URL + 揭露 5 個後續事項）|
 | **Sprint 44 反省報告** | [docs/reflection/module-sprint44-reflection.md](reflection/module-sprint44-reflection.md)（Reflection 清理 4 SP + Admin AI Chat FAB 13 SP：FAB + 拖動 snap + 兩欄 Drawer + sessions CRUD + 7 E2E）|
 | **Sprint 45 反省報告** | [docs/reflection/module-sprint45-reflection.md](reflection/module-sprint45-reflection.md)（AI SDK Elements 混合方案 14 SP：4 元件安裝 + AdminChatPanel 重構 + 附件 UI + 程式碼高亮 + 7 E2E）|
-| **Sprint 46 規劃** | 📋 Plan Gate ✅ + Design Gate ✅（見 [docs/sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md)）：附件上傳 13 SP + 進階 Markdown 3 SP + Sources/Reasoning 3 SP + E2E 3 SP + DB schema 2 SP = 22 SP 總計 ｜ 7 commits（schema → upload route → parser → frontend upload → markdown → sources/reasoning → E2E）｜ 14 風險已列、Critical: R1/R2/R8/R12/R13、High: R3/R4/R6/R9/R11 |
+| **Sprint 46 規劃** | ✅ Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅（22.5 SP 100% 完成） — 見 [sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md) + [reflection](reflection/sprint-46-reflection.md) |
+| **Sprint 47 規劃** | ✅ Plan Gate ✅ + Design Gate ✅（[docs/sprint47-plan-gate.md](sprint47-plan-gate.md) + [PRD 11-chat-v2-completions.md](prd/11-chat-v2-completions.md)，17.3 SP / 40 FR / 8 commits）：Office Parser Spike 0.5 SP + Sources/Reasoning 2 SP + Vision 2 SP + Frontend Upload 4 SP + Office Parser 5/2/0 SP (條件) + Cleanup Cron 2 SP + Session Ownership 1 SP + Markdown XSS 0.5 SP ｜ 8 風險已列、Critical: R5/R1/R2、High: R3/R7/R8、Medium: R4/R6 ｜ 下一個 P0: Commit 1 (Office Parser Spike, 0.5 SP) |
 
 ### Sprint 21 規劃（US-102-P2 動態 RBAC，預估 7 SP）
 
