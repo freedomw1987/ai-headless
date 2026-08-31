@@ -14,6 +14,10 @@
  * Sprint 47 Commit 2 (Stage 47-1): SSE protocol 擴展
  * - 新增 data: { reasoning: '...' } events (AI 思考過程)
  * - streamChatMessages 加 onReasoningDelta callback
+ *
+ * Sprint 47 Commit 3 (Stage 47-2): Vision 多模態
+ * - 接受 images 參數 (base64 + mimeType)，轉交 streamChatMessages 走 SDK 原生 PromptOptions.images
+ * - 對應 PRD §2.3 (FR-3.1 ~ FR-3.5)
  */
 
 import { NextRequest } from 'next/server';
@@ -25,6 +29,12 @@ interface RequestBody {
   messages: { role: 'user' | 'assistant' | 'system'; content: string }[];
   sessionId?: string;
   attachments?: { id: string }[];
+  /**
+   * Sprint 47 Commit 3 (Stage 47-2): Vision 圖片
+   * base64 data + mimeType (image/png, image/jpeg, image/webp, image/gif)
+   * 最多 10 張 (FR-3.3)
+   */
+  images?: Array<{ type: 'image'; data: string; mimeType: string }>;
 }
 
 export async function POST(req: NextRequest) {
@@ -42,7 +52,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { messages, sessionId, attachments: attachmentIds } =
+  const { messages, sessionId, attachments: attachmentIds, images } =
     (await req.json()) as RequestBody;
 
   // Sprint 46 Commit 5: 從 DB 讀 attachment 詳情 (storagePath, filename, mime)
@@ -87,6 +97,8 @@ export async function POST(req: NextRequest) {
             mime: a.mimeType,
             storagePath: a.storagePath,
           })),
+          // Sprint 47 Commit 3 (Stage 47-2): Vision 走 SDK 原生
+          images,
           systemPrompt: 'You are a helpful AI assistant.',
           onDelta: (chunk) => {
             controller.enqueue(

@@ -140,6 +140,13 @@ function inferProviderFromModel(modelId: string): string {
 export async function streamChatMessages(params: {
   messages: { role: 'user' | 'assistant' | 'system'; content: string }[];
   attachments?: AttachmentRef[];
+  /**
+   * Sprint 47 Commit 3 (Stage 47-2): Vision 圖片多模態
+   * 對應 PRD FR-3.2: 用 pi-agent-sdk 原生 PromptOptions.images
+   * 取代 Sprint 46 的 base64+prompt 自組方案
+   * 最多 10 張 (FR-3.3, 跟 attachment 上限一致)
+   */
+  images?: Array<{ type: 'image'; data: string; mimeType: string }>;
   systemPrompt?: string;
   onDelta: (chunk: string) => void;
   onReasoningDelta?: (chunk: string) => void;
@@ -193,9 +200,19 @@ export async function streamChatMessages(params: {
       promptText = `${lastUserMsg.content}${attachmentBlocks.join('')}`;
     }
 
-    await session.prompt(promptText, {
+    // Sprint 47 Commit 3 (Stage 47-2): Vision 圖片走 SDK 原生 PromptOptions.images
+    // 上限 10 張避免誤傳 (FR-3.3)
+    const promptOptions: {
+      streamingBehavior: 'followUp';
+      images?: Array<{ type: 'image'; data: string; mimeType: string }>;
+    } = {
       streamingBehavior: 'followUp',
-    });
+    };
+    if (params.images && params.images.length > 0) {
+      promptOptions.images = params.images.slice(0, 10);
+    }
+
+    await session.prompt(promptText, promptOptions);
     await session.waitForIdle();
 
     await params.onComplete(fullText);

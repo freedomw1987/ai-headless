@@ -71,3 +71,32 @@ describe('S44-F — /api/admin/chat/stream API', () => {
     expect(source, '應呼叫 admin endpoint').toMatch(/\/api\/admin\/chat\/stream/);
   });
 });
+
+/**
+ * Sprint 47 Commit 3 (Stage 47-2) — Vision 端到端守護測試
+ *
+ * 對應 PRD: docs/prd/11-chat-v2-completions.md §2.3 (FR-3.1 ~ FR-3.4)
+ *
+ * 目的 (static source code check):
+ * - route 接受 RequestBody.images 參數 (ImageContent[])
+ * - route 將 images 傳給 streamChatMessages
+ * - route 不再 base64+prompt 自組（交 SDK 原生）
+ */
+describe('S47-2 — /api/admin/chat/stream Vision images', () => {
+  const source = readFileSync('app/api/admin/chat/stream/route.ts', 'utf-8');
+
+  it('route 應接受 RequestBody.images 型別', () => {
+    expect(source, '應有 images?: ImageContent[] 欄位').toMatch(/images\?:.*ImageContent|mages\?:\s*Array<.*image/i);
+  });
+
+  it('route 應將 images 傳給 streamChatMessages', () => {
+    // 驗證 streamChatMessages({ ..., images, ... })
+    expect(source, '應傳 images 參數給 streamChatMessages').toMatch(/streamChatMessages\s*\(\s*\{[\s\S]*?images\s*,/);
+  });
+
+  it('route 不應再以 base64 文字方式拼 prompt（被 SDK 原生取代）', () => {
+    // Sprint 47-2 改用 PromptOptions.images，原 Sprint 46 的 base64 拼 prompt 邏輯
+    // 不應在 stream route 出現 (readAttachmentImage 仍在 attachment-reader 內)
+    expect(source, '不應再 base64+prompt 自組').not.toMatch(/base64.*data:.*image|prompt.*images\.join/i);
+  });
+});

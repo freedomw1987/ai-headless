@@ -254,3 +254,138 @@ describe('agent-sdk — Sprint 47-1 thinking_delta 處理', () => {
     expect(onComplete).toHaveBeenCalledWith('hi');
   });
 });
+
+/**
+ * Sprint 47 Commit 3 (Stage 47-2) — Vision 圖片多模態測試
+ *
+ * 對應 PRD: docs/prd/11-chat-v2-completions.md §2.3 (FR-3.2, FR-3.3, FR-3.4)
+ *
+ * 驗證:
+ * - images 參數傳到 session.prompt 第二參數的 images 欄位
+ * - 多張圖片都以 ImageContent[] 形式傳入
+ * - 沒圖片時不傳 images 欄位
+ * - image attachments 不拼成文字 (Sprint 47 改用 SDK 原生, 不再 base64+prompt)
+ */
+describe('agent-sdk — Sprint 47-2 Vision images', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('傳 images 時, session.prompt 應收到 images 欄位含所有圖片', async () => {
+    const fake = makeFakeSession();
+    let resolveIdle: () => void = () => {};
+    fake.session.waitForIdle = vi.fn().mockImplementation(
+      () => new Promise<void>((r) => { resolveIdle = r; }),
+    );
+    vi.mocked(createAgentSession).mockResolvedValue({ session: fake.session } as never);
+
+    const images = [
+      { type: 'image' as const, data: 'base64-png-data-1', mimeType: 'image/png' },
+      { type: 'image' as const, data: 'base64-jpeg-data-2', mimeType: 'image/jpeg' },
+    ];
+
+    const promise = streamChatMessages({
+      messages: [{ role: 'user', content: '描述這張圖' }],
+      images,
+      onDelta: vi.fn(),
+      onComplete: vi.fn(),
+    });
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    // session.prompt 應被呼叫，第二參數含 images
+    expect(fake.session.prompt).toHaveBeenCalledTimes(1);
+    const callArgs = vi.mocked(fake.session.prompt).mock.calls[0]!;
+    expect(callArgs[0]).toBe('描述這張圖'); // text
+    expect(callArgs[1]).toMatchObject({
+      images: [
+        { type: 'image', data: 'base64-png-data-1', mimeType: 'image/png' },
+        { type: 'image', data: 'base64-jpeg-data-2', mimeType: 'image/jpeg' },
+      ],
+      streamingBehavior: 'followUp',
+    });
+
+    resolveIdle();
+    await promise;
+  });
+
+  it('多張圖片最多 10 張（PRD FR-3.3 上限）', async () => {
+    const fake = makeFakeSession();
+    let resolveIdle: () => void = () => {};
+    fake.session.waitForIdle = vi.fn().mockImplementation(
+      () => new Promise<void>((r) => { resolveIdle = r; }),
+    );
+    vi.mocked(createAgentSession).mockResolvedValue({ session: fake.session } as never);
+
+    // 15 張圖 → 期望被截為 10 張
+    const images = Array.from({ length: 15 }, (_, i) => ({
+      type: 'image' as const,
+      data: `data-${i}`,
+      mimeType: 'image/png',
+    }));
+
+    const promise = streamChatMessages({
+      messages: [{ role: 'user', content: '看這些圖' }],
+      images,
+      onDelta: vi.fn(),
+      onComplete: vi.fn(),
+    });
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    const callArgs = vi.mocked(fake.session.prompt).mock.calls[0]!;
+    const passedImages = callArgs[1]?.images;
+    expect(passedImages).toHaveLength(10); // 截斷
+
+    resolveIdle();
+    await promise;
+  });
+
+  it('沒傳 images 時不應傳 images 欄位（不污染 SDK prompt）', async () => {
+    const fake = makeFakeSession();
+    let resolveIdle: () => void = () => {};
+    fake.session.waitForIdle = vi.fn().mockImplementation(
+      () => new Promise<void>((r) => { resolveIdle = r; }),
+    );
+    vi.mocked(createAgentSession).mockResolvedValue({ session: fake.session } as never);
+
+    const promise = streamChatMessages({
+      messages: [{ role: 'user', content: 'no image' }],
+      // 不傳 images
+      onDelta: vi.fn(),
+      onComplete: vi.fn(),
+    });
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    const callArgs = vi.mocked(fake.session.prompt).mock.calls[0]!;
+    expect(callArgs[1]?.images).toBeUndefined();
+
+    resolveIdle();
+    await promise;
+  });
+
+  it('images 為空陣列時不應傳 images 欄位', async () => {
+    const fake = makeFakeSession();
+    let resolveIdle: () => void = () => {};
+    fake.session.waitForIdle = vi.fn().mockImplementation(
+      () => new Promise<void>((r) => { resolveIdle = r; }),
+    );
+    vi.mocked(createAgentSession).mockResolvedValue({ session: fake.session } as never);
+
+    const promise = streamChatMessages({
+      messages: [{ role: 'user', content: 'empty' }],
+      images: [],
+      onDelta: vi.fn(),
+      onComplete: vi.fn(),
+    });
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    const callArgs = vi.mocked(fake.session.prompt).mock.calls[0]!;
+    expect(callArgs[1]?.images).toBeUndefined();
+
+    resolveIdle();
+    await promise;
+  });
+});
