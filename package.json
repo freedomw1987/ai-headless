@@ -25,7 +25,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "cleanup:once": "tsx scripts/cleanup-attachments-once.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
