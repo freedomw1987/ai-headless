@@ -111,16 +111,23 @@ Sprint 47 在 Sprint 46 已實作的真實附件上傳 + 進階 Markdown 基礎�
 | **FR-4.6** | 整合測試：選檔 → upload → AI 回應（mock fetch）| P0 | 0.5 |
 | **FR-4.7** | E2E：選檔 → upload → AI 回應含附件內容（Playwright）| P0 | 0.5 |
 
-### 2.5 FR-5：Office Parser（Stage 47-4，條件執行）
+### 2.5 FR-5：Office Parser（Stage 47-4）
+
+> **Sprint 47 決策**（spike 完成，見 [docs/spike/sprint47-office-parser.md](../spike/sprint47-office-parser.md)）：**只做 PDF（D-1 方案）**。DOCX/XLSX 延 Sprint 48+。
+>
+> **理由**：
+> 1. **80/20 法則**：PDF 佔 Office 附件 60% use case
+> 2. **Bundle 控管**：pdf-parse ~5-8 MB 還可接受；mammoth + xlsx 共 9.6 MB 額外負擔
+> 3. **Sprint 47 整體時程**：保留 12 SP 給其他 6 個主題，安全守護不能被砍
 
 | FR | 功能描述 | 優先級 | SP |
 |---|---|---|---|
-| **FR-5.1** | PDF parser：`pdf-parse` 套件，提取所有頁面文字 | P0 | 1 |
-| **FR-5.2** | DOCX parser：`mammoth` 套件（DOCX），PPTX 用 `jszip` + XML | P0 | 1.5 |
-| **FR-5.3** | XLSX parser：`xlsx` 套件，轉 CSV 文字 | P0 | 1 |
-| **FR-5.4** | `attachment-reader.ts` 接入新 parser（PDF/DOCX/XLSX/PPTX 分支）| P0 | 0.5 |
-| **FR-5.5** | 整合測試：3 種檔案各 1 個樣本解析成功 | P0 | 0.5 |
-| **FR-5.6** | bundle 影響評估文件（從 spike 結果）| P0 | 0.5 |
+| **FR-5.1** | PDF parser：`pdf-parse` v2.4.5（class API: `PDFParse({ data }).getText()`）| P0 | 1 |
+| **FR-5.2** | ~~DOCX parser（`mammoth`）~~ → **Sprint 48+** | — | 0 |
+| **FR-5.3** | ~~XLSX parser（`xlsx`）~~ → **Sprint 48+** | — | 0 |
+| **FR-5.4** | `attachment-reader.ts` 接入 PDF parser（kind: 'office' for PDF）| P0 | 0.5 |
+| **FR-5.5** | 整合測試：sample.pdf fixture 解析成功 | P0 | 0.5 |
+| **FR-5.6** | ~~bundle 影響評估~~ → 已包含在 [spike 文件](../spike/sprint47-office-parser.md) | — | 0 |
 
 ### 2.6 FR-6：Cleanup Cron（Stage 47-5）
 
@@ -157,16 +164,15 @@ Sprint 47 在 Sprint 46 已實作的真實附件上傳 + 進階 Markdown 基礎�
 | FR-2 Sources/Reasoning | 7 | 2.3 |
 | FR-3 Vision | 5 | 2 |
 | FR-4 Frontend Upload | 7 | 4 |
-| FR-5 Office Parser | 6 | 5（條件執行）/ 2（只 PDF）/ 0（延 Sprint 48）|
+| FR-5 Office Parser | 3 | 2（只 PDF, spike 決策 D-1）|
 | FR-6 Cleanup Cron | 5 | 2 |
 | FR-7 Session Ownership | 4 | 1 |
 | FR-8 Markdown XSS | 3 | 0.5 |
-| **總計** | **40 FR** | **17.3 SP**（實取 17 SP） |
+| **總計** | **37 FR** | **14 SP** |
 
-**Office Parser 降階情境**：
-- spike 通過（bundle ≤5MB）：FR-5 全做，總計 17.3 SP
-- spike bundle >5MB：D-1 方案（只做 PDF），總計 14.3 SP
-- spike bundle >10MB：D-2 方案（延 Sprint 48），總計 12.3 SP
+**Office Parser 降階情境**（已被 spike 決策解答）：
+- ✅ Spike 結果：**D-1 方案（只做 PDF, 2 SP）** — 見 [spike 文件](../spike/sprint47-office-parser.md) §5
+- 替選方案（已取消）：D-0 全做（5 SP）、D-2 延 Sprint 48（0 SP）
 
 ---
 
@@ -748,17 +754,15 @@ main();
 
 **Commit 4**：`feat: frontend real upload with XHR abort and progress bar (47-3)`
 
-#### Stage 47-4 — Office Parser（5 SP / 2 SP / 0 SP, 條件執行）
+#### Stage 47-4 — Office Parser（**2 SP, PDF only**, 條件已解答 — D-1 方案）
 
-**若 spike 通過（bundle ≤5MB）**：
+> **Spike 決策**（2026-08-31, 見 [spike 文件](../spike/sprint47-office-parser.md)）：只做 PDF，D-1 方案。
 
-**Step 1（1 SP）**：PDF parser（pdf-parse）
-**Step 2（1.5 SP）**：DOCX parser（mammoth）+ PPTX（jszip + XML）
-**Step 3（1 SP）**：XLSX parser（xlsx → CSV）
-**Step 4（0.5 SP）**：`attachment-reader.ts` 接新 parser
-**Step 5（1 SP）**：整合測試 3 種檔案解析 + E2E PDF upload
+**Step 1（1 SP）**：PDF parser（pdf-parse v2.4.5, class API）
+**Step 2（0.5 SP）**：`attachment-reader.ts` 接 PDF parser（新增 `kind: 'office'` 分支）
+**Step 3（0.5 SP）**：整合測試 sample.pdf fixture 解析 + E2E PDF upload
 
-**Commit 5**：`feat: office parser (PDF/DOCX/XLSX/PPTX) (47-4)`
+**Commit 5**：`feat: office parser (PDF only, spike D-1) (47-4)`
 
 #### Stage 47-5 — Cleanup Cron（2 SP, 2 天）
 
