@@ -26,7 +26,8 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 47 Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅ + Submit Gate ✅（14 SP / 8 commits 100% 完成，1795 → 1881 tests）** |
+| **當前 Sprint** | **Sprint 48 Plan Gate ✅（5 commits / ~4.8 SP：3 技術債清理 + 1 新功能 Office Rest）** |
+| **上個 Sprint** | Sprint 47 Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅ + Submit Gate ✅（13.5 SP / 8 commits 100% 完成，1795 → 1881 tests） |
 | **Sprint 46 總計** | Commit 1 (3) + Commit 2 (5) + Commit 3 SDK (3) + Commit 4 Markdown (4) + Commit 5 Attachment Reader (3) + Commit 6 Cleanup (1) + Commit 7 E2E (3) = 22 SP ✅ + Bug Fix 4 個 (2.5 SP extra) = 22.5 SP delivered |
 | **Sprint 46 Reflection** | ✅ [docs/reflection/sprint-46-reflection.md](./reflection/sprint-46-reflection.md)：6 項發現 (3 P1 + 3 P2)；Sprint 47 全數回應 5/6 |
 | **Sprint 47 總計** | Commit 1 (47-0 Spike 2) + Commit 2 (47-1 2) + Commit 3 (47-2 2) + Commit 4 (47-3 2) + Commit 5 (47-4 2) + Commit 6 (47-5 2) + Commit 7 (47-6 1) + Commit 8 (47-7 0.5) = 13.5 SP ✅ |
