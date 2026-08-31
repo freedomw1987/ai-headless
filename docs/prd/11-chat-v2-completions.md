@@ -170,6 +170,66 @@ Sprint 47 在 Sprint 46 已實作的真實附件上傳 + 進階 Markdown 基礎�
 | FR-8 Markdown XSS | 3 | 0.5 |
 | **總計** | **37 FR** | **14 SP** |
 
+---
+
+## 2.10 FR-9 ~ FR-13：Sprint 48 技術債清理 + Office Rest 延伸（Stage 48-1 ~ 48-5）
+
+**對應 Plan Gate**: [docs/sprint48-plan-gate.md](../sprint48-plan-gate.md)
+**對應 Sprint 47 Reflection**: [docs/reflection/sprint-47-reflection.md](../reflection/sprint-47-reflection.md) 揭露 4/5 項
+
+### FR-9：Lint Cleanup（Stage 48-1）
+
+| FR | 功能描述 | 優先級 | SP |
+|---|---|---|---|
+| **FR-9.1** | 修 `react-hooks/exhaustive-deps` (admin-sidebar.tsx, settings/page.tsx) | P2 | 0.2 |
+| **FR-9.2** | 修 `await-thenable` (roles/page.tsx, users/page.tsx) | P2 | 0.15 |
+| **FR-9.3** | 修 `no-floating-promises` (conversation.tsx) | P2 | 0.15 |
+
+### FR-10：ChatStatus 自訂型別（Stage 48-2）
+
+| FR | 功能描述 | 優先級 | SP |
+|---|---|---|---|
+| **FR-10.1** | `chat-utils.ts` 自訂 `ChatStatus = 'ready' \| 'submitted' \| 'streaming' \| 'error'` 型別 | P2 | 0.1 |
+| **FR-10.2** | `use-chat-stream.ts` 移除 `from 'ai'` import, 改 import 自 `chat-utils` | P2 | 0.1 |
+| **FR-10.3** | source-code guard: 驗證無 `'ai'` SDK import on `use-chat-stream.ts` | P2 | 0.1 |
+
+### FR-11：Upload Ownership Refactor（Stage 48-3）
+
+| FR | 功能描述 | 優先級 | SP |
+|---|---|---|---|
+| **FR-11.1** | `app/api/admin/chat/upload/route.ts` 改 call `requireSessionOwnership(sessionId, user.id)` 取代內聯查詢 | P2 | 0.3 |
+| **FR-11.2** | upload route guard test: 驗證 upload route 也 call helper | P2 | 0.2 |
+
+### FR-12：Office Rest Bundle Spike（Stage 48-4）
+
+| FR | 功能描述 | 優先級 | SP |
+|---|---|---|---|
+| **FR-12.1** | Spike 文件：評估 mammoth / xlsx / pptx 3 個依賴的 bundle 影響 | P1 | 0.2 |
+| **FR-12.2** | PPTX parser library 選擇決策（pptxgenjs vs node-pptx vs 其他）| P1 | 0.3 |
+
+### FR-13：Office Parser Rest - DOCX/XLSX/PPTX（Stage 48-5）
+
+| FR | 功能描述 | 優先級 | SP |
+|---|---|---|---|
+| **FR-13.1** | DOCX parser: `mammoth` 動態 import + try/finally + 抽出文字 | P1 | 1 |
+| **FR-13.2** | XLSX parser: `xlsx` 動態 import + try/finally + 每個 sheet 轉文字 | P1 | 1 |
+| **FR-13.3** | PPTX parser: 依 spike 決策選 library + 動態 import + 每張 slide 抽文字 | P1 | 0.5 |
+| **FR-13.4** | `attachment-reader.ts` 接入 3 個 parser (kind: 'office' 變體複用) | P1 | 0.3 |
+| **FR-13.5** | 3 個 fixture (sample.docx / sample.xlsx / sample.pptx) + 整合測試 | P1 | 0.2 |
+
+### FR 總計（含 Sprint 48）
+
+| 主題 | FR 數 | SP 總計 |
+|---|---|---|
+| FR-1 ~ FR-8 (Sprint 47) | 37 | 14 |
+| FR-9 Lint Cleanup | 3 | 0.5 |
+| FR-10 ChatStatus | 3 | 0.3 |
+| FR-11 Upload Ownership Refactor | 2 | 0.5 |
+| FR-12 Office Rest Spike | 2 | 0.5 |
+| FR-13 Office Parser Rest | 5 | 3 |
+| **Sprint 48 新增** | **15 FR** | **~4.8 SP** |
+| **總計 (Sprint 47+48)** | **52 FR** | **~18.8 SP** |
+
 **Office Parser 降階情境**（已被 spike 決策解答）：
 - ✅ Spike 結果：**D-1 方案（只做 PDF, 2 SP）** — 見 [spike 文件](../spike/sprint47-office-parser.md) §5
 - 替選方案（已取消）：D-0 全做（5 SP）、D-2 延 Sprint 48（0 SP）
