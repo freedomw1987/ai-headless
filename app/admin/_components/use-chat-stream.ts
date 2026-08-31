@@ -1,10 +1,12 @@
 /**
- * useChatStream — Admin AI Chat SSE streaming hook (S45-B)
+ * useChatStream — Admin AI Chat SSE streaming hook (S45-B + Sprint 47-3 真實上傳)
  *
  * 用途:
  * - 串接 /api/admin/chat/stream (保留 Sprint 43 createProviderFromDB)
  * - 不依賴 AI SDK UIMessageStream (避免破壞 Custom URL)
  * - 解析現有 SSE 格式: data: {content}\n\n, data: [DONE]\n\n
+ * - Sprint 47 Commit 2 (Stage 47-1): 同時解析 reasoning event
+ * - Sprint 47 Commit 4 (Stage 47-3): 支援 File[] 真實 multipart upload (FR-4.1)
  *
  * 用法:
  *   const { messages, input, setInput, send, status, error } = useChatStream({
@@ -12,6 +14,7 @@
  *     userId,
  *     onSessionUpdate,
  *   });
+ *   await send('請讀檔', [file1, file2]);
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -46,7 +49,7 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: { sessionI
   }, []);
 
   const send = useCallback(
-    async (overrideInput?: string, attachments: ReadonlyArray<{ filename: string; size?: number }> = []) => {
+    async (overrideInput?: string, attachments: ReadonlyArray<File | { filename: string; size?: number }> = []) => {
       const text = (overrideInput ?? input).trim();
       if (!text || status === 'submitted' || status === 'streaming') return;
 
@@ -71,17 +74,62 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: { sessionI
         }
       }
 
+      // Sprint 47 Commit 4 (Stage 47-3): 判斷是否為 File[] (真實上傳)
+      const fileAttachments = attachments.filter(
+        (a): a is File => typeof File !== 'undefined' && a instanceof File,
+      );
+      const metaAttachments = attachments.filter(
+        (a): a is { filename: string; size?: number } => !(typeof File !== 'undefined' && a instanceof File),
+      );
+
+      let uploadedAttachmentIds: Array<{ id: string; filename: string; mimeType: string; size: number }> = [];
+      if (fileAttachments.length > 0) {
+        try {
+          const formData = new FormData();
+          formData.append('sessionId', activeSessionId!);
+          for (const file of fileAttachments) {
+            formData.append('files', file);
+          }
+          const uploadRes = await fetch('/api/admin/chat/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          if (!uploadRes.ok) {
+            const errData = (await uploadRes.json().catch(() => ({}))) as { error?: string };
+            throw new Error(errData.error ?? `Upload failed: ${uploadRes.status}`);
+          }
+          const data = (await uploadRes.json()) as {
+            attachments: Array<{ id: string; filename: string; mimeType: string; size: number }>;
+          };
+          uploadedAttachmentIds = data.attachments;
+        } catch (err) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setStatus('error');
+          return;
+        }
+      }
+
       const now = new Date().toISOString();
       // 把附件檔名拼進 message content (S45-C 純前端, 不上傳)
-      const attachmentPrefix = attachments
+      // Sprint 47 Commit 4 (Stage 47-3): 附件 UI 顯示上傳後的 IDs (有真實 size)
+      // 對向後相容: metaAttachments 仍以原 S45-C 行為拼進 message
+      const attachmentPrefix = metaAttachments
         .map((a) => `📎 ${a.filename}${a.size ? ` (${formatSize(a.size)})` : ''}`)
         .join('\n');
-      const fullContent = attachmentPrefix ? `${attachmentPrefix}\n\n${text}` : text;
+      const uploadedPrefix = uploadedAttachmentIds
+        .map((a) => `📎 ${a.filename}${a.size ? ` (${formatSize(a.size)})` : ''}`)
+        .join('\n');
+      const combinedPrefix = [attachmentPrefix, uploadedPrefix].filter(Boolean).join('\n');
+      const fullContent = combinedPrefix ? `${combinedPrefix}\n\n${text}` : text;
 
       const userMsg: ChatMessage = {
         id: `user-${Date.now()}`,
         role: 'user',
         content: fullContent,
+        attachments:
+          uploadedAttachmentIds.length > 0
+              ? uploadedAttachmentIds.map((a) => ({ id: a.id, filename: a.filename, size: a.size }))
+              : undefined,
         createdAt: now,
       };
       const assistantId = `assistant-${Date.now()}`;
@@ -106,6 +154,8 @@ export function useChatStream({ sessionId, userId, onSessionUpdate }: { sessionI
           body: JSON.stringify({
             messages: [{ role: 'user', content: fullContent }],
             sessionId: activeSessionId,
+            // Sprint 47 Commit 4 (Stage 47-3): 傳上傳後的 attachment IDs
+            attachments: uploadedAttachmentIds,
           }),
           signal: controller.signal,
         });

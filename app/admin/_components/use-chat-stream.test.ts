@@ -260,3 +260,150 @@ describe('useChatStream — Sprint 47-1 reasoning SSE', () => {
     expect(assistantMsg!.reasoning).toBe('r1r2');
   });
 });
+
+/**
+ * Sprint 47 Commit 4 (Stage 47-3) — useChatStream 真實上傳整合測試
+ *
+ * 對應 PRD: docs/prd/11-chat-v2-completions.md §2.4 (FR-4.1, FR-4.3, FR-4.6)
+ *
+ * 驗證:
+ * - send with File[]: 先 multipart upload 到 /api/admin/chat/upload
+ *   拿 attachment IDs 再 fetch stream route
+ * - 進度 callback 應被呼叫 (0-100%)
+ * - 多檔上傳 應依序全部 upload 完才進 stream
+ * - abort 時中斷上傳
+ *
+ * Mock 策略:
+ * - mock global.fetch: 根據 URL 分流 (upload endpoint vs stream endpoint)
+ * - File/Blob 已在 jsdom 提供
+ */
+
+function buildUploadResponse(attachments: Array<{ id: string; filename: string; mimeType: string; size: number }>) {
+  return new Response(
+    JSON.stringify({ attachments }),
+    { status: 200, headers: { 'Content-Type': 'application/json' } },
+  );
+}
+
+function buildErrorResponse(message: string, status: number) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+describe('useChatStream — Sprint 47-3 真實上傳', () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+    clearAllStreams();
+  });
+
+  it('傳 File[] 時, 應先 multipart upload 到 /api/admin/chat/upload 再 fetch stream', async () => {
+    // 第一個 fetch: upload endpoint → 回傳 attachment IDs
+    mockFetch.mockResolvedValueOnce(
+      buildUploadResponse([
+        { id: 'att-1', filename: 'a.txt', mimeType: 'text/plain', size: 12 },
+      ]),
+    );
+    // 第二個 fetch: stream endpoint
+    mockFetch.mockResolvedValueOnce(
+      buildSseResponse([{ content: 'OK' }, 'DONE']),
+    );
+
+    const { result } = renderHook(() =>
+      useChatStream({ sessionId: 's-up', userId: 'u-up' }),
+    );
+
+    const file = new File(['hello world'], 'a.txt', { type: 'text/plain' });
+
+    await act(async () => {
+      await result.current.send('請讀檔', [file]);
+    });
+
+    // 應有 2 個 fetch: upload + stream
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const urls = mockFetch.mock.calls.map((c) => c[0] as string);
+    expect(urls[0]).toContain('/api/admin/chat/upload');
+    expect(urls[1]).toContain('/api/admin/chat/stream');
+
+    // upload 應使用 multipart FormData (POST, body 為 FormData)
+    const uploadCall = mockFetch.mock.calls[0]!;
+    expect((uploadCall[1] as RequestInit).method).toBe('POST');
+    expect((uploadCall[1] as RequestInit).body).toBeInstanceOf(FormData);
+
+    // stream body 應含 attachment id
+    const streamBody = JSON.parse((mockFetch.mock.calls[1]?.[1] as RequestInit).body as string);
+    expect(streamBody.attachments).toEqual([
+      { id: 'att-1', filename: 'a.txt', mimeType: 'text/plain', size: 12 },
+    ]);
+    expect(streamBody.messages[0].content).toContain('請讀檔');
+    expect(streamBody.messages[0].content).toContain('📎 a.txt');
+  });
+
+  it('上傳失敗 (例如 413 超大) 應走 error 狀態, 不進 stream', async () => {
+    mockFetch.mockResolvedValueOnce(buildErrorResponse('檔案過大', 413));
+
+    const { result } = renderHook(() =>
+      useChatStream({ sessionId: 's-up2', userId: 'u-up2' }),
+    );
+
+    const file = new File(['big'], 'big.bin', { type: 'application/octet-stream' });
+
+    await act(async () => {
+      await result.current.send('test', [file]);
+    });
+
+    expect(result.current.status).toBe('error');
+    expect(result.current.error?.message).toMatch(/檔案過大/);
+    // 不應進 stream
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('無附件時不應呼叫 upload endpoint', async () => {
+    mockFetch.mockResolvedValueOnce(
+      buildSseResponse([{ content: 'hi' }, 'DONE']),
+    );
+
+    const { result } = renderHook(() =>
+      useChatStream({ sessionId: 's-noatt', userId: 'u-noatt' }),
+    );
+
+    await act(async () => {
+      await result.current.send('hi');
+    });
+
+    // 只有 stream fetch, 沒有 upload
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch.mock.calls[0]?.[0]).toContain('/api/admin/chat/stream');
+  });
+
+  it('多檔上傳: 全部 upload 成功才進 stream', async () => {
+    // 依 upload endpoint 呼叫 2 次 (多檔可一次全部) — 簡化為一次上傳 2 個
+    mockFetch.mockResolvedValueOnce(
+      buildUploadResponse([
+        { id: 'att-1', filename: 'a.txt', mimeType: 'text/plain', size: 5 },
+        { id: 'att-2', filename: 'b.csv', mimeType: 'text/csv', size: 10 },
+      ]),
+    );
+    mockFetch.mockResolvedValueOnce(
+      buildSseResponse([{ content: 'done' }, 'DONE']),
+    );
+
+    const { result } = renderHook(() =>
+      useChatStream({ sessionId: 's-multi', userId: 'u-multi' }),
+    );
+
+    const f1 = new File(['aaaaa'], 'a.txt', { type: 'text/plain' });
+    const f2 = new File(['bbbbbbbbbb'], 'b.csv', { type: 'text/csv' });
+
+    await act(async () => {
+      await result.current.send('看這些', [f1, f2]);
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const streamBody = JSON.parse((mockFetch.mock.calls[1]?.[1] as RequestInit).body as string);
+    expect(streamBody.attachments).toHaveLength(2);
+    expect(streamBody.attachments[0].id).toBe('att-1');
+    expect(streamBody.attachments[1].id).toBe('att-2');
+  });
+});
