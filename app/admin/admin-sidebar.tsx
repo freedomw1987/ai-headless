@@ -68,7 +68,7 @@ export function AdminSidebar({
     if (isMobileOpen) {
       onMobileOpenChange(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // onMobileOpenChange 是 setter，刻意不列 deps (避免無限迴圈)
   }, [pathname]);
 
   // Top section: enabled extensions（過濾 disabled）

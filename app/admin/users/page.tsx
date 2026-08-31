@@ -62,7 +62,7 @@ export default async function UsersPage() {
     ],
   }));
 
-  const canCreate = await hasUIPermission(session.user.permissions ?? [], 'users:write');
+  const canCreate = hasUIPermission(session.user.permissions ?? [], 'users:write');
 
   return (
     <div className="space-y-4">

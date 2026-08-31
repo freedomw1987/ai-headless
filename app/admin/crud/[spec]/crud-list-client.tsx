@@ -140,7 +140,7 @@ export function CrudListClient({
     } catch {
       // 無效 JSON 忽略
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // views/setActiveView 不列 deps (避免 init 重跑)
   }, [specName]);
 
   // Sprint D: 篩選 state
@@ -169,7 +169,7 @@ export function CrudListClient({
         setVisibleColumns(new Set(filtered));
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // allColumnNames/setVisibleColumns 不列 deps (避免 init 重跑)
   }, [specName]);
 
   // Sprint 33: 切換 view 時更新 URL (?view=...)

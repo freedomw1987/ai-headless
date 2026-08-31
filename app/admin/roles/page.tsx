@@ -64,7 +64,7 @@ export default async function RolesPage() {
     };
   }
 
-  const canWrite = await hasUIPermission(session.user.permissions ?? [], 'roles:write');
+  const canWrite = hasUIPermission(session.user.permissions ?? [], 'roles:write');
 
   return (
     <div className="space-y-4">
