@@ -594,7 +594,169 @@ import type { FileUIPart, SourceDocumentUIPart } from "@/lib/ai/chat/ui-message-
 
 | 項目 | 預估 SP | 備註 |
 |---|---|---|
-| AI 生成 extensions product CRUD | TBD | 用戶主動提出（Sprint 51 Plan Gate Q&A），需另開 Plan Gate 評估 |
+| AI 生成 extensions product CRUD | TBD | 用戶主動提出（Sprint 51 Plan Gate Q&A），需另開 Plan Gate 評估 → Sprint 52 採用 |
+
+### 2.14 FR-19：AI Chat 生成 extensions product CRUD
+
+> **Sprint 52 決策**（基於 [Sprint 51 Reflection](reflection/sprint-51-reflection.md) §5 帶下項目）：
+> - **方向澄清**：不是「手動建 product extension」，而是「讓 admin 在 pi agent chat 中用自然語言 prompt 生成 extensions 程式碼」
+> - **3 commits / 2 SP / 5 FR**
+> - **新方向 sprint** — 探討 AI coding 在 admin chat 中的應用
+> - 詳見 [sprint52-plan-gate.md](../sprint52-plan-gate.md)
+
+| FR | 描述 | 優先 | SP |
+|----|------|------|-----|
+| **FR-19.1** | spike: 驗證 pi agent 從 chat prompt 可生成 extensions 程式碼 | P3 | 0.5 |
+| **FR-19.2** | 設計 extension generator prompt + manifest/spec schema 模板 | P3 | 0.3 |
+| **FR-19.3** | admin chat 加 slash command `/extension create` 觸發 | P3 | 0.3 |
+| **FR-19.4** | AI 從 prompt 生成 8 個 extension 檔案（對齊 todo extension 結構） | P3 | 0.5 |
+| **FR-19.5** | 三層驗證（loader test + manifest schema + tsc）+ 覆寫保護（`--force`） | P3 | 0.4 |
+| **總計** | **5 FR** | | **2.0 SP** |
+
+#### 5 個 Q&A 決策彙總
+
+| 決策 | 採用 | 為何 |
+|---|---|---|
+| 方向 | AI chat 自然語言生成完整 product extension | 用戶明確提出 AI 生成需求 |
+| 觸發模式 | slash command `/extension create` | 明確，易測試，避免誤觸 |
+| 生成範圍 | 完整 8 個檔案（對齊 todo） | 一次性生成完整可運作的 extension |
+| 驗證方式 | 三層：loader test + manifest schema + tsc | 嚴謹，防止 AI 生成無法運作的程式碼 |
+| 覆寫保護 | 預設拒絕，`--force` 才覆寫 | 安全，避免 AI 誤刪既有 extensions |
+
+#### FR-19.1 spike 驗證可行性
+
+**目的**：確認 pi agent 的 coding capability 能生成 extensions 結構 + 程式碼，避免 Sprint 52-2 大規模實作後才發現不可行。
+
+**spike 任務**：
+1. 在 admin chat 用自然語言 prompt：「建立一個 product extension，含 CRUD + hook + action + computed」
+2. 觀察 pi agent 是否能：
+   - 生成 `extensions/product/manifest.json`
+   - 生成 `extensions/product/product-spec.json`
+   - 生成 1 個簡單 hook（e.g. `beforeCreate.ts`）
+3. 評估生成品質（是否可編譯、是否對齊 extension-loader schema）
+
+**預估產出**：`docs/spike/sprint52-ai-extension-gen.md` + spike 守護測試
+
+#### FR-19.2 設計 extension generator
+
+**位置**：`lib/ai/agent-sdk/extension-generator.ts`（新增）
+
+**設計**：
+- **Prompt 模板**：系統 prompt 告訴 pi agent 應生成什麼
+- **Manifest schema**：Zod schema 驗證生成的 manifest.json
+- **Spec schema**：Zod schema 驗證生成的 spec.json
+- **Output 規範**：pi agent 透過 tool call 寫檔，不用 raw text
+
+**範本參考**：
+- `extensions/todo/manifest.json`（manifest 範本）
+- `extensions/todo/todo-spec.json`（spec 範本）
+
+#### FR-19.3 Slash Command 觸發
+
+**位置**：`app/admin/_components/admin-chat-panel.tsx`（修改）
+
+**設計**：
+- 偵測使用者輸入 `/extension create <name>`
+- 解析為 extension generator 請求
+- 把請求送到 pi agent session，帶 extension-generator prompt
+- 例如：`/extension create product --fields name,price,stock`
+- 例如：`/extension create product --force`（覆寫既有）
+
+#### FR-19.4 AI 生成 8 個檔案
+
+**生成檔案清單**（對齊 todo extension 結構）：
+
+```
+extensions/product/
+├── actions/                 (1 個 action: createProduct)
+├── computed/                (1 個 computed: isInStock)
+├── examples/                (1 個 example: list-and-filter)
+├── hooks/                   (1 個 hook: beforeCreate)
+├── workflow/                (1 個 workflow: product-workflow)
+├── manifest.json
+├── README.md
+└── product-spec.json        (CRUD spec)
+```
+
+**生成流程**：
+1. Admin prompt → pi agent 收到「生成 extension」指令
+2. pi agent 透過 tool call（e.g. `write_file`）生成每個檔案
+3. 每個 tool call 經過 server-side 驗證（manifest schema + spec schema）
+
+**AI 生成的限制**：
+- 只能寫入 `extensions/<name>/` 目錄（路徑防護）
+- 不能修改 `extensions/todo`, `extensions/blog` 等既有 extension（除非 `--force`）
+- 不能修改 `lib/extensions/` 等核心程式
+
+#### FR-19.5 三層驗證 + 覆寫保護
+
+**驗證流程**：
+
+```
+pi agent 生成所有檔案
+   ↓
+[1] Manifest schema 驗證（Zod）
+   ↓ 通過
+[2] ts/tsx 編譯驗證（tsc --noEmit）
+   ↓ 通過
+[3] extension-loader.test.ts 跑（確認可 load）
+   ↓ 通過
+回傳成功訊息給 admin
+```
+
+**覆寫保護**：
+- 預設：若 `extensions/<name>/` 已存在 → 報錯 `Extension already exists. Use --force to overwrite.`
+- `--force` flag：允許覆寫，但需備份原 extension 到 `extensions-backup/<name>-<timestamp>/`
+
+**位置**：
+- `lib/ai/agent-sdk/extension-validator.ts`（新增）
+- `tests/extension-generator-guard.test.ts`（新增）
+
+#### 風險與緩解
+
+| 風險 | 嚴重性 | 緩解 |
+|---|---|---|
+| AI 生成品質不穩定 | 🟠 高 | spike 先驗證可行性（FR-19.1） |
+| 覆寫既有 extensions | 🔴 嚴重 | 預設拒絕, --force 才覆寫，且備份（FR-19.5） |
+| 生成程式碼無法編譯 | 🟠 高 | tsc 驗證（FR-19.5） |
+| Manifest schema 不符 | 🟡 中 | Zod schema 驗證（FR-19.5） |
+| AI 寫到 extensions/ 之外路徑 | 🔴 嚴重 | 路徑防護（只能寫入 `extensions/<name>/`）+ 守護測試 |
+| 與既有 admin chat 衝突 | 🟡 中 | 僅在 slash command 觸發，不影響一般 chat |
+
+#### 明確排除（Sprint 52 不做）
+
+| 項目 | 排除原因 |
+|---|---|
+| 自動 e2e 測試（C 方案） | 範圍過大，留 Sprint 53+ |
+| Generator API 工具（C 方案） | Sprint 52 只做 admin chat 內生成，不建獨立工具 |
+| 支援其他 extension 類型 | Sprint 52 聚焦 product，其他類型 Sprint 53+ 評估 |
+| 自動 commit + push | admin 需手動確認（避免 AI 自動 push 風險） |
+
+#### FR 總計（含 Sprint 52）
+
+| 主題 | FR 數 | SP 總計 |
+|---|---|---|
+| Sprint 47~51（累積） | 68 | ~21.2 |
+| FR-19 AI Chat 生成 extensions（Sprint 52） | 5 | 2.0 |
+| **Sprint 52 新增** | **5 FR** | **~2.0 SP** |
+| **總計（Sprint 47+48+49+50+51+52）** | **73 FR** | **~23.2 SP** |
+
+**Sprint 52 範圍方案選擇**：
+- ✅ **方案 A**（本 Sprint 採用）：AI chat 自然語言生成完整 product extension（3 commits / 2 SP）
+- 替選方案（已取消）：
+  - B（1 SP, 最小骨架 3 檔案）— 範圍過小，不足以驗證 AI 生成品質
+  - C（2.5 SP, 生成 + 自動測試）— 範圍過大，自動 e2e 留 Sprint 53+
+  - D（1.5 SP, 手動建）— 不是 AI，違背用戶需求
+
+#### Sprint 53+ 帶下
+
+| 項目 | 預估 SP | 備註 |
+|---|---|---|
+| 自動 e2e 測試生成的 extension | 1.0 | Sprint 52-2 排除，後續評估 |
+| Generator API 工具（CLI） | 2.0 | Sprint 52-2 排除，後續評估 |
+| 支援更多 extension 類型（inventory, invoice 等） | TBD | 評估常見需求 |
+| SourcesList v3（圖片 preview） | 1.2 | 從 Sprint 50 帶下第 5 次 |
+| CRUD List 增強 | 5 | 從 Sprint 48 帶下第 4 次 |
 
 ---
 
