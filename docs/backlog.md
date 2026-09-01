@@ -22,17 +22,19 @@
 
 ---
 
-## 📌 當前狀態（2026-08-30）
+## 📌 當前狀態（2026-09-01）
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 48 Plan Gate ✅（5 commits / ~4.8 SP：3 技術債清理 + 1 新功能 Office Rest）** |
+| **當前 Sprint** | **Sprint 48 Submit Gate ✅（5 commits + 1 hotfix = 6 commits / 2.1 SP 完成，剩 3 SP 帶下 Sprint 49）** |
 | **上個 Sprint** | Sprint 47 Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅ + Submit Gate ✅（13.5 SP / 8 commits 100% 完成，1795 → 1881 tests） |
 | **Sprint 46 總計** | Commit 1 (3) + Commit 2 (5) + Commit 3 SDK (3) + Commit 4 Markdown (4) + Commit 5 Attachment Reader (3) + Commit 6 Cleanup (1) + Commit 7 E2E (3) = 22 SP ✅ + Bug Fix 4 個 (2.5 SP extra) = 22.5 SP delivered |
 | **Sprint 46 Reflection** | ✅ [docs/reflection/sprint-46-reflection.md](./reflection/sprint-46-reflection.md)：6 項發現 (3 P1 + 3 P2)；Sprint 47 全數回應 5/6 |
 | **Sprint 47 總計** | Commit 1 (47-0 Spike 2) + Commit 2 (47-1 2) + Commit 3 (47-2 2) + Commit 4 (47-3 2) + Commit 5 (47-4 2) + Commit 6 (47-5 2) + Commit 7 (47-6 1) + Commit 8 (47-7 0.5) = 13.5 SP ✅ |
 | **Sprint 47 Reflection** | ✅ [docs/reflection/sprint-47-reflection.md](./reflection/sprint-47-reflection.md)：5 項發現 (2 P1 + 3 P2)；Sprint 46 揭露 5/6 回應 |
-| **下個 Sprint 計劃** | Sprint 48：TD-S48-LintCleanup (0.5) + TD-S47-ChatStatus (0.3) + TD-S48-UploadOwnershipRefactor (0.5) + US-S48-OfficeParserRest (3, 條件) + CRUD List 增強 (5, 既有) |
+| **Sprint 48 總計** | Commit 1 (48-1 Lint 0.5) + Commit 2 (48-2 ChatStatus 0.3) + Commit 3 (48-3 UploadOwnership 0.5) + Commit 4 (48-4 Office Rest Spike 0.5) + Hotfix (48-4.1 audit P0 0.3) = **2.1 SP 完成**，剩 48-5 Office Rest 實作 (3 SP) 帶下 Sprint 49 |
+| **Sprint 48 Reflection** | ✅ [docs/reflection/sprint-48-reflection.md](./reflection/sprint-48-reflection.md)：mid-review audit 揭露 9 項 (3 P0 + 6 P1/P2)，P0 全部 hotfix 修完，P1 部分帶下 Sprint 49 |
+| **下個 Sprint 計劃** | Sprint 49：US-S49-OfficeParserRest (3 SP, Sprint 48-5 帶下) + TD-S48-CutAISDKTypeDeps (0.5) + TD-S49-OfficeRestGuardTightening (0.3) |
 | **Sprint 46 範圍** | 7 個 Stage 46-A 到 46-G，完整決策與風險見 [sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md) |
 | **Sprint 46 累計測試** | 1795 passed（既有 1629 baseline + Sprint 46 新增 166：Commit 1 守護 26 + Commit 2 守護 28 + mime-validator 57 + Bug Fix 20 + Commit 4 守護 10 + Commit 5 守護 7 + Commit 6 單元 5 + Commit 6 守護 6 + 其他 7）+ Playwright E2E 6 passed（Commit 7）|
 | **Sprint 44 狀態** | ✅ **100% 收尾（17/17 SP）**（Reflection 清理 4 SP + Admin AI Chat FAB 13 SP：FAB + 拖動 snap + 兩欄 Drawer + sessions CRUD + SSE streaming + 7 E2E）|
@@ -47,9 +49,10 @@
 | **Sprint 41 狀態** | ✅ **100% 收尾（~4 SP）**（4 P1 fixes：TD-803/804/806/812 + RWD audit 4 頁 + VIEW_REGISTRY 重構 + sidebar 3 關閉路徑 E2E；reflection 由 Sprint 42 開工時反向補寫）|
 | **Sprint 42 狀態** | ✅ **100% 收尾（3/3 SP）**（清完 Sprint 32 review 全部 7 個未處理項目：TD-805/807/808/809/810/815/818）|
 | **Sprint 43 狀態** | ✅ **100% 收尾（13/13 SP，原估 15 SP）**（AI Config v2.0: Custom LLM Endpoint + 4-type Provider + AES-256-GCM 加密 + 統一錯誤 + log redaction + /admin/settings/ai-config UI）|
+| **測試基線** | **1919 integration tests + 0 E2E 變動**（Sprint 48 +38 tests, 0 regression）|
 | **測試基線** | **1587 integration + 127/127 E2E**（Sprint 44 +81 守護測試 + 7 E2E）|
 | **測試基線** | **1506 integration + 120/120 E2E**（Sprint 43 +56 守護測試）|
-| **下一個 P0** | Sprint 47 Execution Gate：開 Commit 1（Office Parser Bundle Spike，0.5 SP）→ 跑 Gate 1（TDD 紅→綠）→ Gate 2（lint+typecheck）→ Gate 3（regression）→ Gate 4（reviewer）|
+| **下一個 P0** | Sprint 49 Execution Gate：開 Commit 1（US-S49-OfficeParserRest, 3 SP）→ 跑 Gate 1（TDD 紅→綠）→ Gate 2（lint+typecheck）→ Gate 3（regression）→ Gate 4（reviewer）|
 | **路線圖關鍵** | ✅ Sprint 21-32 → ✅ Sprint 33-40（View Feature + bug fixes）→ ✅ Sprint 41（4 P1 + RWD audit + 重構）→ 📋 Sprint 42+（剩餘風險 + 新方向）|
 | **Sprint 27 反省報告** | [docs/reflection/module-crud-list-enhancements-reflection.md](reflection/module-crud-list-enhancements-reflection.md) |
 | **Sprint 28-29 反省報告** | [docs/reflection/module-sprint28-29-reflection.md](reflection/module-sprint28-29-reflection.md) |
@@ -63,6 +66,7 @@
 | **Sprint 45 反省報告** | [docs/reflection/module-sprint45-reflection.md](reflection/module-sprint45-reflection.md)（AI SDK Elements 混合方案 14 SP：4 元件安裝 + AdminChatPanel 重構 + 附件 UI + 程式碼高亮 + 7 E2E）|
 | **Sprint 46 規劃** | ✅ Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅（22.5 SP 100% 完成） — 見 [sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md) + [reflection](reflection/sprint-46-reflection.md) |
 | **Sprint 47 規劃** | ✅ Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅ + Submit Gate ✅（[docs/sprint47-plan-gate.md](sprint47-plan-gate.md) + [PRD 11-chat-v2-completions.md](prd/11-chat-v2-completions.md) + [Reflection](reflection/sprint-47-reflection.md)，**13.5 SP / 8 commits 100%**）：Commit 1 (47-0 Office Parser Spike 2 SP) + Commit 2 (47-1 Sources/Reasoning 2 SP) + Commit 3 (47-2 Vision 2 SP) + Commit 4 (47-3 Frontend Upload 2 SP) + Commit 5 (47-4 PDF Parser 2 SP) + Commit 6 (47-5 Cleanup Cron 2 SP) + Commit 7 (47-6 Session Ownership 1 SP) + Commit 8 (47-7 XSS 守護 0.5 SP) ｜ 测试基線 1795 → **1881** (+86 tests, 0 regression) |
+| **Sprint 48 規劃** | ✅ Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅ + Submit Gate ✅（[docs/sprint48-plan-gate.md](sprint48-plan-gate.md) + [PRD 11-chat-v2-completions.md](prd/11-chat-v2-completions.md) §2.10 + [Reflection](reflection/sprint-48-reflection.md)，**2.1 SP / 6 commits 83%**）：Commit 1 (48-1 Lint Cleanup 0.5 SP) + Commit 2 (48-2 ChatStatus 0.3 SP) + Commit 3 (48-3 UploadOwnership 0.5 SP) + Commit 4 (48-4 Office Rest Spike 0.5 SP) + Hotfix 48-4.1 (audit P0 修補 0.3 SP) ｜ Stage 48-5 Office Rest 實作 (3 SP) 帶下 Sprint 49 ｜ 测试基線 1881 → **1919** (+38 tests, 0 regression) ｜ mid-review audit 揭露 9 項問題 (3 P0 + 6 P1/P2)，P0 全部 hotfix 修完 |
 
 ### Sprint 21 規劃（US-102-P2 動態 RBAC，預估 7 SP）
 
