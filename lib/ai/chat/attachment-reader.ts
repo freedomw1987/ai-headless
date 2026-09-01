@@ -1,27 +1,35 @@
 /**
- * Sprint 46 Commit 5 (Stage 46-D) + Sprint 47 Commit 5 (Stage 47-4) — Attachment Reader
+ * Sprint 46 Commit 5 (Stage 46-D) + Sprint 47 Commit 5 (Stage 47-4) + Sprint 48 Commit 5 (Stage 48-5) — Attachment Reader
  *
  * 對應 PRD:
  * - Sprint 46: docs/prd/10-chat-attachments.md §2.2 (FR-2)
  * - Sprint 47: docs/prd/11-chat-v2-completions.md §2.5 (FR-5.1, FR-5.4, FR-5.5)
+ * - Sprint 48: docs/prd/11-chat-v2-completions.md §2.10 (FR-13.1 ~ FR-13.5)
  *
  * 用途: 讀取使用者上傳的附件, 將內容注入 LLM prompt
  *
  * 支援格式:
  * - 文字類: .txt/.md/.json/.csv/.log/.html/.xml/.svg (FR-2.1, 直接讀 utf-8)
  * - 圖片類: png/jpeg/webp/gif (FR-2.5, base64 + mime 給 vision)
- * - Office 類 (Sprint 47-4):
- *   - PDF: pdf-parse v2.4.5 (kind: 'office', 解析文字)
- *   - DOCX/XLSX/PPTX: 仍 kind: 'unsupported' (Sprint 48+)
+ * - Office 類:
+ *   - PDF: pdf-parse v2.4.5 (Sprint 47-4, kind: 'office', 解析文字)
+ *   - DOCX: mammoth (Sprint 48-5 FR-13.1, kind: 'office')
+ *   - XLSX: xlsx (SheetJS) (Sprint 48-5 FR-13.2, kind: 'office')
+ *   - PPTX: jszip + fast-xml-parser (Sprint 48-5 FR-13.3, kind: 'office')
  *
- * 為什麼 Sprint 47 scope down (D-1 方案):
- * - pdf-parse bundle ~200KB, 仍可接受
- * - mammoth / xlsx bundle 較大, 推到 Sprint 48+
- * - spike 詳見 docs/spike/sprint47-office-parser.md
+ * 為什麼 dynamic import (Sprint 47-4 開始):
+ * - pdf-parse / mammoth / xlsx bundle 較大, dynamic import 避免 cold start 負擔
+ * - 只有讀該格式時才加載
+ *
+ * Sprint 47 scope down (D-1 方案): 當時只做 PDF, 推到 Sprint 48+
+ * Sprint 48-5 (D-2 方案): DOCX + XLSX + PPTX 全做, spike 詳見 docs/spike/sprint48-office-rest.md
  */
 
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
+import { parseDocx } from '@/lib/ai/office/docx-parser';
+import { parseXlsx } from '@/lib/ai/office/xlsx-parser';
+import { parsePptx } from '@/lib/ai/office/pptx-parser';
 
 export type AttachmentContent =
   | {
@@ -155,14 +163,36 @@ export async function readAttachmentContent(
     }
   }
 
-  // 4. 其他 Office (DOCX/XLSX/PPTX) - Sprint 48+ 才支援
+  // 4. Sprint 48 Commit 5 (Stage 48-5): DOCX / XLSX / PPTX 解析 (FR-13.1 ~ FR-13.3)
   if (OTHER_OFFICE_EXTENSIONS.has(ext)) {
-    return {
-      kind: 'unsupported',
-      filename,
-      mime,
-      reason: 'Sprint 48+ 將支援此格式 (本次僅 PDF)',
-    };
+    const buf = await readFile(storagePath);
+    try {
+      let text = '';
+      let officeMime = mime;
+      if (ext === '.docx') {
+        text = await parseDocx(buf);
+        officeMime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      } else if (ext === '.xlsx') {
+        text = await parseXlsx(buf);
+        officeMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      } else if (ext === '.pptx') {
+        text = await parsePptx(buf);
+        officeMime = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      }
+      return {
+        kind: 'office',
+        filename,
+        mime: officeMime,
+        text,
+      };
+    } catch (err) {
+      return {
+        kind: 'unsupported',
+        filename,
+        mime,
+        reason: `${ext} parse failed: ${err instanceof Error ? err.message : String(err)}`,
+      };
+    }
   }
 
   // 5. 完全不支援
