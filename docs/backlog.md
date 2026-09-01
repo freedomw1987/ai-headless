@@ -32,9 +32,11 @@
 | **Sprint 46 Reflection** | ✅ [docs/reflection/sprint-46-reflection.md](./reflection/sprint-46-reflection.md)：6 項發現 (3 P1 + 3 P2)；Sprint 47 全數回應 5/6 |
 | **Sprint 47 總計** | Commit 1 (47-0 Spike 2) + Commit 2 (47-1 2) + Commit 3 (47-2 2) + Commit 4 (47-3 2) + Commit 5 (47-4 2) + Commit 6 (47-5 2) + Commit 7 (47-6 1) + Commit 8 (47-7 0.5) = 13.5 SP ✅ |
 | **Sprint 47 Reflection** | ✅ [docs/reflection/sprint-47-reflection.md](./reflection/sprint-47-reflection.md)：5 項發現 (2 P1 + 3 P2)；Sprint 46 揭露 5/6 回應 |
-| **Sprint 48 總計** | Commit 1 (48-1 Lint 0.5) + Commit 2 (48-2 ChatStatus 0.3) + Commit 3 (48-3 UploadOwnership 0.5) + Commit 4 (48-4 Office Rest Spike 0.5) + Hotfix (48-4.1 audit P0 0.3) = **2.1 SP 完成**，剩 48-5 Office Rest 實作 (3 SP) 帶下 Sprint 49 |
-| **Sprint 48 Reflection** | ✅ [docs/reflection/sprint-48-reflection.md](./reflection/sprint-48-reflection.md)：mid-review audit 揭露 9 項 (3 P0 + 6 P1/P2)，P0 全部 hotfix 修完，P1 部分帶下 Sprint 49 |
-| **下個 Sprint 計劃** | Sprint 49：US-S49-OfficeParserRest (3 SP, Sprint 48-5 帶下) + TD-S48-CutAISDKTypeDeps (0.5) + TD-S49-OfficeRestGuardTightening (0.3) |
+| **Sprint 48 總計** | Commit 1 (48-1 Lint 0.5) + Commit 2 (48-2 ChatStatus 0.3) + Commit 3 (48-3 UploadOwnership 0.5) + Commit 4 (48-4 Office Rest Spike 0.5) + Commit 5 (48-5 Office Rest 3 SP) + Hotfix (48-4.1 audit P0 0.3) = **5.1 SP 完成 (Office Rest 已入 Sprint 48)**, 詳見 Sprint 48 Reflection |
+| **Sprint 49 總計** | Commit 1 (49-0 UIMessage Spike 0.2) + Commit 2 (49-1 Office Rest Guard 0.3) + Commit 3 (49-2 UIMessage 切斷 0.3) = **0.8 SP 完成** (從 1.0 降到 0.8, spike 刪 dead code) |
+| **Sprint 48 Reflection** | ✅ [docs/reflection/sprint-48-reflection.md](./reflection/sprint-48-reflection.md)：mid-review audit 揭露 9 項 (3 P0 + 6 P1/P2)，P0 全部 hotfix 修完，P1 部分帶下 Sprint 49 (Sprint 49-1 已回應 audit #4-#6) |
+| **Sprint 49 Reflection** | ✅ [docs/reflection/sprint-49-reflection.md](./reflection/sprint-49-reflection.md)：0 新功能, 3 commits / 0.8 SP 100% 完成；移除 ~75 行 dead code (Sprint 49-0 spike 揭露)；Sprint 50+ 帶下項目: SourcesList 升級 / CRUD List 增強 / 其他 SDK type dep 切斷 |
+| **下個 Sprint 計劃** | Sprint 49 Submit Gate ✅（3 commits / 0.8 SP 完成）：Commit 1 (49-0 UIMessage Spike 0.2) + Commit 2 (49-1 Office Rest Guard 0.3) + Commit 3 (49-2 UIMessage 切斷 0.3) = 0.8 SP 100% ｜ 0 新功能 (技術債清理 sprint) ｜ 移除 ~75 行 dead code (意外好處) ｜ Sprint 48 mid-review audit #4-#6 全部回應 ｜ 測試基線 1938 → **1956** (+18 tests, 0 regression) ｜ Sprint 50 選擇待定 |
 | **Sprint 46 範圍** | 7 個 Stage 46-A 到 46-G，完整決策與風險見 [sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md) |
 | **Sprint 46 累計測試** | 1795 passed（既有 1629 baseline + Sprint 46 新增 166：Commit 1 守護 26 + Commit 2 守護 28 + mime-validator 57 + Bug Fix 20 + Commit 4 守護 10 + Commit 5 守護 7 + Commit 6 單元 5 + Commit 6 守護 6 + 其他 7）+ Playwright E2E 6 passed（Commit 7）|
 | **Sprint 44 狀態** | ✅ **100% 收尾（17/17 SP）**（Reflection 清理 4 SP + Admin AI Chat FAB 13 SP：FAB + 拖動 snap + 兩欄 Drawer + sessions CRUD + SSE streaming + 7 E2E）|
