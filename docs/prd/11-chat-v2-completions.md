@@ -758,6 +758,147 @@ pi agent 生成所有檔案
 | SourcesList v3（圖片 preview） | 1.2 | 從 Sprint 50 帶下第 5 次 |
 | CRUD List 增強 | 5 | 從 Sprint 48 帶下第 4 次 |
 
+### 2.15 FR-20：整合 admin chat + 端到端生成 product extension
+
+> **Sprint 53 決策**（基於 [Sprint 52 Reflection](reflection/sprint-52-reflection.md) §5 帶下項目）：
+> - **方向：將 Sprint 52 設計推到 runtime 整合**
+> - **3 commits / 3 SP / 4 FR**
+> - **延續 Sprint 52 新方向** — 從設計階段進入實際整合階段
+> - 詳見 [sprint53-plan-gate.md](../sprint53-plan-gate.md)
+
+| FR | 描述 | 優先 | SP |
+|----|------|------|-----|
+| **FR-20.1** | admin-chat-panel 整合 slash command 偵測 `/extension create` | P3 | 0.5 |
+| **FR-20.2** | server-side 攔截 pi agent tool call, 呼叫 validator | P3 | 0.5 |
+| **FR-20.3** | 端到端：admin 輸入 → AI 生成 → 驗證 → extensions/product/ 8 個檔案 | P3 | 1.5 |
+| **FR-20.4** | 三層驗證整合：loader test + manifest schema + tsc 編譯 | P3 | 0.5 |
+| **總計** | **4 FR** | | **3.0 SP** |
+
+#### 5 個 Q&A 決策彙總
+
+| 決策 | 採用 | 為何 |
+|---|---|---|
+| 方向 | 整合 admin chat + 攔截 + 端到端生成 product | Sprint 52 reflection §5 明確帶下 |
+| 產物 | 完整 8 個檔案 | 對齊 Sprint 52 spike §7 |
+| AI 模型 | 沿用 admin chat AI config | 沿用現有基礎設施，不增加配置複雜度 |
+| 生成流程 | 同步流程 | 簡單，易測試，避免 SSE 整合複雜度 |
+| 錯誤處理 | 回傳明確錯誤訊息 | Admin 可修正 prompt 重試 |
+
+#### FR-20.1 admin chat 整合 slash command
+
+**位置**：`app/admin/_components/admin-chat-panel.tsx`（修改）
+
+**設計**：
+- 在現有 input handler 中偵測 `/extension` 開頭
+- 呼叫 `parseExtensionCommand(input)` 解析（Sprint 52-1）
+- 若為 `create` action, 觸發 extension generator flow（不再走一般 chat）
+- 若為 `help` action, 回傳用法說明
+- 若為非 extension command, 走一般 chat flow
+
+**與 Sprint 46-2 admin chat 整合**：
+- 沿用 `use-chat-sessions.ts` 的 session 機制
+- 不開新 session, 使用現有 session 即可
+- 在 chat 訊息中標記「[Extension Generator]」標籤
+
+#### FR-20.2 server-side 攔截
+
+**位置**：`lib/ai/agent-sdk/agent-sdk.ts`（修改）+ `app/api/admin/chat/stream/route.ts`（修改）
+
+**設計**：
+- pi agent 透過 `write_file(path, content)` tool call 寫檔
+- Server-side 攔截 write_file tool call:
+  1. 檢查 `isPathAllowed(path, extensionName)`（Sprint 52-2）
+  2. 若拒絕, 回傳錯誤給 AI（不寫入）
+- 全部寫入完成後:
+  1. 跑 `validateExtensionFiles(files, extensionName)`（Sprint 52-2）
+  2. 失敗 → 全部回滾（刪除已寫入的檔案）
+  3. 成功 → 回傳 success 訊息給 admin
+
+#### FR-20.3 端到端生成 product
+
+**輸入格式**：
+```
+/extension create product --fields=name,price,stock
+```
+
+**端到端流程**：
+```
+1. Admin 輸入 /extension create product --fields=name,price,stock
+2. admin-chat-panel 偵測 slash command, 觸發 extension generator
+3. Server-side 建立 pi agent session 帶 EXTENSION_GENERATOR_SYSTEM_PROMPT
+4. AI 透過 write_file tool call 寫入 8 個檔案
+5. Server-side 攔截每個 tool call, 驗證 path + content
+6. 全部寫入後, 跑三層驗證（schema + 結構 + tsc）
+7. 驗證失敗 → 回滾 + 回傳錯誤訊息
+8. 驗證成功 → 回傳 success 訊息 + extension 路徑
+```
+
+**生成的 8 個檔案**（對齊 Sprint 52 spike §7）：
+```
+extensions/product/
+├── actions/complete.ts           (1 個 action)
+├── computed/isInStock.ts         (1 個 computed)
+├── examples/list-and-filter.ts   (1 個 example)
+├── hooks/beforeCreate.ts         (1 個 hook)
+├── workflow/product-workflow.ts  (1 個 workflow)
+├── manifest.json
+├── README.md
+└── product-spec.json             (CRUD spec)
+```
+
+#### FR-20.4 三層驗證整合
+
+**三層驗證**：
+- **Layer 1（Schema）**：Zod spec + manifest schema（Sprint 52-2 已實作）
+- **Layer 2（結構）**：8 個檔案必須齊全（Sprint 52-2 已實作）
+- **Layer 3（編譯）**：tsc --noEmit 對生成的檔案執行編譯檢查（Sprint 53 新增）
+
+**tsc 編譯驗證**：
+- 用 Node.js child process 執行 `npx tsc --noEmit extensions/<name>/**/*`
+- 若失敗, 回傳錯誤訊息給 admin
+- 若成功, extension 已可運作
+
+#### 風險與緩解
+
+| 風險 | 嚴重性 | 緩解 |
+|---|---|---|
+| pi agent tool call 不易攔截 | 🟠 高 | 用 agent-sdk 提供 callback hook 設計 |
+| AI 生成 8 個檔案品質不穩定 | 🟠 中 | 已有 Sprint 52 Zod schema + validator |
+| tsc 編譯驗證耗時 | 🟡 中 | 僅驗證生成的 extension 目錄，不全專案 |
+| 端到端測試不穩定（需真實 AI） | 🟠 高 | 守護測試為主（mock AI），端到端手動驗證 |
+| Token cost 高 | 🟡 中 | 預估 5-10k tokens/extension，可接受 |
+| 已生成的 extensions/product/ 影響測試 | 🟢 低 | 守護測試用 `--force` 備份到 extensions-backup/ |
+
+#### 明確排除（Sprint 53 不做）
+
+| 項目 | 排除原因 |
+|---|---|
+| 自動 e2e 測試（Playwright） | Sprint 52 排除，留 Sprint 54+ |
+| Generator CLI 工具 | Sprint 52 排除，留 Sprint 55+ |
+| 支援更多 extension 類型 | Sprint 53 只生成 product，其他類型 Sprint 56+ 評估 |
+| 自動 commit + push | admin 需手動確認（避免 AI 自動 push 風險） |
+| 非同步生成流程（SSE 進度） | 同步流程已足夠，非同步留 Sprint 57+ |
+
+#### FR 總計（含 Sprint 53）
+
+| 主題 | FR 數 | SP 總計 |
+|---|---|---|
+| Sprint 47~52（累積） | 73 | ~23.2 |
+| FR-20 整合 admin chat + 端到端生成（Sprint 53） | 4 | 3.0 |
+| **Sprint 53 新增** | **4 FR** | **~3.0 SP** |
+| **總計（Sprint 47+48+49+50+51+52+53）** | **77 FR** | **~26.2 SP** |
+
+#### Sprint 54+ 帶下
+
+| 項目 | 預估 SP | 備註 |
+|---|---|---|
+| 自動 e2e 測試生成的 extension | 1.0 | Sprint 53 排除，評估 Playwright |
+| Generator CLI 工具 | 2.0 | Sprint 53 排除，後續評估 |
+| 支援更多 extension 類型（inventory, invoice 等） | TBD | 評估常見需求 |
+| 非同步生成流程（SSE 進度） | 1.5 | 同步流程已足夠，非同步留後續 |
+| SourcesList v3（圖片 preview） | 1.2 | 從 Sprint 50 帶下第 6 次 |
+| CRUD List 增強 | 5 | 從 Sprint 48 帶下第 5 次 |
+
 ---
 
 ## 3. 資料模型
