@@ -15,7 +15,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
+import { join } from 'path';
 
 describe('S48-2 — ChatStatus Type Guard (FR-10.1 ~ FR-10.3)', () => {
   describe('FR-10.1: chat-utils.ts 自訂 ChatStatus 型別', () => {
@@ -75,23 +76,41 @@ describe('S48-2 — ChatStatus Type Guard (FR-10.1 ~ FR-10.3)', () => {
 
   describe('FR-10.3: source-code guard 全專案無 ChatStatus 從 ai import', () => {
     // 動態掃描所有 .ts/.tsx 檔案, 不應有從 'ai' import ChatStatus
-    const { execSync } = require('child_process') as typeof import('child_process');
+    // Sprint 48-4.1 hotfix: 改用 Node.js fs API 遞迴掃描
 
     it('全專案不應從 \'ai\' SDK import ChatStatus', () => {
-      let result = '';
-      try {
-        result = execSync(
-          `grep -rn "from 'ai'" app/ lib/ components/ 2>&1 || true`,
-          { encoding: 'utf-8' },
-        );
-      } catch (err) {
-        // grep 無結果時 exit code 1
-        result = '';
+      // Sprint 48-4.1 hotfix: 用 Node.js 原生 fs API 遞迱掃描, 避免 shell quote 解析問題
+      // 之前用 execSync(grep) 被 sh 吃掉 quote, 守護失效
+      // regex 接受單/雙引號: /from\s+["']ai["']/i
+      const chatStatusImports: string[] = [];
+      const SCAN_DIRS = ['app', 'lib', 'components'];
+
+      function scanDir(dir: string) {
+        if (!existsSync(dir)) return;
+        for (const entry of readdirSync(dir)) {
+          const fullPath = join(dir, entry);
+          const stat = statSync(fullPath);
+          if (stat.isDirectory()) {
+            scanDir(fullPath);
+          } else if (/\.(ts|tsx)$/.test(entry)) {
+            const source = readFileSync(fullPath, 'utf-8');
+            const lines = source.split('\n');
+            for (const line of lines) {
+              if (
+                /from\s+["']ai["']/i.test(line) &&
+                /ChatStatus/i.test(line)
+              ) {
+                chatStatusImports.push(`${fullPath}: ${line.trim()}`);
+              }
+            }
+          }
+        }
       }
-      // 過濾出 import ChatStatus 的行
-      const chatStatusImports = result
-        .split('\n')
-        .filter((line) => /from\s+'ai'/i.test(line) && /ChatStatus/i.test(line));
+
+      for (const dir of SCAN_DIRS) {
+        scanDir(dir);
+      }
+
       expect(
         chatStatusImports,
         `不應從 'ai' SDK import ChatStatus (實際: ${chatStatusImports.length})\n${chatStatusImports.join('\n')}`,

@@ -71,26 +71,31 @@ describe('S48-1 — Lint Config Guard (FR-9.1 ~ 9.3)', () => {
   });
 
   describe('Pre-existing lint errors 守護', () => {
-    // 動態列出 Sprint 48-1 修復的 6 個檔案
+    // Sprint 48-4.1 hotfix: 從 FIXED_FILES 移除 settings/page.tsx
+    // Sprint 48 mid-review audit §3: Sprint 48-1 實際只修了 5 個檔, 沒修 settings/page.tsx
+    // 誠實守護: 只列實際有動的檔
     const FIXED_FILES = [
       'app/admin/admin-sidebar.tsx',
       'app/admin/crud/[spec]/crud-list-client.tsx',
       'app/admin/roles/page.tsx',
       'app/admin/users/page.tsx',
       'components/ai-elements/conversation.tsx',
-      'app/admin/settings/page.tsx',
     ];
 
     for (const filePath of FIXED_FILES) {
-      it(`${filePath} 不應有 disable-next-line comment (代表已正確修復)`, () => {
+      it(`${filePath} 不應有 react-hooks disable-next-line comment (Sprint 48-1 已清)`, () => {
         if (!existsSync(filePath)) return;
         const source = readFileSync(filePath, 'utf-8');
-        // eslint-disable-next-line 不應該再出現 (代表已正確修復, 不需要 disable)
-        const disableMatches = source.match(/eslint-disable-next-line/g);
-        // 允許已有 disable comment (若 Sprint 48-1 用 disable 而非真正修復)
-        // 但守護未來不應再增加 disable comment
-        // 這裡我們只記錄現有數量, 不做硬性 assert
-        expect(disableMatches === null || disableMatches.length >= 0).toBe(true);
+        // Sprint 48-4.1 hotfix: 從恒等式斷言 (永遠 true) 改成有意義斷言
+        // Sprint 48 mid-review audit §3: 原守護 disableMatches === null || disableMatches.length >= 0 是恒等式
+        // 現改為: 固定檔案不應有 react-hooks/exhaustive-deps disable
+        const reactHooksDisable = source.match(
+          /eslint-disable-next-line[^]*react-hooks\/exhaustive-deps/,
+        );
+        expect(
+          reactHooksDisable,
+          `${filePath} 不應有 react-hooks disable (Sprint 48-1 已清)`,
+        ).toBeNull();
       });
     }
   });

@@ -129,5 +129,20 @@ describe('S48-3 — Upload Ownership Helper Guard (FR-11.1 ~ FR-11.2)', () => {
       );
       expect(helperSource).toMatch(/export\s+class\s+SessionOwnershipError/);
     });
+
+    it('helper 應拋出固定錯誤訊息 (Sprint 48-4.1 hotfix: 防止使用者可見訊息靜默變動)', () => {
+      // Sprint 48 mid-review audit §2:
+      // Sprint 48-3 重構改了錯誤訊息 ("user" → "current user"),
+      // 影響使用者可見訊息與 i18n 對應
+      // 守護: helper 錯誤訊息字串穩定, 未來調整需明確決策
+      const helperSource = readFileSync(
+        'lib/auth/session-ownership.ts',
+        'utf-8',
+      );
+      expect(
+        helperSource,
+        'helper 應使用 canonical 錯誤訊息',
+      ).toContain("'Session does not belong to current user'");
+    });
   });
 });
