@@ -326,6 +326,153 @@ Sprint 47 在 Sprint 46 已實作的真實附件上傳 + 進階 Markdown 基礎�
   - C (6 SP, 含 CRUD List 增強) — 留 Sprint 50+
   - D (最小範圍, 0.8 SP) — 與 A 差異僅 1 個守護項目，方案 A 已包含
 
+### 2.12 FR-17：SourcesList 升級（檔案類型圖示 + 下載按鈕）
+
+> **Sprint 50 決策**（基於 [Sprint 49 Reflection](reflection/sprint-49-reflection.md) §8 帶下項目）：
+> - **方案 A1**：檔案類型圖示 + 下載按鈕
+> - **1 commit / 0.8 SP / 4 FR**
+> - **SourcesList 從 Sprint 47 帶下第 4 次，本 Sprint 升級為「可下載」**
+> - 詳見 [sprint50-plan-gate.md](../sprint50-plan-gate.md)
+
+| FR | 描述 | 優先 | SP |
+|----|------|------|-----|
+| **FR-17.1** | 加 5 種檔案類型 icon 區分 (PDF/DOCX/XLSX/PPTX/圖片/未分類) | P2 | 0.2 |
+| **FR-17.2** | 加檔案類型標籤 (顯示「MIME 友好名」如「PDF 文件」) | P2 | 0.1 |
+| **FR-17.3** | 加下載按鈕 (每個附件有 `<a download>` 連結) | P2 | 0.3 |
+| **FR-17.4** | 建立下載 API `/api/admin/chat/attachments/[id]/download` (RBAC + session ownership 三層守衛) | P2 | 0.2 |
+| **總計** | **4 FR** | | **0.8 SP** |
+
+#### FR-17.1 檔案類型 icon 區分
+
+**實作**：
+```typescript
+// helpers/attachment-icon.ts
+function getAttachmentIcon(mimeType: string): LucideIcon {
+  if (mimeType.startsWith('image/')) return ImageIcon;
+  if (mimeType === 'application/pdf') return FileTextIcon;
+  if (mimeType.includes('word') || mimeType.includes('document')) return FileTextIcon;
+  if (mimeType.includes('sheet') || mimeType.includes('excel')) return SheetIcon;
+  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return PresentationIcon;
+  if (mimeType.startsWith('text/')) return FileTextIcon;
+  return FileIcon; // fallback
+}
+```
+
+**icon 對應**（lucide-react 已裝）：
+- 圖片 (jpg/png/webp/gif) → `ImageIcon`
+- PDF / Word / TXT → `FileTextIcon`
+- XLSX → `SheetIcon`
+- PPTX → `PresentationIcon`
+- 其他 → `FileIcon` (fallback)
+
+#### FR-17.2 MIME 友好名標籤
+
+**實作**：
+```typescript
+const MIME_LABELS: Record<string, string> = {
+  'application/pdf': 'PDF 文件',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word 文件',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel 表格',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint 簡報',
+  'image/jpeg': 'JPEG 圖片',
+  'image/png': 'PNG 圖片',
+  'image/gif': 'GIF 圖片',
+  'image/webp': 'WebP 圖片',
+  'text/plain': '純文字',
+  'text/csv': 'CSV 表格',
+  'text/markdown': 'Markdown',
+};
+```
+
+#### FR-17.3 下載按鈕
+
+**實作**：
+```typescript
+<a
+  href={`/api/admin/chat/attachments/${att.id}/download`}
+  download
+  aria-label={`下載 ${att.filename}`}
+>
+  <DownloadIcon className="size-3" />
+</a>
+```
+
+**為什麼用 `<a download>` 而非 `fetch` + Blob**：
+- 瀏覽器原生支援，不需 JS
+- 對大檔更友善（10MB 不會吃記憶體）
+- 與 RBAC redirect 機制相容（401/403 自動跳轉）
+
+#### FR-17.4 下載 API
+
+**位置**：`app/api/admin/chat/attachments/[id]/download/route.ts`
+
+**RBAC + session ownership + 404 三層守衛**（對齊 upload route Sprint 48-3 重構 pattern）：
+
+```typescript
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  // 1. RBAC 雙層守衛
+  const user = await requireUser().catch(() => null);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Admin only' }, { status: 403 });
+
+  // 2. 讀 attachment
+  const { id } = await params;
+  const attachment = await db.attachment.findUnique({ where: { id } });
+  if (!attachment) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  // 3. 驗證 session 歸屬
+  await requireSessionOwnership(attachment.sessionId, user.id);
+
+  // 4. 讀檔案 (含 path traversal 防護)
+  const filePath = join(process.cwd(), attachment.storagePath);
+  if (!filePath.startsWith(UPLOAD_ROOT)) {
+    return NextResponse.json({ error: 'Invalid path' }, { status: 500 });
+  }
+  const buffer = await readFile(filePath);
+
+  // 5. 回傳 (含 Content-Disposition 強制下載 + 中文檔名編碼)
+  return new NextResponse(buffer, {
+    headers: {
+      'Content-Type': attachment.mimeType,
+      'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(attachment.filename)}`,
+      'Content-Length': attachment.size.toString(),
+    },
+  });
+}
+```
+
+**安全設計**：
+- **RBAC 雙層**：`requireUser` + `isAdmin`（對齊 upload route）
+- **session ownership**：`requireSessionOwnership(attachment.sessionId, user.id)`（Sprint 48-3 helper）
+- **path traversal 防護**：`filePath.startsWith(UPLOAD_ROOT)` 驗證
+- **中文檔名**：`filename*=UTF-8''...` RFC 5987 雙編碼
+
+#### FR 總計（含 Sprint 50）
+
+| 主題 | FR 數 | SP 總計 |
+|---|---|---|
+| Sprint 47~49 (累積) | 61 | ~19.6 |
+| FR-17 SourcesList 升級 (Sprint 50) | 4 | 0.8 |
+| **Sprint 50 新增** | **4 FR** | **~0.8 SP** |
+| **總計 (Sprint 47+48+49+50)** | **65 FR** | **~20.4 SP** |
+
+**Sprint 50 範圍方案選擇**：
+- ✅ **方案 A1**（本 Sprint 採用）：檔案類型圖示 + 下載按鈕（1 commit / 0.8 SP / 0 新架構風險）
+- 替選方案（已取消）：
+  - A2 (1.2 SP, 圖片 inline preview) — 留 Sprint 51+
+  - A3 (2 SP, A1 + A2 全部) — 範圍過大，Sprint 51+ 再評估
+
+#### SourcesList 演進史
+
+| Sprint | 版本 | 功能 |
+|---|---|---|
+| Sprint 47 | v1 | 附件引用折疊區（無下載） |
+| **Sprint 50** | **v2** | **+ 檔案類型 icon + MIME 標籤 + 下載按鈕 + 下載 API** |
+| Sprint 51+ (規劃) | v3 | 圖片 inline preview (A2) |
+
 ---
 
 ## 3. 資料模型
