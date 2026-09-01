@@ -26,8 +26,9 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 48 Submit Gate ✅（5 commits + 1 hotfix = 6 commits / 2.1 SP 完成，剩 3 SP 帶下 Sprint 49）** |
-| **上個 Sprint** | Sprint 47 Plan Gate ✅ + Design Gate ✅ + Execution Gate ✅ + Submit Gate ✅（13.5 SP / 8 commits 100% 完成，1795 → 1881 tests） |
+| **當前 Sprint** | **Sprint 52 Submit Gate ✅（3 commits / 2 SP 100% 完成，新方向 sprint: AI Chat 生成 extensions）** |
+| **上個 Sprint** | Sprint 51 Submit Gate ✅（1 commit / 0.8 SP 100% 完成） |
+| **Sprint 52 總計** | Commit 1 (52-0 Spike 0.5) + Commit 2 (52-1 Generator 設計 + Slash Command 0.6) + Commit 3 (52-2 Validator 完整實作 0.9) = **2 SP 100% 完成** |
 | **Sprint 46 總計** | Commit 1 (3) + Commit 2 (5) + Commit 3 SDK (3) + Commit 4 Markdown (4) + Commit 5 Attachment Reader (3) + Commit 6 Cleanup (1) + Commit 7 E2E (3) = 22 SP ✅ + Bug Fix 4 個 (2.5 SP extra) = 22.5 SP delivered |
 | **Sprint 46 Reflection** | ✅ [docs/reflection/sprint-46-reflection.md](./reflection/sprint-46-reflection.md)：6 項發現 (3 P1 + 3 P2)；Sprint 47 全數回應 5/6 |
 | **Sprint 47 總計** | Commit 1 (47-0 Spike 2) + Commit 2 (47-1 2) + Commit 3 (47-2 2) + Commit 4 (47-3 2) + Commit 5 (47-4 2) + Commit 6 (47-5 2) + Commit 7 (47-6 1) + Commit 8 (47-7 0.5) = 13.5 SP ✅ |
@@ -38,7 +39,8 @@
 | **Sprint 49 Reflection** | ✅ [docs/reflection/sprint-49-reflection.md](./reflection/sprint-49-reflection.md)：0 新功能, 3 commits / 0.8 SP 100% 完成；移除 ~75 行 dead code (Sprint 49-0 spike 揭露)；Sprint 50+ 帶下項目: SourcesList 升級 / CRUD List 增強 / 其他 SDK type dep 切斷 |
 | **Sprint 50 Reflection** | ✅ [docs/reflection/sprint-50-reflection.md](./reflection/sprint-50-reflection.md)：1 新功能 (SourcesList v2), 1 commit / 0.8 SP 100% 完成；RBAC 三層守衛 + path traversal + 中文編碼；Sprint 51+ 帶下項目: SourcesList v3 (圖片 preview) / CRUD List 增強 |
 | **Sprint 51 Reflection** | ✅ [docs/reflection/sprint-51-reflection.md](./reflection/sprint-51-reflection.md)：0 新功能, 1 commit / 0.8 SP 100% 完成；**全專案 from \"ai\" 為 0** (type dep 切斷完成)；Sprint 48-2 (ChatStatus) + Sprint 49-2 (UIMessage) + Sprint 51 (FileUIPart + SourceDocumentUIPart) 持續守護；Sprint 52+ 用戶主動提出: AI 生成 extensions product CRUD |
-| **下個 Sprint 計劃** | Sprint 51 Submit Gate ✅（1 commit / 0.8 SP 完成）：Commit 1 (51-0 SDK Type Dep 切斷 0.8) = 0.8 SP 100% ｜ 0 新功能 (純技術債清理) ｜ **全專案 from \"ai\" 為 0** (type dep 切斷完成) ｜ Sprint 48-2 (ChatStatus) + Sprint 49-2 (UIMessage) + Sprint 51 (FileUIPart + SourceDocumentUIPart) 全部持續守護 ｜ +10 守護測試 (超預期 +2) ｜ 測試基線 1979 → **1989** (+10 tests, 0 regression) ｜ Sprint 52+ 計畫用 AI 生成 extensions product CRUD |
+| **Sprint 52 Reflection** | ✅ [docs/reflection/sprint-52-reflection.md](./reflection/sprint-52-reflection.md)：**新方向 sprint (AI coding)**, 3 commits / 2 SP 100% 完成；建立: spike 可行性驗證 + Extension Generator (Zod schema + prompt + slash command) + Extension Validator (路徑防護 + 覆寫保護 + 三層驗證)；+52 守護測試 (超預期 +38)；測試基線 1989 → **2041** (+52 tests, 0 regression)；**首次突破 2000 tests 里程碑**；Sprint 53+ 帶下: 整合 admin chat panel + 實際生成 product extension |
+| **下個 Sprint 計劃** | Sprint 52 Submit Gate ✅（3 commits / 2 SP 完成）：Commit 1 (52-0 Spike 0.5) + Commit 2 (52-1 Generator + Slash Command 0.6) + Commit 3 (52-2 Validator 0.9) = **2 SP 100%** ｜ **新方向 sprint: AI Chat 生成 extensions** ｜ +52 守護測試 (超預期 +38) ｜ 測試基線 1989 → **2041** (+52 tests, 0 regression) ｜ **首次突破 2000 tests 里程碑** ｜ Sprint 53+ 計畫: 整合 admin chat panel + 實際生成 product extension |
 | **Sprint 46 範圍** | 7 個 Stage 46-A 到 46-G，完整決策與風險見 [sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md) |
 | **Sprint 46 累計測試** | 1795 passed（既有 1629 baseline + Sprint 46 新增 166：Commit 1 守護 26 + Commit 2 守護 28 + mime-validator 57 + Bug Fix 20 + Commit 4 守護 10 + Commit 5 守護 7 + Commit 6 單元 5 + Commit 6 守護 6 + 其他 7）+ Playwright E2E 6 passed（Commit 7）|
 | **Sprint 44 狀態** | ✅ **100% 收尾（17/17 SP）**（Reflection 清理 4 SP + Admin AI Chat FAB 13 SP：FAB + 拖動 snap + 兩欄 Drawer + sessions CRUD + SSE streaming + 7 E2E）|
