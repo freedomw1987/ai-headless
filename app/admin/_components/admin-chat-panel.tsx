@@ -40,6 +40,10 @@ import { Markdown } from '@/lib/ai/chat/markdown-renderer';
 import { useChatStream } from './use-chat-stream';
 import type { ChatMessage } from '@/lib/ai/chat/chat-utils';
 import type { SessionDetail } from './use-chat-sessions';
+import {
+  isExtensionCommand,
+  parseExtensionCommand,
+} from '@/lib/ai/agent-sdk/extension-generator';
 
 type Props = {
   userId: string;
@@ -163,7 +167,47 @@ type WrapperProps = {
 function PromptInputWrapper({ input, setInput, isStreaming, send }: WrapperProps) {
   const attachments = usePromptInputAttachments();
 
+  /**
+   * Sprint 53-0 (FR-20.1): 處理 Extension Generator slash command
+   * - /extension create <name> → 觸發 extension generator flow
+   * - /extension help → 回傳用法說明
+   * - 一般 chat → 走原本 send() 流程
+   */
+  const handleExtensionCommand = (text: string): boolean => {
+    if (!isExtensionCommand(text)) {
+      return false;
+    }
+
+    try {
+      const parsed = parseExtensionCommand(text);
+
+      if (parsed.action === 'help') {
+        // 顯示用法說明 (admin 需手動看 chat 訊息)
+        return true;
+      }
+
+      if (parsed.action === 'create' && parsed.name) {
+        // [Extension Generator] 觸發點
+        // Sprint 53-1 將在此呼叫 server-side 攔截 + validator
+        // Sprint 53-0 僅偵測 slash command, 實際生成留 Sprint 53-2
+        return true;
+      }
+    } catch {
+      // 解析錯誤, 回傳 false 走一般 chat
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = () => {
+    // FR-20.1: 偵測 slash command
+    if (isExtensionCommand(input)) {
+      handleExtensionCommand(input);
+      setInput('');
+      return;
+    }
+
     const atts = attachments.files.map((f) => ({
       filename: f.filename ?? 'file',
       size: undefined,
