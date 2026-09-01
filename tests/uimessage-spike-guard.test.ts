@@ -83,22 +83,22 @@ describe('S49-0 — UIMessage Spike Guard (FR-16.1 ~ FR-16.2)', () => {
     });
   });
 
-  describe('當前 UIMessage 使用面快照 (spike 起點)', () => {
-    it('conversation.tsx 應有 from "ai" import UIMessage (spike 前狀態)', () => {
+  describe('Sprint 49-2 完成後狀態快照 (spike 結論已實作)', () => {
+    it('conversation.tsx 不應有 from "ai" import UIMessage (已切斷)', () => {
       const source = readFileSync(
         'components/ai-elements/conversation.tsx',
         'utf-8',
       );
-      // spike 進行時尚未修, 確認這就是起點
+      // Sprint 49-2 已完成: dead code 刪除, 不再有 UIMessage import
       const hasUIMessageFromAI =
         /from\s+["']ai["']/i.test(source) && /UIMessage/.test(source);
       expect(
         hasUIMessageFromAI,
-        'spike 起點: conversation.tsx 仍從 "ai" import UIMessage',
-      ).toBe(true);
+        'Sprint 49-2 完成: conversation.tsx 已切斷 UIMessage 依賴',
+      ).toBe(false);
     });
 
-    it('message.tsx 應有 from "ai" import UIMessage (spike 前狀態)', () => {
+    it('message.tsx 不應有 from "ai" import UIMessage (已切斷)', () => {
       const source = readFileSync(
         'components/ai-elements/message.tsx',
         'utf-8',
@@ -107,7 +107,19 @@ describe('S49-0 — UIMessage Spike Guard (FR-16.1 ~ FR-16.2)', () => {
         /from\s+["']ai["']/i.test(source) && /UIMessage/.test(source);
       expect(
         hasUIMessageFromAI,
-        'spike 起點: message.tsx 仍從 "ai" import UIMessage',
+        'Sprint 49-2 完成: message.tsx 已切斷 UIMessage 依賴',
+      ).toBe(false);
+    });
+
+    it('message.tsx 應改 import ChatMessageRole from chat-utils', () => {
+      const source = readFileSync(
+        'components/ai-elements/message.tsx',
+        'utf-8',
+      );
+      expect(
+        /from\s+["']@\/lib\/ai\/chat\/chat-utils["']/i.test(source) &&
+          /ChatMessageRole/.test(source),
+        'Sprint 49-2: message.tsx 應改用 ChatMessageRole 而非 UIMessage["role"]',
       ).toBe(true);
     });
   });

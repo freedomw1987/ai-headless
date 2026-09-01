@@ -16,8 +16,6 @@ import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
-import type { UIMessage } from "ai";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 import {
   createContext,
@@ -29,9 +27,11 @@ import {
   useState,
 } from "react";
 import { Streamdown } from "streamdown";
+import type { ChatMessageRole } from "@/lib/ai/chat/chat-utils";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
-  from: UIMessage["role"];
+  from: ChatMessageRole;
 };
 
 export const Message = ({ className, from, ...props }: MessageProps) => (
