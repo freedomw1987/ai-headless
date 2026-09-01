@@ -234,6 +234,98 @@ Sprint 47 在 Sprint 46 已實作的真實附件上傳 + 進階 Markdown 基礎�
 - ✅ Spike 結果：**D-1 方案（只做 PDF, 2 SP）** — 見 [spike 文件](../spike/sprint47-office-parser.md) §5
 - 替選方案（已取消）：D-0 全做（5 SP）、D-2 延 Sprint 48（0 SP）
 
+### 2.11 FR-14 ~ FR-16：Sprint 49 技術債清理（Office Rest Guard 強化 + UIMessage 切斷）
+
+> **Sprint 49 決策**（基於 [Sprint 48 Reflection](reflection/sprint-48-reflection.md)）：
+> - **範圍方案 A**：Office Rest Guard 強化 + UIMessage 切斷（0 新功能）
+> - **3 commits / 1.0 SP / 3 days**
+> - 詳見 [sprint49-plan-gate.md](../sprint49-plan-gate.md)
+
+#### FR-14：Office Rest Guard 強化（Stage 49-1, 0.3 SP）
+
+> **來源**: [Sprint 48 mid-review audit](audit/sprint-48-mid-review.md) 揭露 P1 項目 #4-#6
+
+| FR | 描述 | 優先 | SP |
+|----|------|------|-----|
+| **FR-14.1** | `tests/office-rest-spike.test.ts` 改為「必須裝」守護（不再是「找不到就 skip」） | P1 | 0.1 |
+| **FR-14.2** | fixture 路徑修正（`mammoth-docx-fixture.docx` → 真實 `sample.docx`） | P1 | 0.1 |
+| **FR-14.3** | 加 jszip / fast-xml-parser 「正式列為 package.json 依賴」守護（驗證 Sprint 48-5 列入仍存） | P1 | 0.1 |
+
+**FR-14.1 實作細節**：
+- 原本測試若 jszip/fast-xml-parser 沒裝就 `return`（測試綠但守護失效）
+- 改為 `expect(module, 'jszip 應已安裝').not.toBeNull()`
+- Sprint 48-5 已 `pnpm add jszip fast-xml-parser` 正式列入，現在可放心驗證
+
+**FR-14.2 實作細節**：
+- 原本 `mammoth-docx-fixture.docx` 在測試內引用但實際不存在
+- Sprint 48-5 已建立 `tests/fixtures/office-parser/sample.docx`
+- 守護測試改用實際 fixture 路徑
+
+**FR-14.3 實作細節**：
+- 從 `package.json` `dependencies` + `devDependencies` 讀 deps object
+- 驗證 `deps.jszip` 與 `deps['fast-xml-parser']` 存在
+- Sprint 48-5 已正式列入，本守護是防止未來誤刪依賴
+
+#### FR-15：UIMessage 自訂型別切斷（Stage 49-2, 0.5 SP）
+
+> **來源**: [Sprint 48 Reflection](reflection/sprint-48-reflection.md) 問題 #5
+
+| FR | 描述 | 優先 | SP |
+|----|------|------|-----|
+| **FR-15.1** | 自訂 `UIMessage` 替代型別到 `lib/ai/chat/chat-utils.ts` | P1 | 0.2 |
+| **FR-15.2** | 修改 `conversation.tsx` 改 import 自 chat-utils（不再 `from "ai"` import UIMessage） | P1 | 0.1 |
+| **FR-15.3** | 修改 `message.tsx` 改 import 自 chat-utils（不再 `from "ai"` import UIMessage） | P1 | 0.1 |
+| **FR-15.4** | 加 source-code guard 守護全專案無 `from "ai" import UIMessage` | P1 | 0.1 |
+
+**FR-15.1 實作細節**：
+- 方案 1 (最簡單, 預設): `export type UIMessage = ChatMessage[]`
+- 若 Sprint 49-0 spike 發現需要更複雜型別，改用方案 3: local interface 局部替代
+- 仍保留 AI SDK `ChatStatus` 自訂型別（從 Sprint 48-2）
+
+**FR-15.2 / FR-15.3 實作細節**：
+- 改 import 為 `import type { UIMessage } from '@/lib/ai/chat/chat-utils'`
+- 程式碼其他部分不變（仍使用 UIMessage 型別簽名）
+
+**FR-15.4 守護細節**：
+- 類似 Sprint 48-4.1 hotfix 改進：用 Node.js fs API 遞迴掃描
+- regex: `/from\s+["']ai["']/i` (單/雙引號都抓)
+- 額外 filter: `/import.*UIMessage/i` 確保只守護 UIMessage import
+
+#### FR-16：Spike UIMessage 切斷策略評估（Stage 49-0, 0.2 SP）
+
+> **為什麼需要 spike**: Sprint 48-2 ChatStatus 已有守護失效教訓，先 spike 驗證策略再實作
+
+| FR | 描述 | 優先 | SP |
+|----|------|------|-----|
+| **FR-16.1** | 評估 conversation.tsx + message.tsx 對 UIMessage 的實際使用面（哪些欄位被用） | P1 | 0.1 |
+| **FR-16.2** | 產出 `docs/spike/sprint49-uimessage.md` 記錄 3 個替代方案評估與選擇 | P1 | 0.1 |
+
+**FR-16.1 評估面向**：
+- UIMessage 哪些欄位被讀寫：`id`, `role`, `parts`, `experimental_attachments`, `content`, ...
+- 是否有 AI SDK runtime 依賴（如 `useChat` 回傳 UIMessage）
+- 若有 runtime 依賴，可能需要 re-export 自 AI SDK 而非完全切斷
+
+**FR-16.2 spike 文件章節**：
+- 目的 / 當前 UIMessage 使用面 / 3 個替代方案評估 / 選擇與理由 / Sprint 49-2 行動清單 / 風險
+
+#### FR 總計（含 Sprint 49）
+
+| 主題 | FR 數 | SP 總計 |
+|---|---|---|
+| Sprint 47+48 (累積) | 52 | ~18.8 |
+| FR-14 Office Rest Guard 強化 | 3 | 0.3 |
+| FR-15 UIMessage 切斷 | 4 | 0.5 |
+| FR-16 Spike UIMessage 策略 | 2 | 0.2 |
+| **Sprint 49 新增** | **9 FR** | **~1.0 SP** |
+| **總計 (Sprint 47+48+49)** | **61 FR** | **~19.8 SP** |
+
+**Sprint 49 範圍方案選擇**：
+- ✅ **方案 A** (本 Sprint 採用)：Office Rest Guard 強化 + UIMessage 切斷（3 commits / 1.0 SP / 0 新功能）
+- 替選方案（已取消）：
+  - B (3 SP, 含 SourcesList 新功能) — Sprint 49 決定不擴張
+  - C (6 SP, 含 CRUD List 增強) — 留 Sprint 50+
+  - D (最小範圍, 0.8 SP) — 與 A 差異僅 1 個守護項目，方案 A 已包含
+
 ---
 
 ## 3. 資料模型
