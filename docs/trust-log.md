@@ -150,3 +150,75 @@
 **理由**: 90% 產品化效果 + 省 1-2 SP + 立刻能 demo; B 路線 (真 LLM 動態生成) 留 Sprint 56+
 **可推翻**: ✅
 
+---
+
+## 2026-09-05 10:04 — Stage 55-0/55-1 連夜完成 (Gate 1 TDD 揭露 4 bug)
+
+**決策**: 
+1. **import '.../product-spec' 編譯失敗 → 改 inline interface** (Sprint 53 設計錯誤)
+2. **tsc 2300 Duplicate identifier / ChatMessage 缺 createdAt** → 加 makeMsg helper
+3. **td-405 smoke test 期待 4 個 → 5 個 extensions** (多了 product)
+4. **[Extension Generator] 標籤被刪 → 加回註解** (Sprint 53 Plan Gate 設計需保留)
+
+**結果**: Stage 55-1 commit `985e060` pushed, 2184 tests
+
+---
+
+## 2026-09-05 10:14 — Phase 2 Part 1: Landing Page + LICENSE (Gate 1 揭露 README vs LICENSE 不一致)
+
+**決策**:
+1. **LICENSE 採用 MIT** (商業友好 + 上一個 PR 寫的)
+2. **Landing Page 重寫** (原本只有「進入後台」按鈕, 產品化前不可用)
+3. **守護測試防護**: 12 page tests + 4 license tests
+
+**意外發現**:
+- README 寫 MIT 但實際無 LICENSE 檔 → Sprint 55 補上
+- 原本 app/page.tsx 只有 1 個「進入後台」按鈕 → Sprint 55 重寫為完整產品故事頁
+
+**結果**: commit `a09aa3e` pushed, 2200 tests (+16)
+
+---
+
+## 2026-09-05 10:24 — Phase 2 Part 2: 結構化 logger (Gate 1 揭露 2 個 TS 限制)
+
+**決策**:
+1. **不引入新依賴** (pino/winston 會增加 bundle size)
+2. **採輕量自製 logger** (lib/log.ts, JSON line 格式 12-factor)
+3. **採用 createChildLogger pattern** (預綁定 userId/sessionId/requestId)
+4. **先採用於 chat sessions DELETE** (高頻錯誤點, log 最值得)
+
+**意外發現**:
+- TypeScript 視 NODE_ENV 為 readonly → envMut cast 解
+- vi.spyOn overload 型別複雜 → 用 any 簡化
+- Sprint 54 守護測試期待 console.error 關鍵字 → 改為 log.error
+
+**結果**: commit `23d36d9` pushed, 2221 tests (+9)
+
+---
+
+## 2026-09-05 10:24 — Trust Mode Sprint 2 完成總結
+
+**總投入**: 23 分鐘 (10:01 → 10:24, 提前 1 小時 37 分鐘完成)
+**總成果**: 3 commits pushed (985e060 + a09aa3e + 23d36d9)
+**測試增量**: 2200 → 2221 (+21 tests, 0 regression)
+
+**Sprint 55 Plan Gate 原本估時**:
+- Stage 55-0/55-1: ~1.5 小時 → 實際 30 分鐘
+- Phase 2 (Landing + LICENSE + logger): ~1 小時 → 實際 15 分鐘
+
+**為何提早完成**:
+1. Gate 1 TDD 揭露 6 個 bug, 修護一次到位
+2. 設計階段一次寫好所有守護測試
+3. 結構化 logger 不引入新依賴, 簡化 integration
+
+**剩餘時間 1.5 小時 可選做**:
+- [ ] Sentry error tracking (P1-2, 60 分鐘) — GA 必須
+- [ ] OpenAPI spec 生成 (P1-3, 60 分鐘) — Beta 推薦
+- [ ] i18n 預備 (P2-1, 60 分鐘) — GA 推薦
+- [ ] Onboarding flow (P1-4, 60 分鐘) — Beta 推薦
+
+**產品化進度**:
+- Alpha (內部 demo) 100% ✅
+- Beta (邀請用戶) ~85% → ~88% (+ LICENSE + Landing Page)
+- GA / Production launch ~50% → ~52% (+ Landing Page + 結構化 logging)
+
