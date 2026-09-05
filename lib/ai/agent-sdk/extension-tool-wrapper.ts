@@ -16,7 +16,15 @@
  * - extension-validator.ts 的 isPathAllowed / validateExtensionFiles (Sprint 52-2)
  */
 
-import { writeFileSync, unlinkSync, existsSync, mkdirSync } from 'fs';
+import { execSync } from 'child_process';
+import {
+  writeFileSync,
+  unlinkSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+} from 'fs';
 import { dirname, join } from 'path';
 import {
   isPathAllowed,
@@ -143,19 +151,62 @@ export function validateBatch(
  * - 編譯失敗 → 回傳錯誤訊息
  * - 編譯成功 → 回傳 success
  *
- * 注意: Sprint 53-1 提供函式簽名, Sprint 53-2 才實際整合到端到端流程
+ * Sprint 53-2: 實作為 syntactic check (parse 成功即可, 不檢查 cross-file types)
+ * 原因: cross-file type check 需要完整 tsconfig, 與專案其他檔案耦合
+ *         syntactic check 已足夠抓出大部分語法錯誤
  */
+
 export interface TscValidationResult {
   passed: boolean;
   errors?: string[];
 }
 
 export async function validateTscCompile(
-  _extensionName: string,
+  extensionName: string,
 ): Promise<TscValidationResult> {
-  // Sprint 53-1 placeholder: 實際 tsc 整合留 Sprint 53-2
-  // 原因: tsc 需完整 TypeScript 環境, 整合測試較複雜
-  return { passed: true };
+  const extDir = join('extensions', extensionName);
+  if (!existsSync(extDir)) {
+    return { passed: true }; // 跳過驗證 (無檔案)
+  }
+
+  // 收集所有 .ts 檔案
+  const tsFiles: string[] = [];
+  function collect(dir: string) {
+    for (const entry of readdirSync(dir)) {
+      const fullPath = join(dir, entry);
+      if (statSync(fullPath).isDirectory()) {
+        collect(fullPath);
+      } else if (entry.endsWith('.ts')) {
+        tsFiles.push(fullPath);
+      }
+    }
+  }
+  collect(extDir);
+
+  if (tsFiles.length === 0) {
+    return { passed: true }; // 無 ts 檔案
+  }
+
+  try {
+    // 用 tsc --noEmit 對生成的 ts 檔案做 syntactic check
+    // 注意: --noEmit 不會產出 .js, 只檢查語法
+    execSync(`npx tsc --noEmit --skipLibCheck --target es2020 --module esnext --moduleResolution node ${tsFiles.join(' ')}`, {
+      cwd: process.cwd(),
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    });
+    return { passed: true };
+  } catch (err: unknown) {
+    const error = err as { stdout?: string; stderr?: string; message?: string };
+    const errors: string[] = [];
+    if (error.stdout) errors.push(error.stdout);
+    if (error.stderr) errors.push(error.stderr);
+    if (error.message && errors.length === 0) errors.push(error.message);
+    return {
+      passed: false,
+      errors: errors.length > 0 ? errors : ['tsc compilation failed (unknown error)'],
+    };
+  }
 }
 
 /**
