@@ -26,8 +26,9 @@
 
 | 項目 | 數據 |
 |------|------|
-| **當前 Sprint** | **Sprint 52 Submit Gate ✅（3 commits / 2 SP 100% 完成，新方向 sprint: AI Chat 生成 extensions）** |
-| **上個 Sprint** | Sprint 51 Submit Gate ✅（1 commit / 0.8 SP 100% 完成） |
+| **當前 Sprint** | **Sprint 53 Submit Gate ✅（4 commits / 3 SP 100% 完成，整合 admin chat + 端到端生成 product）** |
+| **上個 Sprint** | Sprint 52 Submit Gate ✅（3 commits / 2 SP 100% 完成，新方向 sprint: AI Chat 生成 extensions） |
+| **Sprint 53 總計** | Commit 1 (53-0 Admin Chat Slash Command 0.5) + Commit 2 (53-1 Extension Tool Wrapper 1.0) + Commit 3 (53-2 tsc 編譯驗證 + 端到端守護 1.5) = **3 SP 100% 完成** |
 | **Sprint 52 總計** | Commit 1 (52-0 Spike 0.5) + Commit 2 (52-1 Generator 設計 + Slash Command 0.6) + Commit 3 (52-2 Validator 完整實作 0.9) = **2 SP 100% 完成** |
 | **Sprint 46 總計** | Commit 1 (3) + Commit 2 (5) + Commit 3 SDK (3) + Commit 4 Markdown (4) + Commit 5 Attachment Reader (3) + Commit 6 Cleanup (1) + Commit 7 E2E (3) = 22 SP ✅ + Bug Fix 4 個 (2.5 SP extra) = 22.5 SP delivered |
 | **Sprint 46 Reflection** | ✅ [docs/reflection/sprint-46-reflection.md](./reflection/sprint-46-reflection.md)：6 項發現 (3 P1 + 3 P2)；Sprint 47 全數回應 5/6 |
@@ -40,6 +41,7 @@
 | **Sprint 50 Reflection** | ✅ [docs/reflection/sprint-50-reflection.md](./reflection/sprint-50-reflection.md)：1 新功能 (SourcesList v2), 1 commit / 0.8 SP 100% 完成；RBAC 三層守衛 + path traversal + 中文編碼；Sprint 51+ 帶下項目: SourcesList v3 (圖片 preview) / CRUD List 增強 |
 | **Sprint 51 Reflection** | ✅ [docs/reflection/sprint-51-reflection.md](./reflection/sprint-51-reflection.md)：0 新功能, 1 commit / 0.8 SP 100% 完成；**全專案 from \"ai\" 為 0** (type dep 切斷完成)；Sprint 48-2 (ChatStatus) + Sprint 49-2 (UIMessage) + Sprint 51 (FileUIPart + SourceDocumentUIPart) 持續守護；Sprint 52+ 用戶主動提出: AI 生成 extensions product CRUD |
 | **Sprint 52 Reflection** | ✅ [docs/reflection/sprint-52-reflection.md](./reflection/sprint-52-reflection.md)：**新方向 sprint (AI coding)**, 3 commits / 2 SP 100% 完成；建立: spike 可行性驗證 + Extension Generator (Zod schema + prompt + slash command) + Extension Validator (路徑防護 + 覆寫保護 + 三層驗證)；+52 守護測試 (超預期 +38)；測試基線 1989 → **2041** (+52 tests, 0 regression)；**首次突破 2000 tests 里程碑**；Sprint 53+ 帶下: 整合 admin chat panel + 實際生成 product extension |
+| **Sprint 53 Reflection** | ✅ [docs/reflection/sprint-53-reflection.md](./reflection/sprint-53-reflection.md)：**整合 + 端到端 sprint**, 4 commits / 3 SP 100% 完成 (含 Design Gate)；Sprint 52 設計推到 runtime: 整合 admin-chat-panel slash command + server-side 攔截 pi agent tool call + 端到端生成 product extension + 三層驗證 (Schema + 結構 + tsc syntactic check)；+32 守護測試 (超預期 +12)；測試基線 2041 → **2073** (+32 tests, 0 regression)；Sprint 54+ 帶下: AdminChatDialog delete button bug 修復 (🔴 P0 用戶反饋) / 自動 e2e (Playwright 1.0) / Generator CLI (2.0) / 其他 extension 類型 (TBD) |
 | **下個 Sprint 計劃** | Sprint 52 Submit Gate ✅（3 commits / 2 SP 完成）：Commit 1 (52-0 Spike 0.5) + Commit 2 (52-1 Generator + Slash Command 0.6) + Commit 3 (52-2 Validator 0.9) = **2 SP 100%** ｜ **新方向 sprint: AI Chat 生成 extensions** ｜ +52 守護測試 (超預期 +38) ｜ 測試基線 1989 → **2041** (+52 tests, 0 regression) ｜ **首次突破 2000 tests 里程碑** ｜ Sprint 53+ 計畫: 整合 admin chat panel + 實際生成 product extension |
 | **Sprint 46 範圍** | 7 個 Stage 46-A 到 46-G，完整決策與風險見 [sprint46-plan-gate.md](sprint46-plan-gate.md) + [PRD 10-chat-attachments.md](prd/10-chat-attachments.md) |
 | **Sprint 46 累計測試** | 1795 passed（既有 1629 baseline + Sprint 46 新增 166：Commit 1 守護 26 + Commit 2 守護 28 + mime-validator 57 + Bug Fix 20 + Commit 4 守護 10 + Commit 5 守護 7 + Commit 6 單元 5 + Commit 6 守護 6 + 其他 7）+ Playwright E2E 6 passed（Commit 7）|
