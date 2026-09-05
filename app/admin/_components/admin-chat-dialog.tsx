@@ -14,7 +14,7 @@
  * - 兩個 button: 「新開對話」+ 「歷史對話」toggle (歷史 sidebar 顯示/隱藏)
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, MessageSquarePlus, History, Trash2 } from 'lucide-react';
 import { AdminChatPanel } from './admin-chat-panel';
 import { useChatSessions, type SessionSummary } from './use-chat-sessions';
@@ -25,8 +25,36 @@ type Props = {
   userId: string;
 };
 
+/**
+ * FR-21.1: useConfirmDialog — 取代原生 confirm() 的原生 <dialog> 包裝
+ */
+function useConfirmDialog() {
+  const [pending, setPending] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (pending && !dialog.open) {
+      dialog.showModal();
+    } else if (!pending && dialog.open) {
+      dialog.close();
+    }
+  }, [pending]);
+
+  const confirm = (id: string, title: string) => setPending({ id, title });
+  const cancel = () => setPending(null);
+  const resolve = () => setPending(null);
+
+  return { pending, confirm, cancel, resolve, dialogRef };
+}
+
 export function AdminChatDialog({ open, onOpenChange, userId }: Props) {
   const [historyOpen, setHistoryOpen] = useState(true); // 預設顯示歷史 sidebar
+  const { pending: confirmDialog, confirm, cancel, resolve, dialogRef } = useConfirmDialog();
   const {
     sessions,
     activeId,
@@ -54,10 +82,15 @@ export function AdminChatDialog({ open, onOpenChange, userId }: Props) {
     await selectSession(id);
   };
 
-  const handleDeleteSession = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm('確定刪除此對話？')) return;
-    await removeSession(id);
+  const handleDeleteSession = async (id: string) => {
+    confirm(id, '');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (confirmDialog) {
+      await removeSession(confirmDialog.id);
+      resolve();
+    }
   };
 
   if (!open) return null;
@@ -103,29 +136,41 @@ export function AdminChatDialog({ open, onOpenChange, userId }: Props) {
                 <ul className="py-1">
                   {sessions.map((s: SessionSummary) => (
                     <li key={s.id}>
-                      {/* Bug Fix (Sprint 46): 外層改 div + role=button, 避免嵌套 button 造成 hydration error */}
+                      {/* Sprint 54 重構 (FR-21.1): 外層純 flex container, 兩個 button 並排, 解決 nested interactive 問題 */}
                       <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleSelectSession(s.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            void handleSelectSession(s.id);
-                          }
-                        }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between gap-1 cursor-pointer ${
+                        className={`w-full flex items-center gap-1 px-3 py-2 text-sm hover:bg-accent ${
                           activeId === s.id ? 'bg-accent' : ''
                         }`}
                         data-testid={`session-item-${s.id}`}
                       >
-                        <span className="truncate flex-1">{s.title}</span>
+                        <button
+                          type="button"
+                          data-action="select"
+                          onClick={() => handleSelectSession(s.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              void handleSelectSession(s.id);
+                            }
+                          }}
+                          className="flex-1 text-left truncate cursor-pointer"
+                          aria-label={`選擇對話 ${s.title}`}
+                        >
+                          {s.title}
+                        </button>
                         <span className="text-xs text-muted-foreground shrink-0">
                           {s._count.messages}
                         </span>
                         <button
                           type="button"
-                          onClick={(e) => handleDeleteSession(s.id, e)}
+                          data-action="delete"
+                          onClick={() => handleDeleteSession(s.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Delete' || e.key === 'Backspace') {
+                              e.preventDefault();
+                              void handleDeleteSession(s.id);
+                            }
+                          }}
                           className="ml-1 p-1 rounded hover:bg-destructive/20 shrink-0"
                           aria-label="刪除對話"
                           data-testid={`delete-session-${s.id}`}
@@ -177,6 +222,38 @@ export function AdminChatDialog({ open, onOpenChange, userId }: Props) {
           />
         </div>
       </div>
+
+      {/* Sprint 54 (FR-21.1): 原生 <dialog> 確認對話框, 取代原生 confirm() */}
+      <dialog
+        ref={dialogRef}
+        className="rounded-lg p-0 backdrop:bg-black/40"
+        data-testid="delete-confirm-dialog"
+      >
+        <div className="p-6 min-w-[320px]">
+          <h3 className="text-lg font-semibold mb-2">確認刪除對話</h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            確定刪除此對話? 刪除後無法復原。
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={cancel}
+              className="px-4 py-2 rounded border hover:bg-accent text-sm"
+              data-testid="delete-confirm-cancel"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              className="px-4 py-2 rounded bg-destructive text-destructive-foreground hover:bg-destructive/90 text-sm"
+              data-testid="delete-confirm-ok"
+            >
+              刪除
+            </button>
+          </div>
+        </div>
+      </dialog>
     </>
   );
 }

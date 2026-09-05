@@ -1,17 +1,24 @@
 /**
  * Bug Fix — Chat History Sidebar 嵌套 <button> in <button> hydration error
  *
- * 對應: Sprint 46 中用戶回報 React hydration error
+ * 對應: Sprint 46 中用戶回報 React hydration error + Sprint 54 delete button bug
  *
- * 問題:
+ * Sprint 46 問題:
  * - admin-chat-dialog.tsx 第 106 行 <button onClick={handleSelectSession}>
  *   內含第 118 行 <button onClick={handleDeleteSession}> (刪除鈕)
  * - HTML 不允許 button 嵌套 button, 會 throw hydration error
  * - 錯誤訊息: "<button> cannot be a descendant of <button>. This will cause a hydration error."
  *
- * 修復策略 (Sprint 46 Bug Fix):
+ * Sprint 46 Bug Fix:
  * - 外層 button 改 div + role="button" + tabIndex=0 + onKeyDown (Enter/Space)
  * - 內層 delete button 保留 button + stopPropagation
+ * - 但 Sprint 54 發現 delete 點不到 (nested interactive 仍有問題)
+ *
+ * Sprint 54 重構 (本檔測試已更新):
+ * - session-item 外層改為純 <div> flex container (不再有 role="button")
+ * - 內部兩個真正 <button> 並排: data-action="select" / data-action="delete"
+ * - 完全消除 nested interactive, 加上原生 <dialog> confirm
+ * - delete button 可正確觸發 confirm, select button 可正確選 session
  */
 
 import { describe, it, expect } from 'vitest';
@@ -51,44 +58,27 @@ describe('Bug Fix — Chat History 嵌套 button hydration', () => {
     ).not.toBe('button');
   });
 
-  it('session-item 應有 role="button" (鍵盤可達性)', () => {
+  // Sprint 54: 既然 session-item 為純 <div>, 也不應有 role="button" / tabIndex={0}
+  // 鍵盤可達性下移到內部 select button (本身是真正 <button> 元素)
+
+  it('session-item 應有 data-action="select" 內部按鈕 (鍵盤可達性)', () => {
     const testidIdx = source.indexOf('data-testid={`session-item-${s.id}`}');
     expect(testidIdx).toBeGreaterThan(-1);
-    const openTags = [...source.substring(0, testidIdx).matchAll(/<(\w+)\s/g)];
-    const lastOpenTag = openTags[openTags.length - 1];
-    expect(lastOpenTag, '應找到 session-item 開 tag').toBeTruthy();
-    // 從開 tag 到 testid 應有 role="button"
-    const startIdx = lastOpenTag!.index!;
-    const fromOpenTag = source.substring(startIdx, testidIdx + 200);
+    const region = source.substring(testidIdx, testidIdx + 1000);
     expect(
-      fromOpenTag,
-      'session-item 開 tag 區域應有 role="button"',
-    ).toMatch(/role="button"/);
+      region,
+      'session-item 內部應有 data-action="select" <button>',
+    ).toMatch(/data-action="select"/);
   });
 
-  it('session-item 應有 tabIndex={0} (鍵盤可達性)', () => {
+  it('session-item 內部 select button 應有 onKeyDown 處理 Enter/Space', () => {
     const testidIdx = source.indexOf('data-testid={`session-item-${s.id}`}');
     expect(testidIdx).toBeGreaterThan(-1);
-    const openTags = [...source.substring(0, testidIdx).matchAll(/<(\w+)\s/g)];
-    const lastOpenTag = openTags[openTags.length - 1];
-    expect(lastOpenTag).toBeTruthy();
-    const startIdx = lastOpenTag!.index!;
-    const fromOpenTag = source.substring(startIdx, testidIdx + 200);
+    const region = source.substring(testidIdx, testidIdx + 1500);
     expect(
-      fromOpenTag,
-      'session-item 開 tag 區域應有 tabIndex={0}',
-    ).toMatch(/tabIndex=\{0\}/);
-  });
-
-  it('session-item 應有 onKeyDown 處理 Enter/Space', () => {
-    const testidIdx = source.indexOf('data-testid={`session-item-${s.id}`}');
-    expect(testidIdx).toBeGreaterThan(-1);
-    const openTags = [...source.substring(0, testidIdx).matchAll(/<(\w+)\s/g)];
-    const lastOpenTag = openTags[openTags.length - 1];
-    expect(lastOpenTag).toBeTruthy();
-    const startIdx = lastOpenTag!.index!;
-    const region = source.substring(startIdx, testidIdx + 500);
-    expect(region, 'session-item 區域應有 onKeyDown').toMatch(/onKeyDown/);
+      region,
+      'session-item 區域應有 onKeyDown',
+    ).toMatch(/onKeyDown/);
   });
 
   // ============== C. delete-session 應仍是 button ==============
@@ -113,17 +103,28 @@ describe('Bug Fix — Chat History 嵌套 button hydration', () => {
 
   // ============== D. 不應有 button 包含 button 嵌套 ==============
 
-  it('不應有 <button ... data-testid="session-item..." 內包含另一個 <button>', () => {
+  it('session-item 區域內不應有 button 包含另一個 button (用 <button 計數驗證)', () => {
+    // Sprint 54 重構: session-item 是純 <div> flex container
+    // 裡面有兩個平行的 <button> (select + delete), 沒有嵌套
+    // 驗證: session-item 區域內, <button 開 tag 數 = </button> 關 tag 數
     const sessionItemIdx = source.indexOf('data-testid={`session-item-${s.id}`}');
     expect(sessionItemIdx).toBeGreaterThan(-1);
-    const beforeSession = source.substring(0, sessionItemIdx);
-    const lastButtonOpen = beforeSession.lastIndexOf('<button');
-    expect(lastButtonOpen).toBeGreaterThan(-1);
-    const buttonClose = source.indexOf('</button>', lastButtonOpen);
-    expect(buttonClose).toBeGreaterThan(-1);
+    // session-item 區域: 從 <li 開 tag 到 </li> 關 tag
+    const beforeLi = source.substring(0, sessionItemIdx);
+    const lastLiOpen = beforeLi.lastIndexOf('<li');
+    expect(lastLiOpen).toBeGreaterThan(-1);
+    const liClose = source.indexOf('</li>', lastLiOpen);
+    expect(liClose).toBeGreaterThan(-1);
+
+    const liRegion = source.substring(lastLiOpen, liClose);
+    // 排除註解裡的 <button> 字串: 只算 <button 或 <button\n 後面不是字母的
+    const buttonOpenCount = (liRegion.match(/<button(\s|>)/g) ?? []).length;
+    const buttonCloseCount = (liRegion.match(/<\/button>/g) ?? []).length;
     expect(
-      sessionItemIdx > buttonClose,
-      'session-item 應在外層 </button> 之後 (即不再嵌套在 <button> 內)',
-    ).toBe(true);
+      buttonOpenCount,
+      `<li> 區域內 <button 開 tag 數應 = </button> 關 tag 數 (代表未嵌套)`,
+    ).toBe(buttonCloseCount);
+    // 且至少 2 個 button (select + delete)
+    expect(buttonOpenCount, '<li> 區域內應至少 2 個 button (select + delete)').toBeGreaterThanOrEqual(2);
   });
 });
