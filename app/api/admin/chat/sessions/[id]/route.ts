@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUser, isAdmin } from '@/lib/auth/auth';
 import { db } from '@/lib/db';
+import { createChildLogger } from '@/lib/log';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -47,6 +48,9 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
   const { id } = await params;
+  const log = createChildLogger({ userId: auth.user.id, sessionId: id, route: 'DELETE /api/admin/chat/sessions/[id]' });
+
+  log.info('delete session requested', { attachmentCount: undefined });
 
   // Sprint 54 Bug Fix — 先確認 session 存在且為此 user 所有 (S47-6 inline check: findUnique + userId)
   const session = await db.chatSession.findUnique({
@@ -58,8 +62,11 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     },
   });
   if (!session || session.userId !== auth.user.id) {
+    log.warn('session not found or not owned by user');
     return NextResponse.json({ error: 'Session not found' }, { status: 404 });
   }
+
+  log.info('session found, starting cleanup', { attachmentCount: session.attachments.length });
 
   // 1. 清檔案系統 (uploads/ 下每個 attachment)
   if (session.attachments.length > 0) {
@@ -73,7 +80,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       }
     } catch (err) {
       // 檔案清除失敗不影響 DB 刪除 (避免部分刪除造成不一致)
-      console.error('[chat sessions DELETE] failed to remove attachment files', err);
+      log.error('failed to remove attachment files', { error: String(err) });
     }
   }
 
@@ -84,7 +91,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
         where: { sessionId: id },
       });
     } catch (err) {
-      console.error('[chat sessions DELETE] failed to delete attachment records', err);
+      log.error('failed to delete attachment records', { error: String(err) });
       return NextResponse.json(
         { error: 'Failed to delete attachments' },
         { status: 500 },
@@ -97,8 +104,10 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     where: { id, userId: auth.user.id },
   });
   if (result.count === 0) {
+    log.warn('session delete returned count=0');
     return NextResponse.json({ error: 'Session not found' }, { status: 404 });
   }
+  log.info('session deleted successfully');
   return NextResponse.json({ ok: true });
 }
 

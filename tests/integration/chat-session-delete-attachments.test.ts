@@ -61,10 +61,11 @@ describe('S54 — DELETE /api/admin/chat/sessions/[id] 互動測試', () => {
       expect(source).toMatch(/force:\s*true/);
     });
 
-    it('應對檔案清除錯誤有 console.error 但不 throw (避免部分刪除)', () => {
-      // try/catch 包住 rm 邏輯, catch 內 console.error
+    it('應對檔案清除錯誤有 logger.error 但不 throw (避免部分刪除)', () => {
+      // Sprint 55 改用結構化 logger (lib/log.ts)
+      // try/catch 包住 rm 邏輯, catch 內 logger.error (不 throw)
       // 確保 fs 失敗不影響 DB 刪除
-      expect(source).toMatch(/console\.error\([^)]*attachment/);
+      expect(source).toMatch(/log\.error\([^)]*attachment/);
     });
   });
 
