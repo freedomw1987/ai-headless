@@ -76,4 +76,68 @@ describe('S44-G2 — /api/admin/chat/sessions API', () => {
       expect(hasSession, 'Panel 應支援 session 切換').toBe(true);
     });
   });
+
+  // ============================================
+  // Sprint 54 Bug Fix — DELETE 500 修護守護測試
+  // ============================================
+  // 用戶反饋: DELETE /api/admin/chat/sessions/[id] 返回 500
+  // 根因: Attachment schema 是 onDelete: NoAction, DELETE session 時 FK 違反
+  // 修法: DELETE handler 先刪 attachment records + 檔案系統, 再刪 session
+  describe('S54 Bug Fix — DELETE 應正確清除 attachments', () => {
+    const detailRouteSource = readFileSync(
+      'app/api/admin/chat/sessions/[id]/route.ts',
+      'utf-8',
+    );
+
+    it('DELETE handler 應先 query session 含 attachments 關聯', () => {
+      expect(
+        detailRouteSource,
+        'DELETE handler 應 query attachments (為清檔案系統)',
+      ).toMatch(/attachments:\s*{\s*select:\s*{\s*storagePath:\s*true\s*}\s*}/);
+    });
+
+    it('DELETE handler 應呼叫 db.attachment.deleteMany', () => {
+      expect(
+        detailRouteSource,
+        'DELETE handler 應先刪 attachment records (FK NoAction 防護)',
+      ).toMatch(/db\.attachment\.deleteMany/);
+    });
+
+    it('DELETE handler 應從 fs/promises 刪 attachment 檔案', () => {
+      // 接受 static import 或 dynamic import 兩種寫法
+      const source = detailRouteSource;
+      const hasRmImport =
+        /import\s*{[^}]*\brm\b[^}]*}\s*from\s*['"]fs\/promises['"]/.test(source) ||
+        /\{[^}]*\brm\b[^}]*\}\s*=\s*await\s+import\(['"]fs\/promises['"]\)/.test(source);
+      expect(
+        hasRmImport,
+        'DELETE handler 應 (dynamic) import rm from fs/promises',
+      ).toBe(true);
+      // 應有 join(process.cwd(), storagePath) 解絕對路徑
+      expect(
+        source,
+        'DELETE handler 應用 process.cwd() + join 解絕對路徑',
+      ).toMatch(/join\(process\.cwd\(\),\s*att\.storagePath\)|join\(process\.cwd\(\)/);
+    });
+
+    it('DELETE handler 應先刪 attachments 再刪 session (順序)', () => {
+      // db.attachment.deleteMany 應在 db.chatSession.deleteMany 之前
+      const attachmentDeleteIdx = detailRouteSource.indexOf('db.attachment.deleteMany');
+      const sessionDeleteIdx = detailRouteSource.indexOf('db.chatSession.deleteMany');
+      expect(attachmentDeleteIdx, '應有 db.attachment.deleteMany').toBeGreaterThan(-1);
+      expect(sessionDeleteIdx, '應有 db.chatSession.deleteMany').toBeGreaterThan(-1);
+      expect(
+        attachmentDeleteIdx < sessionDeleteIdx,
+        '應先刪 attachments 再刪 session (避免 FK 違反)',
+      ).toBe(true);
+    });
+
+    it('DELETE handler 應處理檔案系統錯誤但不 crash DB 刪除', () => {
+      // 檔案系統 rm 失敗不應中斷 DB 刪除 (用 force=true + try/catch + console.error)
+      expect(
+        detailRouteSource,
+        'DELETE handler 應對檔案清除錯誤有 console.error 但不 throw',
+      ).toMatch(/force:\s*true/);
+    });
+  });
 });
