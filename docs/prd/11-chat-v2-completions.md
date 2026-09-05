@@ -899,6 +899,170 @@ extensions/product/
 | SourcesList v3（圖片 preview） | 1.2 | 從 Sprint 50 帶下第 6 次 |
 | CRUD List 增強 | 5 | 從 Sprint 48 帶下第 5 次 |
 
+### 2.16 FR-21：AdminChatDialog Delete Button Bug 修復
+
+> **Sprint 54 決策**（基於 [Sprint 53 Reflection](reflection/sprint-53-reflection.md) §6 帶下項目）：
+> - **方向：修復 delete button 點不到的 bug**（用戶反饋）
+> - **1 commit / 0.5 SP / 5 FR**
+> - **從 Sprint 45-46 AdminChatDialog 帶下問題**
+> - 詳見 [sprint54-plan-gate.md](../sprint54-plan-gate.md)
+
+| FR | 描述 | 優先 | SP |
+|----|------|------|-----|
+| **FR-21.1** | admin-chat-dialog 重構: 扁平事件代理 + 原生 `<dialog>` confirm | P0 | 0.3 |
+| **FR-21.2** | 鍵盤支援: Enter/Space 選 + Delete 觸發 confirm | P1 | 0.1 |
+| **FR-21.3** | 守護測試: 無 nested interactive + useConfirmDialog + data-action | P1 | 0.05 |
+| **FR-21.4** | 互動測試: click 路由 (select / delete) + confirm 流程 | P1 | 0.03 |
+| **FR-21.5** | 鍵盤測試: Enter/Space/Delete 鍵事件 | P2 | 0.02 |
+| **總計** | **5 FR** | | **0.5 SP** |
+
+#### 5 個 Q&A 決策彙總
+
+| 決策 | 採用 | 為何 |
+|---|---|---|
+| 修復策略 | 重構為扁平事件代理 + 原生 `<dialog>` confirm | 徹底解 nested interactive + confirm() 失效問題 |
+| Confirm 設計 | HTML5 `<dialog>` + showModal() | 原生 modal、可摺底蕪、完全可訪問、不需外部 lib |
+| Session 點擊 | 點整個 row 選 session | 保留原 UX，不破壞既有使用者習慣 |
+| 鍵盤操作 | Enter/Space + Delete 鍵 | Tab 順序自然，無需快捷鍵 |
+| 測試範圍 | 守護 + 互動 + 鍵盤 | 三層覆蓋: 結構 + click + 鍵盤 |
+
+#### FR-21.1 重構 admin-chat-dialog
+
+**位置**：`app/admin/_components/admin-chat-dialog.tsx`
+
+**舊結構**（有 bug）：
+```tsx
+<div role="button" tabIndex={0} onClick={() => handleSelectSession(s.id)}>
+  <span>{s.title}</span>
+  <span>{s._count.messages}</span>
+  <button onClick={(e) => handleDeleteSession(s.id, e)}>  {/* ❌ nested interactive */}
+    <Trash2 />
+  </button>
+</div>
+```
+
+**新結構**（扁平事件代理）：
+```tsx
+<div className="flex items-center gap-1 ..." data-testid={`session-item-${s.id}`}>
+  <button
+    data-action="select"
+    onClick={() => handleSelectSession(s.id)}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleSelectSession(s.id);
+      }
+    }}
+    className="flex-1 text-left ..."
+  >
+    <span>{s.title}</span>
+    <span>{s._count.messages}</span>
+  </button>
+  <button
+    data-action="delete"
+    aria-label="刪除對話"
+    data-testid={`delete-session-${s.id}`}
+    onClick={() => confirmDelete(s.id, s.title)}
+    onKeyDown={(e) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        confirmDelete(s.id, s.title);
+      }
+    }}
+    className="ml-1 p-1 rounded hover:bg-destructive/20"
+  >
+    <Trash2 />
+  </button>
+</div>
+```
+
+**設計重點**：
+- 外層 `<div>` 沒有 `role="button"`，純 flex container
+- 兩個真正的 `<button>` 並排，用 `data-action` 區分
+- 完全符合 HTML5 規範（不再 nested interactive）
+- `useConfirmDialog` hook 包裝 `<dialog>` + `showModal()`
+- 不再用 `window.confirm()`（dialog 內可能失效）
+
+#### FR-21.2 鍵盤支援
+
+**設計**：
+- Tab focus 到 select button → Enter/Space 觸發選 session
+- Tab focus 到 delete button → Delete/Backspace 觸發 confirm
+- 不用快捷鍵（避免與瀏覽器預設衝突）
+
+**對應無障礙**：
+- 每個 `<button>` 都是真正的 button，瀏覽器/螢幕閱讀器原生支援
+- `aria-label="刪除對話"` 保留
+
+#### FR-21.3 守護測試
+
+**位置**：`tests/admin-chat-dialog-delete-bug-guard.test.ts`
+
+**守護項目**：
+- 不應有 nested interactive (`<div role="button">` 內含 `<button>`)
+- 應有 `data-action="select"` / `data-action="delete"` attribute
+- 應有原生 `<dialog>` 元素 (或 `showModal()` 呼叫)
+- 不應有 `window.confirm()` 呼叫
+
+#### FR-21.4 互動測試
+
+**設計**：
+- click row（不含 trash） → 選 session
+- click trash icon → 觸發 confirm dialog (showModal)
+- confirm 取消 → 不刪除, dialog 關閉
+- confirm 確認 → 刪除 session, dialog 關閉
+
+#### FR-21.5 鍵盤測試
+
+**設計**：
+- Tab focus + Enter → 選 session
+- Tab focus + Space → 選 session
+- Tab focus + Delete → 觸發 confirm
+
+#### 風險與緩解
+
+| 風險 | 嚴重性 | 緩解 |
+|---|---|---|
+| 改 click 行為破壞既有測試 | 🟠 中 | 更新 `admin-chat-dialog-guard.test.ts` 的 data-testid 結構檢查 |
+| `<dialog>` 跨瀏覽器 | 🟢 低 | 現代瀏覽器支援度高 (Chrome 37+ / Firefox 98+ / Safari 15.4+) |
+| 既有使用者習慣 Enter 键 | 🟢 低 | 保留 Enter 行為 + 視覺一致 |
+| 新 `<button>` 取代 `<div role="button">` 改變鍵盤 tab 順序 | 🟢 低 | 兩個 button 並排，Tab 順序自然 |
+
+#### 明確排除（Sprint 54 不做）
+
+| 項目 | 排除原因 |
+|---|---|
+| AdminChatPanel 改寫 | 範圍過大, 留 Sprint 55+ |
+| 鍵盤快捷鍵 (Cmd+D 等) | Enter/Space/Delete 已足 |
+| 批量刪除 | 一次性 delete 1 個 session 已足 |
+| Toast 通知刪除成功 | 留 Sprint 55+ |
+| 從 delete button 移出 dialog 外（Portal） | 範圍過大, 留 Sprint 55+ |
+| Auto-focus 第一個 session | 留 Sprint 55+ |
+
+#### FR 總計（含 Sprint 54）
+
+| 主題 | FR 數 | SP 總計 |
+|---|---|---|
+| Sprint 47~53（累積） | 77 | ~26.2 |
+| FR-21 Delete Button Bug 修復 (Sprint 54) | 5 | 0.5 |
+| **Sprint 54 新增** | **5 FR** | **~0.5 SP** |
+| **總計（Sprint 47~54）** | **82 FR** | **~26.7 SP** |
+
+#### Sprint 55+ 帶下
+
+| 項目 | 預估 SP | 備註 |
+|---|---|---|
+| AdminChatPanel 改寫 (分離 dialog 邏輯) | 2.0 | Sprint 54 排除 |
+| 鍵盤快捷鍵 (Cmd+K 等) | 0.5 | Sprint 54 排除 |
+| 批量刪除 sessions | 1.0 | Sprint 54 排除 |
+| Toast 通知刪除成功 | 0.3 | Sprint 54 排除 |
+| 自動 e2e 測試生成的 extension (Playwright) | 1.0 | 從 Sprint 53 帶下第 2 次 |
+| Generator CLI 工具 | 2.0 | 從 Sprint 53 帶下第 2 次 |
+| 支援更多 extension 類型 (inventory, invoice 等) | TBD | 從 Sprint 53 帶下第 2 次 |
+| 非同步生成流程 (SSE 進度) | 1.5 | 從 Sprint 53 帶下第 2 次 |
+| SourcesList v3 (圖片 preview) | 1.2 | 從 Sprint 50 帶下第 7 次 |
+| CRUD List 增強 | 5 | 從 Sprint 48 帶下第 6 次 |
+
 ---
 
 ## 3. 資料模型
