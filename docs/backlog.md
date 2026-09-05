@@ -641,7 +641,7 @@
 
 | ID | 類型 | 標題 | 描述 | SP | Sprint | 模組 | 狀態 |
 |----|------|------|------|----|----|------|------|
-| **TD-402** | Tech Debt | Extension grid RWD | `md:grid-cols-2`，<md 未做單欄處理 | 0.5 | SP4 | M7 | 📋 Ready（未做） |
+| **TD-402** | Tech Debt | Extension grid RWD | `md:grid-cols-2`，<md 未做單欄處理 | 0.5 | SP4 | M7 | ✅ Done（Sprint 54 trust mode：驗證 `app/admin/page.tsx` 已 `grid grid-cols-1 md:grid-cols-2`，<md 單欄已實現）|
 | **TD-406** | Tech Debt | Chat 串流重連機制 | 無 retry，弱網環境體驗差 | 1 | SP4 | M5 | ✅ Done（streamChatWithRetry 已實作，盤點 2026-08-24） |
 | **TD-501** | Tech Debt | chat-page-client.tsx 職責過多 | 243 行 → 135 行 + 3 hooks | 3 | SP5 | M5 | ✅ Done |
 | **TD-503** | Tech Debt | SSE 串流無 abort/cancel | 用戶離開頁面或新對話時，串流繼續消耗 API quota | 1 | SP5 | M5 | ✅ Done |
@@ -683,10 +683,10 @@
 | **US-803** | User Story | 批次刪除 undo 機制 | toast 內加 undo button，防止誤刪（從 Sprint 27 延續）| 2 | SP30 | M4 | 📋 Ready |
 | **US-804** | User Story | Toolbar 鍵盤快捷鍵 | Cmd+A 全選 / Delete 開批次刪除 dialog / Esc 關 dialog | 1 | SP30 | M4 | 📋 Ready |
 | **TD-812** | Tech Debt | Batch delete RBAC + TransitionLog 守護測試 | 補 unit + integration test：RBAC 邊界 + 每筆刪除有 TransitionLog 紀錄 | 0.5 | SP30 | M4 | ✅ Done（Sprint 41 admin RBAC + source-code guard）|
-| **TD-813** | Tech Debt | `?filters=` parse 邊界測試 | 補 integration test：malformed JSON、無效欄位、injection 防護、Sprint 32 review R2 守護 | 0.5 | SP30 | M1 | 📋 Ready（Sprint 42+ partial：source-code guard 已有，behavior test 缺）|
-| **TD-814** | Tech Debt | Infinite scroll trigger + 累積 render 測試 | 補 unit test：max page guard、`useTransition`、cumulative render 正確性 | 0.5 | SP30 | M4 | 📋 Ready（Sprint 42 必修）|
+| **TD-813** | Tech Debt | `?filters=` parse 邊界測試 | 補 integration test：malformed JSON、無效欄位、injection 防護、Sprint 32 review R2 守護 | 0.5 | SP30 | M1 | ✅ Done（Sprint 54 trust mode：18 tests, 涵盖 malformed JSON / 非 array / 注入防護 / 無效元素 / 正常輸入）|
+| **TD-814** | Tech Debt | Infinite scroll trigger + 累積 render 測試 | 補 unit test：max page guard、`useTransition`、cumulative render 正確性 | 0.5 | SP30 | M4 | ✅ Done（Sprint 54 trust mode：10 tests, 涵盖 max page cap 4 個 / useTransition+cumulative 3 個 / query string 保留 3 個）|
 | **TD-815** | Tech Debt | Sidebar Escape / route-change / backdrop 三種關閉路徑 E2E | Playwright 補 3 個情境測試（目前 `admin-mobile-rwd.spec.ts` 只測漢堡 toggle） | 0.5 | SP30 | M7 | ✅ Done（Sprint 42 改寫強斷言：dispatchEvent + toHaveCount(0)；3 個 E2E 從偽綠變真綠）|
-| **TD-816** | Tech Debt | JWT name/image cache miss vs hit 路徑測試 | 補 unit test：cache miss 查 DB、cache hit 不查；防止 R1 再犯 | 0.5 | SP30 | M2 | ⚠️ Partial（source-code guard 已有；Sprint 42+ 可加 behavior test）|
+| **TD-816** | Tech Debt | JWT name/image cache miss vs hit 路徑測試 | 補 unit test：cache miss 查 DB、cache hit 不查；防止 R1 再犯 | 0.5 | SP30 | M2 | ✅ Done（Sprint 54 trust mode：6 source-code guards, 涵盖 cache miss/hit 3 個路徑 + TD-802/803 記號 + TTL 註解）|
 | **TD-817** | Tech Debt | `lib/runtime/batch-delete.ts` 檔案健檢 | 被 `route.ts` 引用但不在 working tree 改動清單。確認檔案存在、有 unit test、respects permission checks、寫 TransitionLog | 0.5 | SP30 | M4 | ✅ Done（Sprint 41 source-code guard + RBAC 測試覆蓋）|
 | **TD-818** | Tech Debt | Lockfile 雙軌整理 | `bun.lock` + `pnpm-lock.yaml` 都改動，CI 一邊裝一邊不裝。修正：挑一個（推薦 pnpm，CI 已用 `--frozen-lockfile`）並 `.gitignore` 另一個 | 0.3 | SP30 | M0 | ✅ Done（Sprint 42 `.gitignore` bun.lock + git rm + source-code guard）|
 | **US-S46-SourcesReasoning** | User Story | Sprint 46 補做 SourcesList + ReasoningSection | PRD §7 規劃「自製 SourcesList + ReasoningSection 元件，從 AI 回應 metadata 顯示」；Sprint 46 只做了 Markdown + 附件 2/3 主題 | 3 | SP47 | M5 | ✅ Done（Sprint 47-1 降階方案：Sources 改附件引用折疊區）|
@@ -696,12 +696,12 @@
 | **TD-S47-MarkdownXSS** | Tech Debt | Markdown 輸出 XSS E2E 守護 | Sprint 46 守護測試顯式避免 `rehype-raw` 但沒對 Markdown 輸出做端到端 XSS 測試；防 Sprint 47+ 加 `rehype-raw` 時引入 XSS | 0.5 | SP47 | M5 | ✅ Done（Sprint 47-7 7 個 XSS 守護測試全綠）|
 | **US-S48-SourcesList** | User Story | Sources 完整列表（PRD §2.3 FR-1.4） | Sprint 47-1 採降階「附件引用折疊區」，未實作完整 SourcesList 元件。用戶看不到 AI 引用來源列表 | 3 | SP48 | M5 | 📋 Ready（Sprint 47 reflection 揭露）|
 | **US-S48-OfficeParserRest** | User Story | DOCX/XLSX/PPTX 解析 (PRD §2.5 FR-5.2/5.3) | Sprint 47-4 只做 PDF (D-1 方案)，DOCX/XLSX/PPTX 仍 `unsupported`。PDF 動態 import 已證明可行，可延伸 | 3 | SP48 | M5 | 📋 Ready（Sprint 47 reflection 揭露，需重跑 bundle spike）|
-| **TD-S48-LintCleanup** | Tech Debt | 修 6 個 pre-existing lint 錯誤 | `react-hooks/exhaustive-deps` (admin-sidebar, settings/page) + `await-thenable` (roles/page, users/page) + `no-floating-promises` (conversation.tsx) | 0.5 | SP48 | M0 | 📋 Ready（Sprint 47 reflection 揭露）|
-| **TD-S48-UploadOwnershipRefactor** | Tech Debt | Upload route 改用 requireSessionOwnership helper | Sprint 47-6 stream route 改用 helper，但 upload route 仍用內聯 `db.chatSession.findUnique` + userId 比對。風格不一致 | 0.5 | SP48 | M5 | 📋 Ready（Sprint 47 reflection 揭露）|
+| **TD-S48-LintCleanup** | Tech Debt | 修 6 個 pre-existing lint 錯誤 | `react-hooks/exhaustive-deps` (admin-sidebar, settings/page) + `await-thenable` (roles/page, users/page) + `no-floating-promises` (conversation.tsx) | 0.5 | SP48 | M0 | ✅ Done（Sprint 54 trust mode：驗證 `pnpm lint` 0 error）|
+| **TD-S48-UploadOwnershipRefactor** | Tech Debt | Upload route 改用 requireSessionOwnership helper | Sprint 47-6 stream route 改用 helper，但 upload route 仍用內聯 `db.chatSession.findUnique` + userId 比對。風格不一致 | 0.5 | SP48 | M5 | ✅ Done（Sprint 48-3 揭露：upload route 已用 helper, 與 stream route 風格一致）|
 | **TD-901** | Tech Debt | 其他 CRUD 頁面 RWD 健檢 (todo/event) | Sprint 27 只修 blog，其他 CRUD 頁面需要同樣健檢 | 1 | SP31 | M4 | ✅ Done（Sprint 41 spec loader mtime cache + admin 4 頁 RWD 健檢）|
 | **TD-902** | Tech Debt | 批次刪除 undo 機制 | toast 內加 undo button，防止誤刪 | 2 | SP31 | M4 | 📋 Ready |
 | **TD-903** | Tech Debt | Toolbar 鍵盤快捷鍵 | Cmd+A 全選 / Delete 開批次刪除 dialog | 1 | SP31 | M4 | 📋 Ready |
-| **TD-S47-ChatStatus** | Tech Debt | ChatStatus 自訂型別 | `use-chat-stream.ts` 從 `'ai'` SDK import `ChatStatus` 型別；整個專案 Sprint 45 起都刻意避免依賴 AI SDK UIMessage，卻唯獨 `ChatStatus` 用 'ai' SDK 型別 | 0.3 | SP47 | M5 | 📋 Ready（Sprint 46 reflection 揭露）|
+| **TD-S47-ChatStatus** | Tech Debt | ChatStatus 自訂型別 | `use-chat-stream.ts` 從 `'ai'` SDK import `ChatStatus` 型別；整個專案 Sprint 45 起都刻意避免依賴 AI SDK UIMessage，卻唯獨 `ChatStatus` 用 'ai' SDK 型別 | 0.3 | SP47 | M5 | ✅ Done（Sprint 54 trust mode：驗證 `use-chat-stream.ts` 已從 `@/lib/ai/chat/chat-utils` import 自訂 `ChatStatus`）|
 | **TD-904** | Tech Debt | admin dashboard RWD 健檢 | dashboard 頁面在 mobile 下檢查 | 1 | SP31 | M4 | ✅ Done（Sprint 41 admin RWD audit 已涵蓋 dashboard）|
 | **TD-905** | Tech Debt | 移除 hook-sdk.ts 的 deprecated HookFunction | TD-523 完整清理（破壞性變更：所有 hook 必須改用 StrictHookFunction）| 2 | SP31 | M1 | 📋 Ready |
 | **TD-906** | Tech Debt | 移除 app-error.ts 的 regex fallback | TD-524 完整清理（破壞性變更：所有 throw 必須改用 AppError）| 3 | SP31 | M1 | 📋 Ready |
