@@ -1,0 +1,89 @@
+{
+  "name": "product",
+  "label": "Product",
+  "requiresExtension": "product",
+  "list": {
+    "allowColumnToggle": true,
+    "defaultColumns": [
+      "createdAt",
+      "updatedAt"
+    ],
+    "views": [
+      {
+        "type": "table",
+        "label": "表格"
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "Product",
+      "label": "Product",
+      "description": "Product model",
+      "fields": [
+        {
+          "name": "name",
+          "type": "string",
+          "label": "Name",
+          "validation": {
+            "required": true
+          },
+          "list": {
+            "defaultVisible": true
+          }
+        },
+        {
+          "name": "price",
+          "type": "number",
+          "label": "Price",
+          "validation": {
+            "required": false
+          },
+          "list": {
+            "defaultVisible": true
+          }
+        },
+        {
+          "name": "stock",
+          "type": "number",
+          "label": "Stock",
+          "validation": {
+            "required": false
+          },
+          "list": {
+            "defaultVisible": true
+          }
+        },
+        {
+          "name": "isActive",
+          "type": "boolean",
+          "label": "Is Active",
+          "validation": {
+            "required": false
+          },
+          "list": {
+            "defaultVisible": true
+          }
+        },
+        {
+          "name": "createdAt",
+          "type": "datetime",
+          "label": "建立時間",
+          "validation": {},
+          "list": {
+            "defaultVisible": true
+          }
+        },
+        {
+          "name": "updatedAt",
+          "type": "datetime",
+          "label": "更新時間",
+          "validation": {},
+          "list": {
+            "defaultVisible": true
+          }
+        }
+      ]
+    }
+  ]
+}

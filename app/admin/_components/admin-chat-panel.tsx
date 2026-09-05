@@ -62,6 +62,7 @@ export function AdminChatPanel({ userId, sessionId, session, onSessionCreated }:
     send,
     loadMessages,
     reset,
+    setMessages,
   } = useChatStream({
     sessionId,
     userId,
@@ -144,6 +145,7 @@ export function AdminChatPanel({ userId, sessionId, session, onSessionCreated }:
           setInput={setInput}
           isStreaming={isStreaming}
           send={send}
+          setMessages={setMessages}
         />
       </PromptInputProvider>
     </div>
@@ -162,48 +164,113 @@ type WrapperProps = {
   setInput: (v: string) => void;
   isStreaming: boolean;
   send: (overrideInput?: string, attachments?: ReadonlyArray<{ filename: string; size?: number }>) => Promise<void>;
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 };
 
-function PromptInputWrapper({ input, setInput, isStreaming, send }: WrapperProps) {
+function PromptInputWrapper({ input, setInput, isStreaming, send, setMessages }: WrapperProps) {
   const attachments = usePromptInputAttachments();
 
   /**
-   * Sprint 53-0 (FR-20.1): 處理 Extension Generator slash command
-   * - /extension create <name> → 觸發 extension generator flow
+   * Sprint 53-0 (FR-20.1) + Sprint 55-1 (FR-22.3): 處理 Extension Generator slash command
+   * [Extension Generator] Sprint 55 接通: 真 fetch /api/admin/extensions/generate
+   * - /extension create <name> --fields=f1,f2 [--force] → POST /api/admin/extensions/generate
    * - /extension help → 回傳用法說明
    * - 一般 chat → 走原本 send() 流程
    */
-  const handleExtensionCommand = (text: string): boolean => {
+  const handleExtensionCommand = async (text: string): Promise<void> => {
     if (!isExtensionCommand(text)) {
-      return false;
+      return;
     }
+
+    const nowIso = new Date().toISOString();
+    const makeMsg = (id: string, content: string): ChatMessage => ({
+      id,
+      role: 'assistant' as const,
+      content,
+      createdAt: nowIso,
+    });
 
     try {
       const parsed = parseExtensionCommand(text);
 
       if (parsed.action === 'help') {
-        // 顯示用法說明 (admin 需手動看 chat 訊息)
-        return true;
+        setMessages((prev) => [
+          ...prev,
+          makeMsg(
+            `help-${Date.now()}`,
+            `**Extension Generator 使用方式:**\n\n\`/extension create <name> --fields=f1,f2,f3 [--force]\`\n\n範例:\n- \`/extension create product --fields=name,price,stock\`\n- \`/extension create order --fields=customerId,total --force\``,
+          ),
+        ]);
+        return;
       }
 
       if (parsed.action === 'create' && parsed.name) {
-        // [Extension Generator] 觸發點
-        // Sprint 53-1 將在此呼叫 server-side 攔截 + validator
-        // Sprint 53-0 僅偵測 slash command, 實際生成留 Sprint 53-2
-        return true;
+        // 顯示 loading 訊息
+        const loadingId = `ext-loading-${Date.now()}`;
+        setMessages((prev) => [
+          ...prev,
+          makeMsg(loadingId, `🔨 正在建立 extension '${parsed.name}'...`),
+        ]);
+
+        try {
+          const res = await fetch('/api/admin/extensions/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: parsed.name,
+              fields: parsed.fields,
+              force: parsed.force,
+            }),
+          });
+
+          const data = (await res.json()) as {
+            success?: boolean;
+            extensionName?: string;
+            files?: string[];
+            error?: string;
+            details?: string[];
+          };
+
+          // 移除 loading, 加結果訊息
+          setMessages((prev) => {
+            const filtered = prev.filter((m) => m.id !== loadingId);
+            if (res.ok && data.success) {
+              return [
+                ...filtered,
+                makeMsg(
+                  `ext-success-${Date.now()}`,
+                  `✅ 已建立 extension '${data.extensionName}', ${data.files?.length ?? 0} 個檔案於 extensions/${data.extensionName}/\n\n檔案:\n${(data.files ?? []).map((f) => `- ${f}`).join('\n')}`,
+                ),
+              ];
+            }
+            return [
+              ...filtered,
+              makeMsg(
+                `ext-error-${Date.now()}`,
+                `❌ 建立失敗: ${data.error ?? 'Unknown error'}${data.details ? '\n\n' + data.details.join('\n') : ''}`,
+              ),
+            ];
+          });
+        } catch (err) {
+          setMessages((prev) => [
+            ...prev.filter((m) => m.id !== loadingId),
+            makeMsg(
+              `ext-network-error-${Date.now()}`,
+              `❌ 網路錯誤: ${err instanceof Error ? err.message : 'Unknown'}`,
+            ),
+          ]);
+        }
+        return;
       }
     } catch {
-      // 解析錯誤, 回傳 false 走一般 chat
-      return false;
+      // 解析錯誤, 走一般 chat
     }
-
-    return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // FR-20.1: 偵測 slash command
     if (isExtensionCommand(input)) {
-      handleExtensionCommand(input);
+      await handleExtensionCommand(input);
       setInput('');
       return;
     }
