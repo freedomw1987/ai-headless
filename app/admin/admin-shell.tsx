@@ -9,11 +9,12 @@
  * - 漢堡跟 sidebar 都在同一個 client component tree 內
  */
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Menu } from 'lucide-react';
 import { AdminSidebar } from './admin-sidebar';
 import { AdminFab } from './_components/admin-fab';
 import { AdminChatDialog } from './_components/admin-chat-dialog';
+import { ensureCsrfToken } from '@/lib/api-client';
 import type { AuthUser } from '@/lib/auth/auth';
 import type { ExtensionNavItem } from '@/lib/extensions/extension-nav';
 
@@ -30,6 +31,13 @@ export function AdminShell({
 }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false); // Sprint 44 Commit E
+
+  // Sprint 57 R4 (修 CSRF 設計漏洞): 所有 /admin/* POST 都靠 csrf-token cookie
+  // register-form 原本會呼叫一次，但其他 admin action (settings/users/blog) 沒 init。
+  // 在 mount 時統一 init，後續所有 POST 都有 cookie。
+  useEffect(() => {
+    void ensureCsrfToken();
+  }, []);
 
   return (
     <div className="min-h-screen bg-muted/30 flex min-w-0">
