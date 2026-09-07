@@ -5,12 +5,32 @@
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OnboardingBanner } from '@/components/admin/onboarding-banner';
+import { db } from '@/lib/db';
 
 export default async function AdminIndexPage() {
   const user = await getCurrentUser();
 
+  // Sprint 58: 抓取 onboarding 狀態
+  let onboardingStep = 99;
+  let emailVerified: boolean | null = true;
+  if (user?.id) {
+    const u = await db.user.findUnique({
+      where: { id: user.id },
+      select: { onboardingStep: true, emailVerified: true },
+    });
+    if (u) {
+      onboardingStep = u.onboardingStep;
+      emailVerified = u.emailVerified !== null;
+    }
+  }
+
   return (
     <div className="space-y-6">
+      <OnboardingBanner
+        emailVerified={emailVerified}
+        onboardingStep={onboardingStep}
+      />
       <div>
         <h1 className="text-3xl font-bold">總覽</h1>
         <p className="text-muted-foreground">

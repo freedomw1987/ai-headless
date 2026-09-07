@@ -45,6 +45,14 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // === Sprint 58: Onboarding + 法務合規 ===
+  // 0 = 未開始, 1-4 = wizard 進度, 99 = 完成或跳過
+  onboardingStep        Int       @default(0)
+  // 註冊時同意的 ToS / Privacy 版本（GDPR/CCPA 合規）
+  acceptedTosVersion    String?
+  acceptedPrivacyVersion String?
+  tosAcceptedAt         DateTime?
+
   @@index([email])
   @@index([role])
   @@index([roleId])

@@ -31,13 +31,33 @@ function shouldLog(level: LogLevel): boolean {
   return LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[logLevel];
 }
 
+// Sprint 57 R6: 可選注入的 request id provider
+// 在 server runtime 把 AsyncLocalStorage 讀取邏輯掛上即可，不裝也可以正常運作
+let requestIdProvider: (() => string | undefined) | null = null;
+
+export function setLogRequestIdProvider(provider: () => string | undefined) {
+  requestIdProvider = provider;
+}
+
+function getCurrentRequestId(): string | undefined {
+  if (!requestIdProvider) return undefined;
+  try {
+    return requestIdProvider();
+  } catch {
+    return undefined;
+  }
+}
+
 function emit(level: LogLevel, msg: string, context?: LogContext): void {
   if (!shouldLog(level)) return;
+
+  const requestId = getCurrentRequestId();
 
   const entry = {
     timestamp: new Date().toISOString(),
     level,
     msg,
+    ...(requestId ? { requestId } : {}),
     ...context,
   };
 

@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-09-05",
+  "terms": {
+    "zh-TW": {
+      "file": "terms.zh-TW.md",
+      "version": "1.0.0",
+      "effectiveDate": "2026-09-05"
+    },
+    "en": {
+      "file": "terms.en.md",
+      "version": "1.0.0",
+      "effectiveDate": "2026-09-05"
+    }
+  },
+  "privacy": {
+    "zh-TW": {
+      "file": "privacy.zh-TW.md",
+      "version": "1.0.0",
+      "effectiveDate": "2026-09-05"
+    },
+    "en": {
+      "file": "privacy.en.md",
+      "version": "1.0.0",
+      "effectiveDate": "2026-09-05"
+    }
+  }
+}

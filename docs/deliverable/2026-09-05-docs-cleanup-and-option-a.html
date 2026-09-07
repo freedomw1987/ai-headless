@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>交付摘要：docs 文件夾整理 + Option A 路線圖啟動</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-soft: #1e293b;
+      --fg: #f1f5f9;
+      --fg-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #a78bfa;
+      --green: #34d399;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: linear-gradient(135deg, var(--bg) 0%, #1e1b4b 100%);
+      color: var(--fg);
+      line-height: 1.7;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 2.25rem; margin-bottom: 0.5rem; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    h2 { font-size: 1.5rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+    p, li { color: var(--fg); margin-bottom: 0.5rem; }
+    code { background: var(--bg-soft); padding: 0.15rem 0.4rem; border-radius: 4px; font-family: "SF Mono", Menlo, monospace; font-size: 0.9em; color: var(--accent); }
+    pre { background: var(--bg-soft); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; border-left: 3px solid var(--accent); }
+    pre code { background: transparent; padding: 0; color: var(--fg); }
+    .meta { display: flex; flex-wrap: wrap; gap: 1rem; padding: 1rem; background: var(--bg-soft); border-radius: 8px; margin: 1rem 0; border-left: 3px solid var(--accent-2); }
+    .meta-item { display: flex; flex-direction: column; }
+    .meta-label { font-size: 0.75rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .meta-value { font-size: 1rem; color: var(--accent); font-weight: 600; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+    .stat-card { background: var(--bg-soft); padding: 1.25rem; border-radius: 8px; border-left: 3px solid var(--accent); }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 0.875rem; color: var(--fg-muted); margin-top: 0.25rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: var(--bg-soft); color: var(--accent); font-weight: 600; font-size: 0.875rem; }
+    td { color: var(--fg); }
+    ul, ol { padding-left: 1.5rem; margin: 0.75rem 0; }
+    li { margin-bottom: 0.5rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-green { background: rgba(52, 211, 153, 0.2); color: var(--green); }
+    .badge-yellow { background: rgba(251, 191, 36, 0.2); color: var(--yellow); }
+    .badge-red { background: rgba(248, 113, 113, 0.2); color: var(--red); }
+    .badge-blue { background: rgba(56, 189, 248, 0.2); color: var(--accent); }
+    .file-tree { background: var(--bg-soft); padding: 1rem; border-radius: 8px; font-family: "SF Mono", Menlo, monospace; font-size: 0.875rem; line-height: 1.6; }
+    .file-tree .new { color: var(--green); font-weight: 600; }
+    .file-tree .updated { color: var(--yellow); }
+    .file-tree .dir { color: var(--accent-2); font-weight: 600; }
+    .callout { padding: 1rem; border-radius: 8px; margin: 1rem 0; background: rgba(56, 189, 248, 0.1); border-left: 3px solid var(--accent); }
+    .callout-warn { background: rgba(251, 191, 36, 0.1); border-left-color: var(--yellow); }
+    .checklist { list-style: none; padding-left: 0; }
+    .checklist li::before { content: "☐ "; color: var(--accent); font-weight: 700; margin-right: 0.5rem; }
+    hr { border: 0; border-top: 1px solid var(--border); margin: 2rem 0; }
+    .footer { margin-top: 3rem; padding: 1.5rem; background: var(--bg-soft); border-radius: 8px; text-align: center; color: var(--fg-muted); font-size: 0.875rem; }
+    .emoji { font-style: normal; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+<h1>🎯 docs 文件夾整理 + Option A 路線圖啟動</h1>
+<p style="color: var(--fg-muted); font-size: 1.1rem;">交付摘要 · 2026-09-05 · Trust Mode 2 小時衝刺</p>
+
+<div class="meta">
+  <div class="meta-item">
+    <span class="meta-label">Trust Mode</span>
+    <span class="meta-value">2 小時（10:40 → 12:40）</span>
+  </div>
+  <div class="meta-item">
+    <span class="meta-label">實際投入</span>
+    <span class="meta-value">~17 分鐘</span>
+  </div>
+  <div class="meta-item">
+    <span class="meta-label">提早完成</span>
+    <span class="meta-value">~1 小時 33 分鐘</span>
+  </div>
+  <div class="meta-item">
+    <span class="meta-label">狀態</span>
+    <span class="meta-value">✅ 全部完成</span>
+  </div>
+</div>
+
+<h2>📦 已完成（7/7 交付物）</h2>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-value">6</div>
+    <div class="stat-label">新建檔案</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">3</div>
+    <div class="stat-label">更新檔案</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">+1,300</div>
+    <div class="stat-label">新增行數</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">97 → 103</div>
+    <div class="stat-label">.md 總數</div>
+  </div>
+</div>
+
+<h3><span class="emoji">📊</span> 1. Productization Gap Audit</h3>
+<p><code>docs/audit/productization-gap-audit.md</code>（159 行）</p>
+<ul>
+  <li><strong>P0 八項</strong>（GA 必修）— email verify / password reset / Sentry / 備份 / CD / migration / onboarding / ToS</li>
+  <li><strong>P1 六項</strong> — OpenAPI / i18n / multi-tenant / billing / analytics / rate limit</li>
+  <li><strong>P2 五項</strong> — Doc Site / 快捷鍵 / undo / Generator CLI / 真 LLM 動態生成</li>
+  <li><strong>技術債 R1-R10</strong>（10 項 sprint 55 漏算的真實風險）</li>
+</ul>
+<div class="callout">
+  <strong>關鍵發現</strong>：Sprint 55 自評 GA 52% 稍樂觀，真實完成度約 <strong>48%</strong>。8 項 P0 是 serial blocker，不可繞過。
+</div>
+
+<h3><span class="emoji">🗺️</span> 2. Option A 產品化路線圖</h3>
+<p><code>docs/roadmap/option-a-productization.md</code>（137 行）</p>
+<ul>
+  <li><strong>Sprint 56-65</strong> 共 10 sprints / 26.2 SP / ~2.5 個月</li>
+  <li>Sprint 56-58：P0 八項（email verify / password reset / Sentry / onboarding / ToS）</li>
+  <li>Sprint 59-61：備份 / CD / migration / Vercel KV / OpenAPI / Analytics</li>
+  <li>Sprint 62-65：i18n / multi-tenant / Billing / Staging / GA 候選發布</li>
+</ul>
+
+<h3><span class="emoji">✅</span> 3. GA Launch Checklist</h3>
+<p><code>docs/roadmap/ga-launch-checklist.md</code>（173 行）</p>
+<ul>
+  <li><strong>80+ 項檢查清單</strong>，13 個分類（環境變數 / Migration / Security / Email / Monitoring / Backup / Onboarding / Legal / API / Performance / Billing / Staging / Smoke Test）</li>
+  <li>發布當天流程（canary 5% → 監控 1 小時 → 100%）</li>
+  <li>取代 README.md「Production Deployment Checklist」</li>
+</ul>
+
+<h3><span class="emoji">📋</span> 4. Sprint 56 Plan Gate</h3>
+<p><code>docs/sprint56-plan-gate.md</code>（252 行）</p>
+<ul>
+  <li><strong>9 個章節</strong>（目標 / 範圍 / 選型 / 結構 / 風險 / 相依 / 決策 / 時程 / 開始條件）</li>
+  <li>Schema migration 草稿（VerificationToken / PasswordResetToken）</li>
+  <li>8 條 Plan Gate 決策記錄（含 nodemailer / 純字串模板 / 30 天寬限期）</li>
+</ul>
+
+<table>
+  <thead>
+    <tr><th>子項目</th><th>SP</th><th>時間</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>R2 SMTP 設定</td><td>0.3</td><td>~30 分鐘</td></tr>
+    <tr><td>P0-1 Email Verification</td><td>1.0</td><td>~1.5 小時</td></tr>
+    <tr><td>P0-2 Password Reset</td><td>1.5</td><td>~2 小時</td></tr>
+    <tr style="background: rgba(56, 189, 248, 0.1); font-weight: 600;"><td>總計</td><td>2.8</td><td>~4.5 小時</td></tr>
+  </tbody>
+</table>
+
+<h3><span class="emoji">📚</span> 5. 更新 docs/index.md</h3>
+<ul>
+  <li>🆕 新增「路線圖與產品化」章節</li>
+  <li>🔍 新增 4 份 audit（含新 audit）</li>
+  <li>🆕 Sprint 56 Plan Gate 連結</li>
+  <li>補齊 sprint 14-55 / 11 個 PRD / 5 個 extensions</li>
+  <li>統計更新：<strong>2,221 tests / 228 files / 97 docs</strong></li>
+</ul>
+
+<h3><span class="emoji">⚠️</span> 6. Need Your Help</h3>
+<p><code>docs/need-you-help.md</code>（209 行）</p>
+<ul>
+  <li><strong>10 條</strong> Trust Mode 期間擔憂</li>
+  <li>Sprint 56 級別 6 條（SMTP / template / 既有用戶 / token hash / 2FA / staging 時間）</li>
+  <li>Option A 全路線 4 條（rate limit 平台 / extensions 持久化 / multi-tenant / i18n）</li>
+  <li>所有決策都有<strong>預設值 + 可推翻標記 + 影響範圍</strong></li>
+</ul>
+
+<h3><span class="emoji">📌</span> 7. 更新 docs/backlog.md</h3>
+<ul>
+  <li>開頭加「🚀 Option A 產品化路線圖」區塊</li>
+  <li>5 個新連結（roadmap / audit / checklist / sprint 56 / need-you-help）</li>
+  <li><strong>P0 八項進度追蹤表</strong>（佔位，後續 sprint 更新）</li>
+</ul>
+
+<h2>📁 檔案結構（建立後）</h2>
+<div class="file-tree">
+<span class="dir">docs/</span>
+├── <span class="updated">index.md</span>                        <span class="badge badge-yellow">已更新</span>
+├── <span class="updated">backlog.md</span>                      <span class="badge badge-yellow">加 Option A 區塊</span>
+├── <span class="updated">trust-log.md</span>                    <span class="badge badge-yellow">加本次決策</span>
+├── <span class="new">need-you-help.md</span>                 <span class="badge badge-green">🆕 新建</span>
+│
+├── <span class="dir">roadmap/</span>                        <span class="badge badge-green">🆕 新目錄</span>
+│   ├── <span class="new">option-a-productization.md</span>    <span class="badge badge-green">🆕</span>
+│   └── <span class="new">ga-launch-checklist.md</span>        <span class="badge badge-green">🆕</span>
+│
+├── <span class="dir">audit/</span>
+│   ├── <span class="new">productization-gap-audit.md</span>   <span class="badge badge-green">🆕</span>
+│   ├── sprint-22-silent-bug-audit.md           (保留)
+│   ├── sprint-46-47-review.md                  (保留)
+│   └── sprint-48-mid-review.md                 (保留)
+│
+├── <span class="new">sprint56-plan-gate.md</span>             <span class="badge badge-green">🆕</span>
+├── specs/                              (保留)
+├── prd/                                (保留，11 個 PRD)
+├── reflection/                         (保留，sprint 3-55)
+├── spike/                              (保留，4 份)
+├── sprint46-55-plan-gate.md            (保留)
+├── sprint55-design-gate.md             (保留)
+├── sprint-review-49-53.md             (保留)
+├── conversation-log.md                 (保留)
+├── getting-started.md                  (保留)
+├── system-design.md                    (保留)
+├── DESIGN.md                           (保留)
+└── crud-list-enhancements.md           (保留)
+</div>
+
+<h2>📊 量化評估（從 audit）</h2>
+
+<table>
+  <thead>
+    <tr><th>等級</th><th>自家評分</th><th>Agent 獨立評分</th><th>差異</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Alpha（內部 demo）</td><td>100%</td><td>100%</td><td>一致</td></tr>
+    <tr><td>Beta（邀請用戶）</td><td>88%</td><td>82%</td><td>-6%（缺 onboarding / 帳號體驗）</td></tr>
+    <tr style="background: rgba(248, 113, 113, 0.1);"><td><strong>GA / Production launch</strong></td><td>52%</td><td><strong>48%</strong></td><td>-4%（P0 八項完全沒做 + R1-R5 沒算）</td></tr>
+  </tbody>
+</table>
+
+<h3>三條路線對比</h3>
+<table>
+  <thead>
+    <tr><th>路線</th><th>時程</th><th>SP</th><th>適用</th></tr>
+  </thead>
+  <tbody>
+    <tr style="background: rgba(56, 189, 248, 0.1);">
+      <td><span class="badge badge-blue">A 推薦</span></td>
+      <td>2-3 個月</td>
+      <td>26.2</td>
+      <td>紮實補 P0 + P1 + 技術債</td>
+    </tr>
+    <tr>
+      <td>B 快速</td>
+      <td>1 個月</td>
+      <td>8</td>
+      <td>只做最小 GA 集（接受風險）</td>
+    </tr>
+    <tr>
+      <td>C 保守</td>
+      <td>3-4 個月</td>
+      <td>26+</td>
+      <td>每 sprint 1-3 SP 慢節奏</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr>
+
+<h2>🚦 下一步等你指示</h2>
+<p>依 Trust Mode §9.3 規範，<strong>結束後 Agent 自動退出 trust 身份</strong>，進入普通對話模式。</p>
+
+<div class="callout callout-warn">
+<strong>可選下一步</strong>：
+<ol>
+  <li><strong>啟動新 trust mode 開始 Sprint 56 執行</strong>（給個 deadline，建議 2-3 小時）</li>
+  <li><strong>逐項審查 trust-log 決策</strong>，標 ❌ 推翻</li>
+  <li><strong>先翻 need-you-help.md</strong>，對 10 條擔憂給指示</li>
+  <li><strong>保留剩餘時間</strong>，結束今天的 trust mode</li>
+</ol>
+</div>
+
+<h3>驗收事項</h3>
+<ul class="checklist">
+  <li>讀 <code>docs/trust-log.md</code>（17 條代答決定）</li>
+  <li>讀 <code>docs/need-you-help.md</code>（10 條擔憂）</li>
+  <li>讀 <code>docs/audit/productization-gap-audit.md</code>（GA 距離量化）</li>
+  <li>讀 <code>docs/roadmap/option-a-productization.md</code>（2-3 個月路線圖）</li>
+  <li>讀 <code>docs/sprint56-plan-gate.md</code>（起點詳細計劃）</li>
+</ul>
+
+<div class="footer">
+  <p>🏁 Trust Mode 已結束 · 2026-09-05 10:44</p>
+  <p>最終狀態：7/7 交付物 ✅ · 17 條 trust-log 決策待檢視 · 10 條 need-you-help 待指示</p>
+</div>
+
+</div>
+</body>
+</html>

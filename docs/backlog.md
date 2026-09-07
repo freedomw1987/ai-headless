@@ -6,6 +6,35 @@
 
 ---
 
+## 🚀 Option A 產品化路線圖（2026-09-05 啟動）
+
+> **目標**：2-3 個月內達到 GA 可上線狀態
+> **起點**：Sprint 56（已完成 Plan Gate）
+> **詳細**：見下方連結
+
+| 文件 | 用途 |
+|---|---|
+| 📘 [Option A 路線圖](roadmap/option-a-productization.md) | Sprint 56-65 完整排程（10 sprints / 26.2 SP / 2.5 個月）|
+| 📊 [Productization Gap Audit](audit/productization-gap-audit.md) | GA 阻塞 8 項 P0 + 6 項 P1 + 5 項技術債 |
+| ✅ [GA Launch Checklist](roadmap/ga-launch-checklist.md) | 上線前逐項打勾（80+ 項）|
+| 📋 [Sprint 56 Plan Gate](sprint56-plan-gate.md) | 起點：Email Verify + Password Reset + SMTP（2.8 SP）|
+| ⚠️ [Need Your Help](need-you-help.md) | Trust Mode 期間 10 條擔憂（待用戶決策）|
+
+### P0 八項進度追蹤
+
+| # | 項目 | Sprint | 狀態 |
+|---|---|---|---|
+| P0-1 | Email Verification | 56 | 🟡 Plan Gate |
+| P0-2 | Password Reset | 56 | 🟡 Plan Gate |
+| P0-3 | Sentry | 57 | ⏳ 待 Plan |
+| P0-4 | 備份策略 | 59 | ⏳ 待 Plan |
+| P0-5 | CI/CD | 59 | ⏳ 待 Plan |
+| P0-6 | Migration policy | 59 + 64 | ⏳ 待 Plan |
+| P0-7 | Onboarding flow | 58 | ⏳ 待 Plan |
+| P0-8 | ToS / Privacy | 58 | ⏳ 待 Plan |
+
+---
+
 ## 📑 目錄（TOC）
 
 | Section | 用途 |
