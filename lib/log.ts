@@ -26,6 +26,24 @@ function isProduction(): boolean {
   return process.env.NODE_ENV === 'production';
 }
 
+/**
+ * 偵測是否跑在 Node.js runtime
+ *
+ * Edge runtime (Next.js middleware 強制) 不支援 process.stdout.write
+ * 但 process.versions.node 在 Edge runtime 是 undefined，可作為可靠偵測
+ *
+ * Sprint 57 R6 揭露: middleware.ts → request-context.ts → log.ts
+ * middleware 在 Edge runtime 跑，會 import log.ts 整個 module
+ * 必須區分 runtime 才不會在 Edge 環境 build/runtime 炸掉
+ */
+function isNodeRuntime(): boolean {
+  return (
+    typeof process !== 'undefined' &&
+    typeof process.versions === 'object' &&
+    typeof process.versions?.node === 'string'
+  );
+}
+
 function shouldLog(level: LogLevel): boolean {
   const logLevel = (process.env.LOG_LEVEL as LogLevel) ?? (isProduction() ? 'info' : 'debug');
   return LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[logLevel];
@@ -61,11 +79,19 @@ function emit(level: LogLevel, msg: string, context?: LogContext): void {
     ...context,
   };
 
-  // Production: 輸出 JSON-line 到 stdout/stderr
+  // Production: 輸出 JSON-line
+  //   - Node runtime: 用 process.stdout/stderr (12-factor compatible)
+  //   - Edge runtime: fallback 到 console (Vercel/Docker 都會收集)
   // Development: 輸出 human-readable 到 console
   if (isProduction()) {
-    const stream = level === 'error' ? process.stderr : process.stdout;
-    stream.write(JSON.stringify(entry) + '\n');
+    if (isNodeRuntime()) {
+      const stream = level === 'error' ? process.stderr : process.stdout;
+      stream.write(JSON.stringify(entry) + '\n');
+    } else {
+      // Edge runtime fallback
+      const fn = level === 'error' ? console.error : console.log;
+      fn(JSON.stringify(entry));
+    }
   } else {
     const fn = level === 'error' ? console.error : console.log;
     const tag = `[${entry.timestamp}] ${level.toUpperCase()}`;

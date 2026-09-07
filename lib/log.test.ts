@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { logger, createChildLogger } from './log';
+import { logger, createChildLogger, setLogRequestIdProvider } from './log';
 
 describe('lib/log', () => {
   // vitest type issue: vi.spyOn returns overloaded MockInstance
@@ -151,6 +151,93 @@ describe('lib/log', () => {
       expect(typeof log.info).toBe('function');
       expect(typeof log.warn).toBe('function');
       expect(typeof log.error).toBe('function');
+    });
+  });
+
+  // ==============================================
+  // Edge Runtime compatibility (Sprint 57 R6 揭露)
+  // ==============================================
+  // middleware.ts 跑在 Edge Runtime (Next.js 強制)
+  // 透過 import chain → request-context.ts → log.ts
+  // process.stdout.write 在 Edge Runtime 不支援
+  // 修法：用 process.versions.node 偵測，Edge runtime fallback 到 console
+  describe('Edge Runtime fallback', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let consoleLogSpy: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let consoleErrorSpy: any;
+    let originalVersions: PropertyDescriptor | undefined;
+
+    beforeEach(() => {
+      // 模擬 Edge Runtime: process.versions 沒有 node 屬性
+      originalVersions = Object.getOwnPropertyDescriptor(process, 'versions');
+      Object.defineProperty(process, 'versions', {
+        value: {}, // 沒有 node 屬性
+        configurable: true,
+      });
+      consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      envMut.NODE_ENV = 'production';
+      envMut.LOG_LEVEL = 'debug'; // 確保所有 level 都通過 shouldLog
+    });
+
+    afterEach(() => {
+      if (originalVersions) {
+        Object.defineProperty(process, 'versions', originalVersions);
+      }
+      consoleLogSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('info 在 Edge runtime 應 fallback 到 console.log（不呼叫 process.stdout）', () => {
+      logger.info('edge test');
+      expect(consoleLogSpy).toHaveBeenCalled();
+      expect(stdoutSpy).not.toHaveBeenCalled();
+    });
+
+    it('warn 在 Edge runtime 應 fallback 到 console.log', () => {
+      logger.warn('edge warn');
+      expect(consoleLogSpy).toHaveBeenCalled();
+      expect(stdoutSpy).not.toHaveBeenCalled();
+    });
+
+    it('debug 在 Edge runtime 應 fallback 到 console.log', () => {
+      logger.debug('edge debug');
+      expect(consoleLogSpy).toHaveBeenCalled();
+      expect(stdoutSpy).not.toHaveBeenCalled();
+    });
+
+    it('error 在 Edge runtime 應 fallback 到 console.error（不呼叫 process.stderr）', () => {
+      logger.error('edge error');
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(stderrSpy).not.toHaveBeenCalled();
+    });
+
+    it('Edge runtime fallback 應仍輸出 JSON 格式（info）', () => {
+      logger.info('msg', { userId: 'u1' });
+      const call = consoleLogSpy.mock.calls[0]?.[0] as string;
+      const parsed = JSON.parse(call);
+      expect(parsed.level).toBe('info');
+      expect(parsed.msg).toBe('msg');
+      expect(parsed.userId).toBe('u1');
+      expect(parsed.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+    });
+
+    it('Edge runtime fallback 應仍輸出 JSON 格式（error）', () => {
+      logger.error('e', { code: 500 });
+      const call = consoleErrorSpy.mock.calls[0]?.[0] as string;
+      const parsed = JSON.parse(call);
+      expect(parsed.level).toBe('error');
+      expect(parsed.code).toBe(500);
+    });
+
+    it('Edge runtime fallback 應保留 requestId（若有 provider）', () => {
+      setLogRequestIdProvider(() => 'edge-req-123');
+      logger.info('with id');
+      const call = consoleLogSpy.mock.calls[0]?.[0] as string;
+      const parsed = JSON.parse(call);
+      expect(parsed.requestId).toBe('edge-req-123');
+      setLogRequestIdProvider(() => undefined);
     });
   });
 });
