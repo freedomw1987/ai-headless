@@ -1,21 +1,106 @@
-# Sprint 59 Plan Gate — P0-4 Backup + P0-5 CD + P0-6 Migration Policy
+# Sprint 59 Plan Gate — P0-4 Backup + P0-5 CD + P0-6 Migration Policy + P0-7 dev DB Baseline
 
 **建立日期**：2026-09-05
-**預估 SP**：1.8
+**最後更新**：2026-09-07（加 P0-7 dev DB baseline，源於 Sprint 23-58 pending migrations 揭露）
+**預估 SP**：2.1（原 1.8 + P0-7 0.3）
 **對應路線**：Option A（產品化路線）
 **前導**：Sprint 58 ✅
 
 ---
 
-## 1. 為什麼這 3 件事放一起？
+## 0. ⚠️ 前置修復 — P0-7 dev DB Baseline + Migrate History（0.3 SP）
+
+### 為什麼加這個
+
+2026-09-07 發現 dev DB 從 Sprint 23 起 **11 個 migration 從未套用**，導致：
+
+- `users.roleId` 缺失 → `JWTSessionError` → admin 無法登入
+- `roles` / `permissions` tables 是空 → RBAC 空轉 → 「無權限」
+- Sprint 58 用戶 onboarding / legal 欄位不可用
+
+本次修復：跑了 `prisma db push` 補 schema + 手動跑 RBAC seed SQL（修 admin 登入），但 **migration history 仍壞**（11 個仍標 pending）—— Sprint 59 開工前必須先修復。
+
+### 0.1 問題
+
+| 項目 | 現狀 | 風險 |
+|------|------|------|
+| Schema 缺失 | ✅ 已修（`prisma db push`）| — |
+| RBAC seed data | ✅ 已修（手動跑 3 個 seed SQL）| — |
+| Migration history | ❌ 11 個仍 pending | `migrate deploy` 會誤判 / 新 dev 無法重現 |
+| CI gate | ❌ 沒有 | 下次 sprint 仍會再次發生 |
+
+### 0.2 目標
+
+1. `prisma migrate status` 顯示「No pending migrations」
+2. 其他 dev 環境可一鍵重現 RBAC seed（不必手動跑 SQL）
+3. CI 自動擋 pending migration PR
+
+### 0.3 範圍
+
+1. **修正 migration history**（標記已套用的 migration 為 resolved）
+   ```bash
+   for m in 20260826120000_baseline_rbac \
+            20260826120100_seed_baseline_rbac \
+            20260826120200_backfill_user_role_id \
+            20260826130000_backfill_extension_permissions \
+            20260830093252_add_blog_cover_url \
+            20260830150957_sprint44_chat_sessions_index \
+            20260830151015_sprint44_chat_messages_index \
+            20260830162750_sprint46_attachments \
+            20260830180000_sprint43_ai_config_v2 \
+            20260831090000_sprint44_placeholder_cleanup \
+            20260905180000_sprint58_user_legal; do
+     pnpm prisma migrate resolve --applied "$m"
+   done
+   ```
+
+2. **`prisma/seed-rbac.sql`** — 整合 RBAC seed SQL（idempotent）
+   - 整合 3 個 baseline migration 的 INSERT 語句
+   - 含 `ON CONFLICT DO NOTHING`，可重複跑
+   - 其他 dev / CI / staging 環境一鍵執行
+
+3. **`scripts/check-prisma-migrations.sh`** — CI gate script
+   - 跑 `prisma migrate status`
+   - 有 pending migration → exit 1
+   - 在 CI 跑，PR 不能 merge
+
+4. **`.github/workflows/ci.yml`** 補完（migration check step）
+   - 加 `bash scripts/check-prisma-migrations.sh`
+   - 失敗 → PR block
+
+### 0.4 不做
+
+- 重做 baseline_rbac migration（DB 已 sync 過，重做沒意義）
+- 自動重跑 seed（idempotent 已夠，自動化反而引入複雜度）
+
+### 0.5 為什麼放在 Sprint 59 而不獨立 sprint
+
+- 0.3 SP 太小，獨立 sprint 浪費 overhead
+- Sprint 59 本身有 P0-6 migration policy 主題，這是 P0-6 的前置
+- 不修這個 → Sprint 59 一開工就壞（DB state 混亂 → migration safety 檢查 baseline 都不準）
+
+### 0.6 預估 SP 細目
+
+| 任務 | 預估 | 備註 |
+|------|------|------|
+| 修正 11 個 migration history | 0.05 SP | 一行 bash 迴圈 |
+| `prisma/seed-rbac.sql` | 0.1 SP | 整合既有 3 個 migration SQL |
+| `scripts/check-prisma-migrations.sh` | 0.1 SP | CI gate script |
+| CI workflow 補完 | 0.05 SP | 一個 step |
+| **小計** | **0.3 SP** | |
+
+---
+
+## 1. 為什麼這 4 件事放一起？
 
 | 項目 | 性質 | 為什麼一起做 |
 |------|------|-------------|
+| **P0-7 dev DB Baseline** | Dev 必修 | Sprint 59 開工前置（修 migration history） |
 | **P0-4 Backup** | Ops 必修 | DB 資料是最重要的資產 |
 | **P0-5 CD** | DevOps 必修 | 部署自動化是 GA 前必備 |
 | **P0-6 Migration Policy** | 治理必修 | DB schema 變更要可追蹤、可回滾 |
 
-三者都是「沒出事沒人想，做了救你一命」類型，跨 Dev/Infra/Governance。
+四者都是「沒出事沒人想，做了救你一命」類型，跨 Dev/Infra/Governance。
 
 ---
 
@@ -185,6 +270,10 @@
 
 | 任務 | 預估 | 備註 |
 |------|------|------|
+| P0-7 migrate resolve 11 個 | 0.05 SP | 一行 bash 迴圈 |
+| P0-7 prisma/seed-rbac.sql | 0.1 SP | 整合既有 3 個 migration SQL |
+| P0-7 check-prisma-migrations.sh | 0.1 SP | CI gate script |
+| P0-7 CI workflow 補完 | 0.05 SP | 一個 step |
 | P0-4 backup-db.sh + restore-db.sh | 0.3 SP | 含 S3 上傳 |
 | P0-4 GitHub Actions backup.yml | 0.2 SP | 每日排程 |
 | P0-4 backup-strategy.md | 0.2 SP | 完整文件 |
@@ -194,7 +283,7 @@
 | P0-6 migration-policy.md | 0.2 SP | 政策文件 |
 | P0-6 check-migration-safety.sh | 0.1 SP | CI 警告腳本 |
 | P0-6 PR template | 0.1 SP | checkbox |
-| **總計** | **1.8 SP** | |
+| **總計** | **2.1 SP** | （原 1.8 + P0-7 0.3）|
 
 ---
 
@@ -206,6 +295,7 @@
 - `scripts/backup-db.sh`
 - `scripts/restore-db.sh`
 - `scripts/check-migration-safety.sh`
+- `scripts/check-prisma-migrations.sh` ← **P0-7**
 
 **Workflows**
 - `.github/workflows/backup.yml`
@@ -216,6 +306,7 @@
 - `docs/operations/backup-strategy.md`
 - `docs/operations/deployment.md`
 - `docs/operations/migration-policy.md`
+- `prisma/seed-rbac.sql` ← **P0-7**（SQL 檔不是 doc）
 
 **測試**
 - `tests/integration/sprint59-ops.test.ts`（guard tests）
@@ -236,6 +327,16 @@
 ---
 
 ## 10. 完成定義
+
+### P0-7 完成定義（前置，先做）
+
+- [ ] `pnpm prisma migrate status` 顯示「No pending migrations」
+- [ ] `bash scripts/check-prisma-migrations.sh` 在乾淨 dev DB 跑 → exit 0
+- [ ] `psql -f prisma/seed-rbac.sql` 在空 DB 跑 → roles + permissions 有資料
+- [ ] CI workflow 加 migration check step，PR 跑成功
+- [ ] （手動驗證）在新 clone 的 repo 跑 migrate + seed → dev DB 可用
+
+### P0-4 / P0-5 / P0-6 完成定義
 
 - [ ] `pnpm typecheck` 全綠
 - [ ] `pnpm lint` 無新錯誤
