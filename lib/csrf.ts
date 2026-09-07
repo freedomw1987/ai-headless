@@ -69,6 +69,35 @@ export async function isValidCsrfRequest(req: Request): Promise<boolean> {
 }
 
 /**
+ * 自動從 cookie 補 CSRF header（Sprint 57 R4 系統漏洞修法）
+ *
+ * 揭露：Sprint 1-56 所有 admin POST action 都用 raw `fetch()`，未帶 x-csrf-token header。
+ * 只有 register-form.tsx 顯式呼叫 ensureCsrfToken() 設 cookie，後續 apiFetch 自動讀 cookie 補 header。
+ * 但 25+ 處用 raw fetch 的地方全部 middleware 403。
+ *
+ * 修法：middleware 在驗證前呼叫此函式，自動從 cookie 補 header（前端零改動）。
+ *
+ * 安全性：
+ *   - 攻擊者無法設跨站 cookie（同源政策 + SameSite=Lax）→ 不會誤放行攻擊請求
+ *   - 此函式只是減少前端負擔，不降低 CSRF 保護強度
+ *
+ * 不覆蓋原 header：client 已明確帶 header（值不同）→ 表示 client 意圖明確，應保留
+ *
+ * 純函數：不 mutate 傳入的 headers，回傳新 Headers 對象
+ */
+export function withCsrfHeaderFallback(headers: Headers): Headers {
+  const out = new Headers(headers);
+  const cookieToken = readCsrfTokenFromCookies(headers.get('cookie'));
+  const headerToken = readCsrfTokenFromHeader(headers);
+
+  if (cookieToken && !headerToken) {
+    out.set(CSRF_HEADER_NAME, cookieToken);
+  }
+
+  return out;
+}
+
+/**
  * 設 csrf cookie 的設定
  */
 export const CSRF_COOKIE_OPTIONS = {

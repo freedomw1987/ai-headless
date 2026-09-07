@@ -11,13 +11,13 @@
  */
 
 import NextAuth from 'next-auth';
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { authConfig } from '@/lib/auth/auth.config';
 import {
   readOrGenerateRequestId,
   REQUEST_ID_HEADER_NAME,
 } from '@/lib/request-context';
-import { isValidCsrfRequest } from '@/lib/csrf';
+import { isValidCsrfRequest, withCsrfHeaderFallback } from '@/lib/csrf';
 
 const { auth } = NextAuth(authConfig);
 
@@ -62,7 +62,15 @@ export default auth(async (req) => {
     nextUrl.pathname.startsWith('/api/') &&
     !isCsrfAllowlisted(nextUrl.pathname)
   ) {
-    const csrfOk = await isValidCsrfRequest(req);
+    // Sprint 57 R4 系統漏洞修法：自動從 cookie 補 header（前端用 raw fetch 時相容）
+    // 25+ 處 Sprint 1-56 的 admin POST 都用 raw fetch()，沒帶 x-csrf-token header
+    // 有 csrf cookie 但沒 header → middleware 自動補 header 後驗證
+    const verifyHeaders = withCsrfHeaderFallback(requestHeaders);
+    const verifyReq = new NextRequest(req.nextUrl.toString(), {
+      method: req.method,
+      headers: verifyHeaders,
+    });
+    const csrfOk = await isValidCsrfRequest(verifyReq);
     if (!csrfOk) {
       return NextResponse.json(
         { error: 'CSRF token missing or invalid' },

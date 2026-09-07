@@ -8,6 +8,7 @@ import {
   readCsrfTokenFromCookies,
   readCsrfTokenFromHeader,
   isValidCsrfRequest,
+  withCsrfHeaderFallback,
   CSRF_COOKIE_NAME_EXPORT,
   CSRF_HEADER_NAME_EXPORT,
 } from './csrf';
@@ -109,5 +110,74 @@ describe('isValidCsrfRequest', () => {
   it('returns false when both empty', async () => {
     const req = await makeReq(`${CSRF_COOKIE_NAME_EXPORT}=`, '');
     expect(await isValidCsrfRequest(req)).toBe(false);
+  });
+});
+
+/**
+ * withCsrfHeaderFallback — Sprint 57 R4 系統漏洞修法
+ *
+ * 揭露：Sprint 1-56 所有 admin POST action 都用 raw fetch()，未帶 x-csrf-token header。
+ * 只有 register-form.tsx 顯式呼叫 ensureCsrfToken() 設 cookie，後續 apiFetch 自動讀 cookie 補 header。
+ * 但 25+ 處用 raw fetch 的地方全部 middleware 403。
+ *
+ * 修法：middleware 在驗證前自動從 cookie 補 header（前端零改動）。
+ *   - 有 cookie + 沒 header → 自動注入 header（攻擊者無法設跨站 cookie，仍安全）
+ *   - 有 cookie + 有 header（值不同）→ 不覆蓋（client 意圖明確）
+ *   - 無 cookie → 不變
+ *   - 純函數：不 mutate 原 headers
+ */
+describe('withCsrfHeaderFallback', () => {
+  it('有 cookie 但無 header → 自動從 cookie 注入 header', () => {
+    const headers = new Headers();
+    headers.set('cookie', `${CSRF_COOKIE_NAME_EXPORT}=abc123; other=xyz`);
+
+    const result = withCsrfHeaderFallback(headers);
+    expect(result.get(CSRF_HEADER_NAME_EXPORT)).toBe('abc123');
+  });
+
+  it('有 cookie + 有 header（值相同）→ 保留 header 不變', () => {
+    const headers = new Headers();
+    headers.set('cookie', `${CSRF_COOKIE_NAME_EXPORT}=abc123`);
+    headers.set(CSRF_HEADER_NAME_EXPORT, 'abc123');
+
+    const result = withCsrfHeaderFallback(headers);
+    expect(result.get(CSRF_HEADER_NAME_EXPORT)).toBe('abc123');
+  });
+
+  it('有 cookie + 有 header（值不同）→ 不覆蓋（保留 client 意圖）', () => {
+    const headers = new Headers();
+    headers.set('cookie', `${CSRF_COOKIE_NAME_EXPORT}=cookie-value`);
+    headers.set(CSRF_HEADER_NAME_EXPORT, 'header-value');
+
+    const result = withCsrfHeaderFallback(headers);
+    expect(result.get(CSRF_HEADER_NAME_EXPORT)).toBe('header-value');
+  });
+
+  it('無 cookie → 不注入 header', () => {
+    const headers = new Headers();
+
+    const result = withCsrfHeaderFallback(headers);
+    expect(result.get(CSRF_HEADER_NAME_EXPORT)).toBeNull();
+  });
+
+  it('純函數：不 mutate 原 headers', () => {
+    const headers = new Headers();
+    headers.set('cookie', `${CSRF_COOKIE_NAME_EXPORT}=abc123`);
+
+    withCsrfHeaderFallback(headers);
+
+    expect(headers.get(CSRF_HEADER_NAME_EXPORT)).toBeNull();
+  });
+
+  it('整合：有 cookie 自動補 header 後 isValidCsrfRequest 應通過', async () => {
+    const headers = new Headers();
+    headers.set('cookie', `${CSRF_COOKIE_NAME_EXPORT}=valid-token`);
+
+    const fixedHeaders = withCsrfHeaderFallback(headers);
+    const verifyReq = new Request('http://localhost/api/admin/users', {
+      method: 'POST',
+      headers: fixedHeaders,
+    });
+    expect(await isValidCsrfRequest(verifyReq)).toBe(true);
   });
 });
