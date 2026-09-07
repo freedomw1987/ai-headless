@@ -1,11 +1,17 @@
 import { defineConfig } from 'vitest/config';
+import { loadEnv } from 'vite';
 import path from 'node:path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   esbuild: {
     jsx: 'automatic',
   },
   test: {
+    // 載入 .env.local / .env.test.local / .env.{mode} 到 process.env
+    // 解決 dev DB 連線問題：vitest.setup.ts 原本沒載入 .env.local
+    // loadEnv 預設順序: .env.{mode}.local > .env.{mode} > .env.local > .env
+    // 空字串 prefix 表示讀取所有變數（不限 VITE_）
+    env: loadEnv(mode, process.cwd(), ''),
     watch: false, // Completely disables watch mode by default
     environment: 'jsdom',
     globals: true,
@@ -32,4 +38,4 @@ export default defineConfig({
       '@': path.resolve(__dirname, './'),
     },
   },
-});
+}));
