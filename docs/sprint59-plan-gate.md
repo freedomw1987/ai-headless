@@ -1,8 +1,8 @@
 # Sprint 59 Plan Gate — P0-4 Backup + P0-5 CD + P0-6 Migration Policy + P0-7 dev DB Baseline
 
 **建立日期**：2026-09-05
-**最後更新**：2026-09-07（加 P0-7 dev DB baseline，源於 Sprint 23-58 pending migrations 揭露）
-**預估 SP**：2.1（原 1.8 + P0-7 0.3）
+**最後更新**：2026-09-07（加 P0-7 + P0-8，源於 dev experience 多項揭露）
+**預估 SP**：2.35（原 2.1 + P0-8 0.25）
 **對應路線**：Option A（產品化路線）
 **前導**：Sprint 58 ✅
 
@@ -91,16 +91,120 @@
 
 ---
 
+## 0.5 ⚠️ dev Setup Automation — P0-8 INSTALL.md + setup-dev.sh + Edge Runtime cleanup（0.4 SP）
+
+### 為什麼加這個
+
+2026-09-07 揭露 3 個 dev experience 問題：
+
+| 問題 | 影響 | 揭露來源 |
+|------|------|---------|
+| `.env.local` 沒 AI_ENCRYPTION_KEY | AI config 儲存 500 | Sprint 43 v2.0 設的嚴格 throw |
+| `docs/INSTALL.md` 缺失 | 新 dev 不知怎麼設 .env.local | 用戶提問 |
+| `lib/log.ts:88` process.stdout warning | dev 編譯警告（Edge runtime bundler）| Sprint 57 Edge fix (f74bec4) 沒完全清乾淨 |
+
+三者都是「沒人提示就踩坑」類型，一起做節省 onboarding 時間。
+
+### 0.5.1 P0-8a `scripts/setup-dev.sh`（0.2 SP）
+
+自動生成 dev 環境需要的 secret / env：
+
+1. 檢查 `.env.local` 是否存在
+   - 不存在 → 從 `.env.example` 拷貝成 `.env.local`
+2. 自動生成 `AI_ENCRYPTION_KEY`（64 hex）若沒設
+3. 自動生成 `AUTH_SECRET`（base64 32）若沒設
+4. 給提示：檢查 `DATABASE_URL` 是否已配置
+5. 顯示 next steps（pnpm db:push / pnpm dev / etc.）
+
+**互動性**：
+- 預設 non-interactive（自動生成 + 提示）
+- 支援 `--reset-keys` 重新生成所有 secret
+- 支援 `--check-only` 只檢查不寫
+
+### 0.5.2 P0-8b `docs/INSTALL.md`（0.1 SP）
+
+從零到跑通 dev 環境的完整指南：
+
+1. **Prerequisites**：Node.js 20+ / pnpm 11 / PostgreSQL 14+
+2. **Clone & Install**：`git clone` + `pnpm install`
+3. **Setup**：跑 `bash scripts/setup-dev.sh` 自動產生 `.env.local`
+4. **Database**：`docker run postgres` 或本地 install
+5. **Schema sync**：`pnpm db:push`（dev 用 db push，prod 用 migrate deploy）
+6. **Seed**：`bash prisma/seed-rbac.sql`（P0-7 產物）
+7. **Run**：`pnpm dev` → http://localhost:3000
+8. **First login**：admin@ai-headless.local / dev_password_123
+9. **Troubleshooting**：常見問題（CSRF / RBAC / log warning 等）
+
+### 0.5.3 P0-8c Edge Runtime cleanup（0.1 SP）
+
+清掉 `lib/log.ts:88` `process.stdout` 靜態引用警告：
+
+**現狀**：
+```ts
+if (isProduction()) {
+  if (isNodeRuntime()) {
+    const stream = level === 'error' ? process.stderr : process.stdout; // ← line 88
+    stream.write(JSON.stringify(entry) + '\n');
+  } else {
+    // Edge runtime fallback
+    const fn = level === 'error' ? console.error : console.log;
+    fn(JSON.stringify(entry));
+  }
+}
+```
+
+**問題**：bundler 靜態分析時，即使在 `if (isNodeRuntime())` guard 內，仍偵測 `process.stdout/stderr` 為 Node API → 編譯警告。
+
+**修法**：用 `globalThis.process` 動態存取，bundler 不會靜態偵測：
+```ts
+if (isProduction()) {
+  const proc = (globalThis as { process?: NodeJS.Process }).process;
+  if (proc) {
+    const stream = level === 'error' ? proc.stderr : proc.stdout;
+    stream.write(JSON.stringify(entry) + '\n');
+  } else {
+    // Edge runtime fallback
+    const fn = level === 'error' ? console.error : console.log;
+    fn(JSON.stringify(entry));
+  }
+}
+```
+
+**測試**：
+- `lib/log.test.ts` 加測試：模擬 edge runtime（沒 process）→ fallback 到 console
+- 模擬 node runtime（有 process）→ 用 process.stdout/stderr
+
+### 0.5.4 預估 SP 細目
+
+| 任務 | 預估 | 備註 |
+|------|------|------|
+| `scripts/setup-dev.sh` | 0.1 SP | Bash + set -e + 互動 |
+| `setup-dev.sh` 測試 | 0.05 SP | 用 bats 或 integration test |
+| `docs/INSTALL.md` | 0.05 SP | 文檔撰寫 |
+| `lib/log.ts` Edge runtime cleanup | 0.05 SP | 改 5 行 + 測試 |
+| **小計** | **0.25 SP** | |
+
+> 註：原估 0.4 SP，細估後 0.25 SP（文件不耗時）。
+
+### 0.5.5 為什麼放在 Sprint 59
+
+- 跟 P0-7 同主題：dev setup 完整性
+- 跟 P0-6（migration policy）有交集：dev workflow 自動化
+- 都是「低 SP / 高 dev experience 價值」類型
+
+---
+
 ## 1. 為什麼這 4 件事放一起？
 
 | 項目 | 性質 | 為什麼一起做 |
 |------|------|-------------|
 | **P0-7 dev DB Baseline** | Dev 必修 | Sprint 59 開工前置（修 migration history） |
+| **P0-8 dev Setup Automation** | Dev 必修 | 新 dev onboarding + 修 dev 警告 |
 | **P0-4 Backup** | Ops 必修 | DB 資料是最重要的資產 |
 | **P0-5 CD** | DevOps 必修 | 部署自動化是 GA 前必備 |
 | **P0-6 Migration Policy** | 治理必修 | DB schema 變更要可追蹤、可回滾 |
 
-四者都是「沒出事沒人想，做了救你一命」類型，跨 Dev/Infra/Governance。
+五者都是「沒出事沒人想，做了救你一命」類型，跨 Dev/Infra/Governance。
 
 ---
 
@@ -274,6 +378,10 @@
 | P0-7 prisma/seed-rbac.sql | 0.1 SP | 整合既有 3 個 migration SQL |
 | P0-7 check-prisma-migrations.sh | 0.1 SP | CI gate script |
 | P0-7 CI workflow 補完 | 0.05 SP | 一個 step |
+| P0-8 scripts/setup-dev.sh | 0.1 SP | Bash + 互動 |
+| P0-8 setup-dev.sh 測試 | 0.05 SP | Bats 或 integration test |
+| P0-8 docs/INSTALL.md | 0.05 SP | 文檔撰寫 |
+| P0-8 lib/log.ts Edge cleanup | 0.05 SP | 改 5 行 + 測試 |
 | P0-4 backup-db.sh + restore-db.sh | 0.3 SP | 含 S3 上傳 |
 | P0-4 GitHub Actions backup.yml | 0.2 SP | 每日排程 |
 | P0-4 backup-strategy.md | 0.2 SP | 完整文件 |
@@ -283,7 +391,7 @@
 | P0-6 migration-policy.md | 0.2 SP | 政策文件 |
 | P0-6 check-migration-safety.sh | 0.1 SP | CI 警告腳本 |
 | P0-6 PR template | 0.1 SP | checkbox |
-| **總計** | **2.1 SP** | （原 1.8 + P0-7 0.3）|
+| **總計** | **2.35 SP** | （原 2.1 + P0-8 0.25）|
 
 ---
 
@@ -296,6 +404,7 @@
 - `scripts/restore-db.sh`
 - `scripts/check-migration-safety.sh`
 - `scripts/check-prisma-migrations.sh` ← **P0-7**
+- `scripts/setup-dev.sh` ← **P0-8a**
 
 **Workflows**
 - `.github/workflows/backup.yml`
@@ -307,6 +416,7 @@
 - `docs/operations/deployment.md`
 - `docs/operations/migration-policy.md`
 - `prisma/seed-rbac.sql` ← **P0-7**（SQL 檔不是 doc）
+- `docs/INSTALL.md` ← **P0-8b**
 
 **測試**
 - `tests/integration/sprint59-ops.test.ts`（guard tests）
@@ -316,6 +426,7 @@
 - `.github/workflows/ci.yml`（補完）
 - `vercel.json`（完善）
 - `.github/PULL_REQUEST_TEMPLATE.md`（加 migration checkbox）
+- `lib/log.ts` ← **P0-8c**（Edge runtime cleanup）
 
 ---
 
@@ -335,6 +446,14 @@
 - [ ] `psql -f prisma/seed-rbac.sql` 在空 DB 跑 → roles + permissions 有資料
 - [ ] CI workflow 加 migration check step，PR 跑成功
 - [ ] （手動驗證）在新 clone 的 repo 跑 migrate + seed → dev DB 可用
+
+### P0-8 完成定義（dev setup 自動化）
+
+- [ ] `bash scripts/setup-dev.sh` 在空目錄跑 → 自動產生 `.env.local` + AI_ENCRYPTION_KEY + AUTH_SECRET
+- [ ] `bash scripts/setup-dev.sh --check-only` 報告目前 env 狀態
+- [ ] `docs/INSTALL.md` 從零到跑通的所有步驟（驗證：在新 dev 環境照文件操作）
+- [ ] `lib/log.ts` Edge runtime cleanup：dev 編譯警告消失（`process.stdout` 警告 0 個）
+- [ ] `pnpm test` 仍全綠（log.ts 改動不破壞既有測試）
 
 ### P0-4 / P0-5 / P0-6 完成定義
 
