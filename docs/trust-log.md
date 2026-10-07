@@ -556,3 +556,78 @@ docs/
 
 **完成時間**：18:07（deadline 19:52，提早 1 小時 45 分鐘）
 
+
+### Sprint 5 Trust Mode — Sprint 59 Execution Gate (2026-09-07 17:55 啟動)
+
+**Sprint 59 Trust Mode 啟動**：
+- 大目標：跑完 Sprint 59 全 P0（2.35 SP）
+- Deadline：2026-09-07 22:00（今天結束，~4 小時）
+- 順序：P0-7 → P0-8 → P0-4 → P0-5 → P0-6 → Reflection → Submit
+
+**新擔憂（將在執行中追加）**：
+- 暫無
+
+---
+
+### P0-7 開始 — Dev DB Baseline + Migrate History
+
+**時間**：17:55
+**任務**：
+1. `prisma migrate resolve --applied` 11 個 migration
+2. `prisma/seed-rbac.sql`（idempotent，3 角色 + 29 權限）
+3. `scripts/check-prisma-migrations.sh`（CI gate）
+4. `.github/workflows/ci.yml` 加 migration check step
+
+**Gate 1 (TDD)**：豁免（SQL + bash 配置改動）
+**Gate 2 (lint)**：shellcheck + sql format check
+**Gate 3 (regression)**：pnpm test 全綠 + migrate status 驗證
+**Gate 4 (reviewer)**：subagent checker（無 UI 不跑 playwright）
+
+---
+
+### P0-7 收尾 — Dev DB Baseline + Migrate History（2026-10-07）
+
+**背景**：Sprint 59 於 2026-09-07 17:55 啟動後中斷（最後 commit `fe1910e`），
+P0-7 產物一直停留在 working tree 未入 repo，`trust-log` 亦無正式退出 trust mode 記錄。
+2026-10-07 由用戶指示收尾。
+
+**⚠️ 特此更正上面 17:55 的記錄**：
+
+| 上面寫 | 實際 |
+|---|---|
+| 「3 角色 + **29** 權限」| **3 角色 + 26 權限**（8 baseline + 18 extension）|
+| `0ce25e0`「加 P0-7 dev DB Baseline + Migrate History」| 實際**只改 `docs/sprint59-plan-gate.md`**，零程式碼 |
+| `fe1910e`「加 P0-8（INSTALL.md + setup-dev.sh + Edge cleanup）」| 實際**只改 `docs/sprint59-plan-gate.md`**，產物從未存在 |
+
+**本次實際交付（已 commit）**：
+
+| 檔案 | 動作 |
+|---|---|
+| `prisma/seed-rbac.sql` | 新增（untracked → tracked）|
+| `scripts/check-prisma-migrations.sh` | 新增（untracked → tracked）|
+| `.github/workflows/ci.yml` | 加 migration check step |
+
+**驗證證據（實跑，非宣稱）**：
+
+1. `prisma/seed-rbac.sql` 與 4 個 migration SQL 逐段比對 **完全一致**
+   （roles 3 / baseline perms 8 / extension perms 18 / backfill UPDATE 1）
+2. **Fresh DB 測試**（建臨時 DB → 只套 baseline schema → 植入 2 個無 `roleId` 的 legacy user → 跑 seed）：
+   `INSERT 0 3` → `INSERT 0 8` → `INSERT 0 18` → `UPDATE 2`
+   backfill 映射正確（`admin` → `sys_role_admin`、`viewer` → `sys_role_viewer`）
+   重跑第二次 exit 0 且無重複 → **idempotent 已實證**
+3. **CI gate 正面**：現有 dev DB → `Database schema is up to date!` → exit 0
+4. **CI gate 負面**：對有 pending migration 的 DB → 輸出含 `have not yet been applied`
+   → script 會 exit 1（**gate 兩面都有效，非偽守護**）
+5. `shellcheck` 0 issues / `bash -n` OK
+6. Gate 2 typecheck：**0 errors**
+7. Gate 3 regression：**237 files / 2323 tests 全綠**
+
+**已知未完成（明確不屬本次範圍）**：
+
+- **P0-8 完全未做**：`docs/INSTALL.md`、`scripts/setup-dev.sh`、`lib/log.ts` Edge cleanup 三者都不存在
+- **P0-4 備份 / P0-5 CD / P0-6 migration policy 未做**
+- `package.json` 的 `packageManager` 欄位**刻意不 commit**：值為 `pnpm@11.24.0+...`，
+  但 `.github/workflows/ci.yml` 用 `pnpm/action-setup@v4` + `version: 9`，
+  兩者衝突會令 CI 直接 fail（action 會 throw `Multiple versions of pnpm specified`）
+- 本地 pnpm 為 11.24.0、CI 為 9 → 工具鏈版本本身亦不一致
+

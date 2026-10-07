@@ -73,6 +73,10 @@ jobs:
       - name: Run Prisma migrations
         run: pnpm exec prisma migrate deploy
 
+      - name: Check Prisma migration history
+        # Sprint 59 P0-7：確保 migration history 跟 DB schema 一致
+        run: bash scripts/check-prisma-migrations.sh
+
       - name: Run database seed
         run: pnpm db:seed || echo "seed skipped (可能無 seed 對應 schema)"
 
